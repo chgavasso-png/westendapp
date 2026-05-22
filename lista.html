@@ -14,7 +14,7 @@
             <div class="flex items-center gap-4">
                 <a href="menu.html" class="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                     </svg>
                 </a>
                 <div>
@@ -29,6 +29,11 @@
     <div class="max-w-5xl mx-auto p-6 space-y-4 mt-4" id="relatorios-container"></div>
 
     <script>
+        // ===== SUPABASE CONFIG (REST API via fetch) =====
+        const SUPABASE_URL = 'https://wkndzjnqypsyluhgrdil.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndrbmR6am5xeXBzeWx1aGdyZGlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NzU5MTQsImV4cCI6MjA5NTA1MTkxNH0.6W9dsBVCeLzT3EIHyQ5ZFmQhEOyj586K9po4cj9wJeA';
+        // ================================================
+
         function formatarNomeStaff(nome) {
             if (!nome) return '';
             const n = nome.toLowerCase();
@@ -48,220 +53,262 @@
             carregarLista();
         };
 
-        function carregarLista() {
+        async function carregarLista() {
             const container = document.getElementById('relatorios-container');
-            let db = JSON.parse(localStorage.getItem('reports_db') || '[]');
-            container.innerHTML = '';
+            container.innerHTML = '<div class="text-center p-8 text-slate-500 font-bold">Carregando relatórios...</div>';
 
-            if (db.length === 0) {
-                container.innerHTML = `<div class="bg-white p-8 rounded-2xl text-center shadow-sm border border-slate-200 text-slate-500 font-bold">Nenhum relatório salvo no sistema.</div>`;
-                return;
-            }
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/reports?order=created_at.desc`, {
+                    headers: { 
+                        'apikey': SUPABASE_ANON_KEY, 
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
 
-            db.slice().reverse().forEach(rep => {
-                let dataFormatada = rep.date ? rep.date.split('-').reverse().join('/') : 'Sem data';
+                if (!res.ok) throw new Error(await res.text());
 
-                container.innerHTML += `
-                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4 hover:shadow-md transition-all">
+                const db = await res.json();
+                container.innerHTML = '';
+
+                if (!db || db.length === 0) {
+                    container.innerHTML = `<div class="bg-white p-8 rounded-2xl text-center shadow-sm border border-slate-200 text-slate-500 font-bold">Nenhum relatório salvo no sistema.</div>`;
+                    return;
+                }
+
+                db.forEach(rep => {
+                    let dataFormatada = rep.date ? rep.date.split('-').reverse().join('/') : 'Sem data';
+
+                    container.innerHTML += `
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4 hover:shadow-md transition-all">
                         <div class="flex-1">
-                            <div class="flex items-center gap-3">
-                                <h3 class="text-lg font-extrabold text-slate-800">${rep.building || 'Prédio sem nome'}</h3>
-                                <span class="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">${rep.period || 'Daily'}</span>
-                            </div>
-                            <p class="text-sm text-slate-500 mt-1"><strong>Empregado(a):</strong> ${rep.employeeName || 'Não preenchido'} • <strong>Data:</strong> ${dataFormatada}</p>
+                        <div class="flex items-center gap-3">
+                        <h3 class="text-lg font-extrabold text-slate-800">${rep.building || 'Prédio sem nome'}</h3>
+                        <span class="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">${rep.period || 'Daily'}</span>
+                        </div>
+                        <p class="text-sm text-slate-500 mt-1"><strong>Empregado(a):</strong> ${rep.employeename || 'Não preenchido'} • <strong>Data:</strong> ${dataFormatada}</p>
                         </div>
                         <div class="flex flex-wrap gap-2">
-                            <button onclick="editarRelatorio('${rep.id}')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm transition-colors">Editar</button>
-                            <button onclick="baixarPDF('${rep.id}')" id="btn-pdf-${rep.id}" class="px-4 py-2 bg-[#547C44] hover:bg-[#436435] text-white font-bold rounded-xl text-sm shadow-sm transition-colors">📄 PDF</button>
-                            <button onclick="excluirRelatorio('${rep.id}')" class="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-600 font-bold rounded-xl text-sm transition-colors">Excluir</button>
+                        <button onclick="editarRelatorio('${rep.id}')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm transition-colors">Editar</button>
+                        <button onclick="baixarPDF('${rep.id}')" id="btn-pdf-${rep.id}" class="px-4 py-2 bg-[#547C44] hover:bg-[#436435] text-white font-bold rounded-xl text-sm shadow-sm transition-colors">📄 PDF</button>
+                        <button onclick="excluirRelatorio('${rep.id}')" class="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-600 font-bold rounded-xl text-sm transition-colors">Excluir</button>
                         </div>
-                    </div>
-                `;
-            });
+                        </div>
+                    `;
+                });
+            } catch(err) {
+                console.error('Erro ao carregar lista:', err);
+                container.innerHTML = `<div class="bg-red-50 p-6 rounded-2xl text-center border border-red-200 text-red-600 font-bold">Erro ao carregar: ${err.message}</div>`;
+            }
         }
 
         function editarRelatorio(id) { window.location.href = `reports.html?id=${id}`; }
 
-        function excluirRelatorio(id) {
-            if (confirm('Tem certeza que deseja apagar este relatório?')) {
-                let db = JSON.parse(localStorage.getItem('reports_db') || '[]');
-                db = db.filter(r => String(r.id) !== String(id));
-                localStorage.setItem('reports_db', JSON.stringify(db));
+        async function excluirRelatorio(id) {
+            if (!confirm('Tem certeza que deseja apagar este relatório?')) return;
+
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/reports?id=eq.${id}`, {
+                    method: 'DELETE',
+                    headers: { 
+                        'apikey': SUPABASE_ANON_KEY, 
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+
+                if (!res.ok) throw new Error(await res.text());
                 carregarLista();
+            } catch(err) {
+                alert('Erro ao excluir: ' + err.message);
             }
         }
 
         /* LÓGICA DO PDF */
         async function baixarPDF(id) {
-            const db = JSON.parse(localStorage.getItem('reports_db') || '[]');
-            const rep = db.find(r => String(r.id) === String(id));
-            if (!rep) return alert('Relatório não encontrado.');
-
-            const b = rep.building || 'Não informado';
-            const e = rep.employeeName || '';
-            const d = rep.date || '';
-            const s = rep.summary || '';
-            const selectedPeriod = rep.period || 'Daily';
-            const selectedPdfDisplayOption = rep.pdfDisplayOption || 'both';
-            const locations = rep.locations || [];
-            
-            // AQUI ESTÁ A MÁGICA DESTA ALTERAÇÃO:
-            // Pega quem está logado AGORA, e não quem criou o relatório no passado
-            const loggedUserAtual = localStorage.getItem('loggedUser');
-            const staffGeradorPDF = formatarNomeStaff(loggedUserAtual || 'Desconhecido');
-
             const btn = document.getElementById(`btn-pdf-${id}`);
             const txtOriginal = btn.innerText;
             btn.innerText = "Gerando..."; btn.disabled = true;
 
-            const doc = new window.jspdf.jsPDF(); 
-            let y = 20;
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/reports?id=eq.${id}&limit=1`, {
+                    headers: { 
+                        'apikey': SUPABASE_ANON_KEY, 
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
 
-            const corVerde = [84, 124, 68]; 
-            const corDado = [30, 30, 30]; 
-            const corTextoLiso = [80, 80, 80]; 
+                const db = await res.json();
+                const rep = db[0];
 
-            const getLogo = () => new Promise(res => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = 'logo.png'; });
-            const logoImg = await getLogo();
-
-            if (logoImg) {
-                const maxW = 40, maxH = 25;
-                let w = logoImg.width, h = logoImg.height;
-                if (w > h) { h = h * (maxW / w); w = maxW; } else { w = w * (maxH / h); h = maxH; }
-                doc.addImage(logoImg, 'PNG', 15, y - 5, w, h);
-            }
-
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(26);
-            doc.setTextColor(...corVerde);
-            doc.text('CLEANING REPORT', 195, y + 10, { align: 'right' });
-
-            y += 30; 
-
-            doc.setDrawColor(...corVerde);
-            doc.setLineWidth(0.6);
-            doc.line(15, y, 195, y);
-            y += 12;
-
-            doc.setFontSize(12);
-            const addInfo = (lbl, valor, posY) => {
-                doc.setFont('helvetica', 'bold'); doc.setTextColor(...corVerde);
-                doc.text(lbl, 15, posY);
-                if (valor) {
-                    doc.setFont('helvetica', 'normal'); doc.setTextColor(...corDado);
-                    doc.text(valor, 60, posY);
+                if (!rep) {
+                    alert('Relatório não encontrado.');
+                    btn.innerHTML = txtOriginal; btn.disabled = false;
+                    return;
                 }
-            };
 
-            // Imprime o nome de quem gerou o PDF
-            addInfo('Supervisor / Staff:', staffGeradorPDF, y); y += 8;
-            addInfo('Cleaning Staff:', e, y); y += 8;
-            
-            if (selectedPdfDisplayOption==='date'||selectedPdfDisplayOption==='both') {
-                addInfo('Date:', d ? d.split('-').reverse().join('/') : '', y); y += 8;
-            }
-            if (selectedPdfDisplayOption==='period'||selectedPdfDisplayOption==='both') {
-                addInfo('Report Type:', selectedPeriod, y); y += 8;
-            }
+                const b = rep.building || 'Não informado';
+                const e = rep.employeename || '';
+                const d = rep.date || '';
+                const s = rep.summary || '';
+                const selectedPeriod = rep.period || 'Daily';
+                const selectedPdfDisplayOption = rep.pdfdisplayoption || 'both';
+                const locations = rep.locations || [];
 
-            y += 8;
+                const loggedUserAtual = localStorage.getItem('loggedUser');
+                const staffGeradorPDF = formatarNomeStaff(loggedUserAtual || 'Desconhecido');
 
-            doc.setFontSize(16); doc.setFont('helvetica', 'bold'); doc.setTextColor(...corVerde);
-            doc.text('Summary of Work', 15, y); y += 6;
+                const doc = new window.jspdf.jsPDF(); 
+                let y = 20;
 
-            const textoPadraoResumo = `Cleaning staff member ${e || '[nome]'} carried out cleaning tasks in the following areas using appropriate machinery and equipment. The work included floor cleaning and dust removal with the machine`;
-            const txtResumo = s || textoPadraoResumo;
+                const corVerde = [84, 124, 68]; 
+                const corDado = [30, 30, 30]; 
+                const corTextoLiso = [80, 80, 80]; 
 
-            doc.setFontSize(12); doc.setFont('helvetica', 'normal'); 
-            const splitS = doc.splitTextToSize(txtResumo, 160);
-            const boxH = splitS.length * 6 + 10;
-            
-            doc.setFillColor(248, 249, 250); 
-            doc.setDrawColor(220, 220, 220); 
-            doc.setLineWidth(0.3);
-            doc.roundedRect(15, y, 180, boxH, 2, 2, 'FD');
+                const getLogo = () => new Promise(res => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = 'logo.png'; });
+                const logoImg = await getLogo();
 
-            doc.setTextColor(...corTextoLiso);
-            doc.text(splitS, 20, y + 8);
-            y += boxH + 15;
+                if (logoImg) {
+                    const maxW = 40, maxH = 25;
+                    let w = logoImg.width, h = logoImg.height;
+                    if (w > h) { h = h * (maxW / w); w = maxW; } else { w = w * (maxH / h); h = maxH; }
+                    doc.addImage(logoImg, 'PNG', 15, y - 5, w, h);
+                }
 
-            if (y > 250) { doc.addPage(); y = 20; }
-            
-            doc.setFontSize(16); doc.setFont('helvetica', 'bold'); doc.setTextColor(...corVerde);
-            doc.text('Building / Property:', 15, y);
-            
-            y += 8;
-            doc.setFontSize(14); doc.setFont('helvetica', 'normal'); doc.setTextColor(...corDado);
-            doc.text(b, 15, y);
-            
-            y += 15;
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(26);
+                doc.setTextColor(...corVerde);
+                doc.text('CLEANING REPORT', 195, y + 10, { align: 'right' });
 
-            doc.setFontSize(16); doc.setFont('helvetica', 'bold'); doc.setTextColor(...corVerde);
-            doc.text('Locations Cleaned:', 15, y); y += 10;
+                y += 30; 
 
-            if (!locations.length) { 
-                doc.setFontSize(12); doc.setFont('helvetica', 'normal'); doc.setTextColor(...corDado);
-                doc.text('Nenhuma área anexada.', 15, y); y += 8; 
-            } else { 
-                locations.forEach(loc => { 
-                    if(y>275) { doc.addPage(); y = 20; } 
-                    
-                    doc.setFillColor(...corVerde); 
-                    doc.circle(16, y - 1.5, 1.2, 'F'); 
+                doc.setDrawColor(...corVerde);
+                doc.setLineWidth(0.6);
+                doc.line(15, y, 195, y);
+                y += 12;
 
-                    doc.setTextColor(...corDado); doc.setFont('helvetica', 'normal'); doc.setFontSize(12); 
-                    doc.text(loc.name || 'Local sem nome', 22, y); 
-                    y += 8; 
+                doc.setFontSize(12);
+                const addInfo = (lbl, valor, posY) => {
+                    doc.setFont('helvetica', 'bold'); doc.setTextColor(...corVerde);
+                    doc.text(lbl, 15, posY);
+                    if (valor) {
+                        doc.setFont('helvetica', 'normal'); doc.setTextColor(...corDado);
+                        doc.text(valor, 60, posY);
+                    }
+                };
 
-                    if (loc.sublocations && loc.sublocations.length > 0) {
+                addInfo('Supervisor / Staff:', staffGeradorPDF, y); y += 8;
+                addInfo('Cleaning Staff:', e, y); y += 8;
+
+                if (selectedPdfDisplayOption==='date'||selectedPdfDisplayOption==='both') {
+                    addInfo('Date:', d ? d.split('-').reverse().join('/') : '', y); y += 8;
+                }
+                if (selectedPdfDisplayOption==='period'||selectedPdfDisplayOption==='both') {
+                    addInfo('Report Type:', selectedPeriod, y); y += 8;
+                }
+
+                y += 8; 
+
+                doc.setFontSize(16); doc.setFont('helvetica', 'bold'); doc.setTextColor(...corVerde);
+                doc.text('Summary of Work', 15, y); y += 6; 
+
+                const textoPadraoResumo = `Cleaning staff member ${e || '[nome]'} carried out cleaning tasks in the following areas using appropriate machinery and equipment. The work included floor cleaning and dust removal with the machine`;
+                const txtResumo = s || textoPadraoResumo;
+
+                doc.setFontSize(12); doc.setFont('helvetica', 'normal'); 
+                const splitS = doc.splitTextToSize(txtResumo, 160);
+                const boxH = splitS.length * 6 + 10;
+
+                doc.setFillColor(248, 249, 250); 
+                doc.setDrawColor(220, 220, 220); 
+                doc.setLineWidth(0.3);
+                doc.roundedRect(15, y, 180, boxH, 2, 2, 'FD');
+
+                doc.setTextColor(...corTextoLiso);
+                doc.text(splitS, 20, y + 8);
+                y += boxH + 15; 
+
+                if (y > 250) { doc.addPage(); y = 20; }
+
+                doc.setFontSize(16); doc.setFont('helvetica', 'bold'); doc.setTextColor(...corVerde);
+                doc.text('Building / Property:', 15, y);
+
+                y += 8;
+                doc.setFontSize(14); doc.setFont('helvetica', 'normal'); doc.setTextColor(...corDado);
+                doc.text(b, 15, y);
+
+                y += 15; 
+
+                doc.setFontSize(16); doc.setFont('helvetica', 'bold'); doc.setTextColor(...corVerde);
+                doc.text('Locations Cleaned:', 15, y); y += 10;
+
+                if (!locations.length) { 
+                    doc.setFontSize(12); doc.setFont('helvetica', 'normal'); doc.setTextColor(...corDado);
+                    doc.text('Nenhuma área anexada.', 15, y); y += 8; 
+                } else { 
+                    locations.forEach(loc => { 
+                        if(y>275) { doc.addPage(); y = 20; } 
+
+                        doc.setFillColor(...corVerde); 
+                        doc.circle(16, y - 1.5, 1.2, 'F'); 
+
+                        doc.setTextColor(...corDado); doc.setFont('helvetica', 'normal'); doc.setFontSize(12); 
+                        doc.text(loc.name || 'Local sem nome', 22, y); 
+                        y += 8; 
+
+                        if (loc.sublocations && loc.sublocations.length > 0) {
                         doc.setTextColor(110, 110, 110); 
                         doc.setFontSize(11);
                         loc.sublocations.forEach(sub => {
-                            if (sub.trim() !== '') {
-                                if(y>275) { doc.addPage(); y = 20; } 
-                                doc.text(`- ${sub}`, 26, y);
-                                y += 6;
-                            }
+                        if (sub.trim() !== '') {
+                        if(y>275) { doc.addPage(); y = 20; } 
+                        doc.text(`- ${sub}`, 26, y);
+                        y += 6;
+                        }
                         });
                         y += 2; 
-                    }
-                }); 
-            }
+                        }
+                    }); 
+                }
 
-            const totalFotos = locations.reduce((a, l) => a + l.photos.length, 0);
-            if (totalFotos > 0) {
-                doc.addPage(); y = 20;
-                doc.setFontSize(22); doc.setFont('helvetica', 'bold'); doc.setTextColor(...corVerde);
-                doc.text('Photographic Evidence', 15, y); y += 15;
+                const totalFotos = locations.reduce((a, l) => a + l.photos.length, 0);
+                if (totalFotos > 0) {
+                    doc.addPage(); y = 20;
+                    doc.setFontSize(22); doc.setFont('helvetica', 'bold'); doc.setTextColor(...corVerde);
+                    doc.text('Photographic Evidence', 15, y); y += 15;
 
-                locations.forEach(loc => {
-                    if (!loc.photos.length) return;
-                    if(y>250){doc.addPage();y=20;}
+                    locations.forEach(loc => {
+                        if (!loc.photos.length) return;
+                        if(y>250){doc.addPage();y=20;}
 
-                    doc.setFontSize(14); doc.setFont('helvetica', 'normal');
-                    doc.setFillColor(...corVerde); doc.rect(15, y - 4, 2, 5, 'F'); 
-                    doc.setTextColor(...corDado); doc.text(loc.name || 'Local sem nome', 20, y); 
-                    y += 10;
+                        doc.setFontSize(14); doc.setFont('helvetica', 'normal');
+                        doc.setFillColor(...corVerde); doc.rect(15, y - 4, 2, 5, 'F'); 
+                        doc.setTextColor(...corDado); doc.text(loc.name || 'Local sem nome', 20, y); 
+                        y += 10;
 
-                    let x = 15; const imgSize = 55; const espaco = 6;
-                    
-                    loc.photos.forEach(img => {
+                        let x = 15; const imgSize = 55; const espaco = 6;
+
+                        loc.photos.forEach(img => {
                         if (x + imgSize > 195) { x = 15; y += imgSize + 15; }
                         if (y + imgSize > 275) { doc.addPage(); y = 20; x = 15; }
-                        
+
                         doc.setDrawColor(210, 210, 210);
                         doc.setLineWidth(0.4);
                         doc.rect(x - 0.5, y - 0.5, imgSize + 1, imgSize + 1);
 
                         try { doc.addImage(img, 'JPEG', x, y, imgSize, imgSize); } catch(e){} 
                         x += imgSize + espaco;
+                        });
+                        y += imgSize + 15;
                     });
-                    y += imgSize + 15;
-                });
+                }
+
+                const nomeSanitizado = e.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 30);
+                const dataSanitizada = d ? d.replace(/-/g, '') : 'no_date';
+                doc.save(`Cleaning_Report_${nomeSanitizado}_${selectedPeriod}_${dataSanitizada}.pdf`);
+            } catch(err) {
+                console.error('Erro ao gerar PDF:', err);
+                alert('Erro ao gerar PDF: ' + err.message);
             }
 
-            doc.save(`Cleaning_Report_${e}_${selectedPeriod}_${d||'no_date'}.pdf`);
-            
             btn.innerHTML = "📄 PDF"; btn.disabled = false;
         }
     </script>
