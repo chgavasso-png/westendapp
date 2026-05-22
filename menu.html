@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menu Principal - West End Cleaning</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 font-sans text-slate-900 min-h-screen">
+
+    <!-- Header Verde Corporativo -->
+    <div class="bg-white shadow-sm border-b-4 border-[#547C44]">
+        <div class="max-w-5xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <img src="logo.png" alt="Logo" class="h-12 object-contain" onerror="this.style.display='none'">
+                <div>
+                    <h2 class="text-xl font-extrabold text-slate-800">Painel Principal</h2>
+                    <p class="text-xs text-slate-500 font-bold uppercase tracking-widest mt-0.5">West End System</p>
+                </div>
+            </div>
+            <button onclick="fazerLogout()" class="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm transition-colors border border-slate-200">Sair</button>
+        </div>
+    </div>
+
+    <!-- Container do Menu -->
+    <div class="max-w-5xl mx-auto p-6 mt-10">
+        
+        <!-- Welcome Card com a Cor Verde -->
+        <div class="bg-[#547C44] text-white p-8 rounded-3xl shadow-lg mb-10 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div>
+                <h1 class="text-3xl font-black mb-1">Bem-vindo(a),</h1>
+                <p id="nome-usuario" class="text-xl font-medium opacity-90"></p>
+            </div>
+            <div class="bg-white/10 px-5 py-3 rounded-2xl border border-white/20 backdrop-blur-sm">
+                <p class="text-xs uppercase tracking-widest font-bold opacity-80 mb-1">Data Atual</p>
+                <p id="data-atual" class="font-bold text-lg"></p>
+            </div>
+        </div>
+
+        <!-- Botões do Menu -->
+        <h3 class="text-lg font-bold text-slate-800 mb-4 px-2">Acesso Rápido</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <button onclick="window.location.href='reports.html'" class="group bg-white p-8 rounded-3xl shadow-sm border border-slate-200 hover:shadow-md hover:border-[#547C44] transition-all text-left flex flex-col h-full relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-slate-50 rounded-bl-[100px] transition-colors group-hover:bg-[#547C44]/10 -z-10"></div>
+                <div class="w-14 h-14 bg-slate-100 text-[#547C44] rounded-2xl flex items-center justify-center font-bold text-3xl mb-6 shadow-inner group-hover:bg-[#547C44] group-hover:text-white transition-colors">
+                    +
+                </div>
+                <h3 class="text-2xl font-black text-slate-800 mb-2">Novo Relatório</h3>
+                <p class="text-slate-500 font-medium">Crie e preencha um novo relatório de limpeza com fotos e detalhes.</p>
+            </button>
+
+            <button onclick="window.location.href='lista.html'" class="group bg-white p-8 rounded-3xl shadow-sm border border-slate-200 hover:shadow-md hover:border-[#547C44] transition-all text-left flex flex-col h-full relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-slate-50 rounded-bl-[100px] transition-colors group-hover:bg-[#547C44]/10 -z-10"></div>
+                <div class="w-14 h-14 bg-slate-100 text-[#547C44] rounded-2xl flex items-center justify-center mb-6 shadow-inner group-hover:bg-[#547C44] group-hover:text-white transition-colors">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                </div>
+                <h3 class="text-2xl font-black text-slate-800 mb-2">Relatórios Salvos</h3>
+                <p class="text-slate-500 font-medium">Visualize os relatórios anteriores, edite ou exporte para PDF.</p>
+            </button>
+
+        </div>
+    </div>
+
+    <script>
+        function formatarNomeStaff(nome) {
+            if (!nome) return '';
+            const n = nome.toLowerCase();
+            if (n.includes('taynara')) return 'Taynara - Support Manager';
+            if (n.includes('marcia')) return 'Marcia - Area Manager';
+            if (n.includes('carlos')) return 'Carlos - IT';
+            return nome; // caso tenha outro nome no futuro
+        }
+
+        window.onload = function() {
+            let loggedUser = localStorage.getItem('loggedUser');
+            if (!loggedUser) {
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            // Aplica a formatação do cargo no menu
+            document.getElementById('nome-usuario').innerText = formatarNomeStaff(loggedUser);
+            
+            // Coloca a data bonitinha
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('data-atual').innerText = new Date().toLocaleDateString('pt-BR', options);
+        };
+
+        function fazerLogout() {
+            localStorage.removeItem('loggedUser');
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>

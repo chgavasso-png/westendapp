@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - West End Cleaning</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 font-sans min-h-screen flex items-center justify-center p-4">
+
+    <div class="bg-white p-10 rounded-3xl shadow-xl w-full max-w-md border border-slate-100 flex flex-col items-center">
+        <!-- Logo -->
+        <img src="logo.png" alt="West End Cleaning Logo" class="h-24 mb-6 object-contain" onerror="this.style.display='none'">
+        
+        <h2 class="text-2xl font-black text-slate-800 mb-2">Acesso ao Sistema</h2>
+        <p class="text-sm text-slate-500 font-medium mb-8 text-center">Insira seu usuário e senha para prosseguir</p>
+
+        <div class="w-full space-y-5 flex flex-col items-center">
+            <div class="w-full">
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 pl-1">Usuário</label>
+                <input type="text" id="username" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:outline-none focus:border-[#547C44] focus:ring-1 focus:ring-[#547C44] transition-all" placeholder="Digite seu usuário">
+            </div>
+
+            <div class="w-full">
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 pl-1">Senha</label>
+                <input type="password" id="password" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:outline-none focus:border-[#547C44] focus:ring-1 focus:ring-[#547C44] transition-all" placeholder="••••••••">
+            </div>
+
+            <button onclick="fazerLogin()" class="w-full mt-4 py-4 bg-[#547C44] hover:bg-[#436435] text-white font-bold rounded-xl shadow-md transition-colors text-lg">
+                Entrar Seguramente
+            </button>
+            <p id="error-msg" class="text-red-500 font-bold text-sm hidden mt-2 text-center"></p>
+        </div>
+    </div>
+
+    <script>
+        const usersDB = [
+            { user: "Taynara", pass: "taynara" },
+            { user: "Marcia", pass: "marcia" },
+            { user: "Carlos", pass: "carlos" }
+        ];
+
+        window.onload = function() {
+            if (localStorage.getItem('loggedUser')) window.location.href = 'menu.html';
+        };
+
+        function fazerLogin() {
+            const u = document.getElementById('username').value.trim();
+            const p = document.getElementById('password').value;
+            const err = document.getElementById('error-msg');
+            
+            const valid = usersDB.find(user => user.user.toLowerCase() === u.toLowerCase() && user.pass === p);
+            
+            if (valid) {
+                // Salva o nome exatamente como está no banco para manter padronizado
+                localStorage.setItem('loggedUser', valid.user);
+                window.location.href = 'menu.html';
+            } else {
+                err.innerText = "Usuário ou senha incorretos!";
+                err.classList.remove('hidden');
+            }
+        }
+
+        // Permite logar apertando Enter na senha
+        document.getElementById('password').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') fazerLogin();
+        });
+    </script>
+</body>
+</html>
