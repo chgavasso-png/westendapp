@@ -25,17 +25,17 @@
                 <input type="date" id="report-date" class="p-3 bg-slate-50 border rounded-xl font-medium">
                 <div class="bg-slate-50 border rounded-xl p-3"><p class="text-xs font-extrabold text-slate-500 uppercase tracking-widest mb-3">Tipo do relatório</p>
                     <div class="grid grid-cols-3 gap-2">
-                        <button type="button" id="period-daily" onclick="selecionarPeriodo('Daily')" class="period-btn px-3 py-2 rounded-xl font-bold text-sm border transition-all hover:bg-slate-200">Daily</button>
-                        <button type="button" id="period-weekly" onclick="selecionarPeriodo('Weekly')" class="period-btn px-3 py-2 rounded-xl font-bold text-sm border transition-all hover:bg-slate-200">Weekly</button>
-                        <button type="button" id="period-monthly" onclick="selecionarPeriodo('Monthly')" class="period-btn px-3 py-2 rounded-xl font-bold text-sm border transition-all hover:bg-slate-200">Monthly</button>
+                    <button type="button" id="period-daily" onclick="selecionarPeriodo('Daily')" class="period-btn px-3 py-2 rounded-xl font-bold text-sm border transition-all hover:bg-slate-200">Daily</button>
+                    <button type="button" id="period-weekly" onclick="selecionarPeriodo('Weekly')" class="period-btn px-3 py-2 rounded-xl font-bold text-sm border transition-all hover:bg-slate-200">Weekly</button>
+                    <button type="button" id="period-monthly" onclick="selecionarPeriodo('Monthly')" class="period-btn px-3 py-2 rounded-xl font-bold text-sm border transition-all hover:bg-slate-200">Monthly</button>
                     </div>
                 </div>
                 <div class="md:col-span-2 bg-slate-50 border rounded-xl p-4"><p class="text-xs font-extrabold text-slate-500 uppercase tracking-widest mb-3">Escolha o que vai aparecer no PDF</p>
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
-                        <button type="button" id="display-date" onclick="selecionarOpcaoPDF('date')" class="pdf-option-btn px-3 py-3 rounded-xl font-bold text-sm border transition-all hover:bg-slate-200">Mostrar Data</button>
-                        <button type="button" id="display-period" onclick="selecionarOpcaoPDF('period')" class="pdf-option-btn px-3 py-3 rounded-xl font-bold text-sm border transition-all hover:bg-slate-200">Mostrar Tipo</button>
-                        <button type="button" id="display-both" onclick="selecionarOpcaoPDF('both')" class="pdf-option-btn px-3 py-3 rounded-xl font-bold text-sm border transition-all hover:bg-slate-200">Mostrar os Dois</button>
-                        <button type="button" id="display-none" onclick="selecionarOpcaoPDF('none')" class="pdf-option-btn px-3 py-3 rounded-xl font-bold text-sm border transition-all hover:bg-slate-200">Não Mostrar</button>
+                    <button type="button" id="display-date" onclick="selecionarOpcaoPDF('date')" class="pdf-option-btn px-3 py-3 rounded-xl font-bold text-sm border transition-all hover:bg-slate-200">Mostrar Data</button>
+                    <button type="button" id="display-period" onclick="selecionarOpcaoPDF('period')" class="pdf-option-btn px-3 py-3 rounded-xl font-bold text-sm border transition-all hover:bg-slate-200">Mostrar Tipo</button>
+                    <button type="button" id="display-both" onclick="selecionarOpcaoPDF('both')" class="pdf-option-btn px-3 py-3 rounded-xl font-bold text-sm border transition-all hover:bg-slate-200">Mostrar os Dois</button>
+                    <button type="button" id="display-none" onclick="selecionarOpcaoPDF('none')" class="pdf-option-btn px-3 py-3 rounded-xl font-bold text-sm border transition-all hover:bg-slate-200">Não Mostrar</button>
                     </div>
                 </div>
                 <textarea id="report-summary" rows="4" class="md:col-span-2 p-3 bg-slate-50 border rounded-xl font-medium" placeholder="Resumo do Trabalho"></textarea>
@@ -49,9 +49,24 @@
     </div>
 
     <script>
+        // ===== SUPABASE CONFIG (REST API via fetch) =====
+        const SUPABASE_URL = 'https://wkndzjnqypsyluhgrdil.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndrbmR6am5xeXBzeWx1aGdyZGlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NzU5MTQsImV4cCI6MjA5NTA1MTkxNH0.6W9dsBVCeLzT3EIHyQ5ZFmQhEOyj586K9po4cj9wJeA';
+        // ================================================
+
         const $ = id => document.getElementById(id);
         let loggedUser = localStorage.getItem('loggedUser'), locations = [], editId = null;
         let resumoFoiEditadoManual = false, selectedPeriod = null, selectedPdfDisplayOption = null;
+
+        // Funções globais (para onclick inline)
+        window.formatarNomeStaff = function(nome) {
+            if (!nome) return '';
+            const n = nome.toLowerCase();
+            if (n.includes('taynara')) return 'Taynara - Support Manager';
+            if (n.includes('marcia')) return 'Marcia - Area Manager';
+            if (n.includes('carlos')) return 'Carlos - IT';
+            return nome;
+        };
 
         function formatarNomeStaff(nome) {
             if (!nome) return '';
@@ -91,7 +106,7 @@
 
         const addLocation = () => { locations.push({ id: Date.now().toString(), name: '', sublocations: [], photos: [] }); renderLocations(); };
         const removePhoto = (id, pIdx) => { locations.find(l => l.id === id)?.photos.splice(pIdx, 1); renderLocations(); };
-        
+
         const addSublocation = (id) => { const loc = locations.find(l => l.id === id); if(loc) { loc.sublocations = loc.sublocations || []; loc.sublocations.push(''); renderLocations(); } };
         const removeSublocation = (id, idx) => { const loc = locations.find(l => l.id === id); if(loc && loc.sublocations) { loc.sublocations.splice(idx, 1); renderLocations(); } };
 
@@ -99,20 +114,20 @@
             $('locations-list').innerHTML = locations.map((loc, i) => `
                 <div class="p-4 bg-slate-50 rounded-2xl">
                     <input value="${loc.name}" oninput="locations[${i}].name=this.value" class="w-full p-2 mb-2 font-bold rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-300" placeholder="Nome do Local Principal (ex: Recepção)">
-                    
+
                     <div class="mb-4 space-y-2">
-                        ${(loc.sublocations || []).map((sub, si) => `
-                            <div class="flex gap-2 ml-4 pl-3 border-l-2 border-slate-300 opacity-95">
-                                <input value="${sub}" oninput="locations[${i}].sublocations[${si}]=this.value" class="w-full p-2 text-sm rounded-lg border focus:outline-none focus:ring-2 focus:ring-slate-300" placeholder="Sub-local (ex: Mesas, Piso)">
-                                <button onclick="removeSublocation('${loc.id}', ${si})" class="px-3 bg-red-100/50 hover:bg-red-100 text-red-500 rounded-lg font-bold transition-colors">X</button>
-                            </div>
-                        `).join('')}
-                        <button onclick="addSublocation('${loc.id}')" class="ml-4 text-xs font-bold text-slate-500 hover:text-slate-800 uppercase tracking-widest">+ Adicionar Sub-local</button>
+                    ${(loc.sublocations || []).map((sub, si) => `
+                    <div class="flex gap-2 ml-4 pl-3 border-l-2 border-slate-300 opacity-95">
+                    <input value="${sub}" oninput="locations[${i}].sublocations[${si}]=this.value" class="w-full p-2 text-sm rounded-lg border focus:outline-none focus:ring-2 focus:ring-slate-300" placeholder="Sub-local (ex: Mesas, Piso)">
+                    <button onclick="removeSublocation('${loc.id}', ${si})" class="px-3 bg-red-100/50 hover:bg-red-100 text-red-500 rounded-lg font-bold transition-colors">X</button>
+                    </div>
+                    `).join('')}
+                    <button onclick="addSublocation('${loc.id}')" class="ml-4 text-xs font-bold text-slate-500 hover:text-slate-800 uppercase tracking-widest">+ Adicionar Sub-local</button>
                     </div>
 
                     <div class="grid grid-cols-5 gap-4">
-                        ${loc.photos.map((p, pi) => `<div class="relative rounded-xl border aspect-square overflow-hidden"><img src="${p}" class="w-full h-full object-cover"><button onclick="removePhoto('${loc.id}', ${pi})" class="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center font-bold text-xs">X</button></div>`).join('')}
-                        <label class="cursor-pointer border-2 border-dashed rounded-xl flex items-center justify-center font-bold min-h-24 hover:bg-white text-slate-500 transition-colors">+ Foto<input type="file" class="hidden" accept="image/*" multiple onchange="handlePhotoUpload(event, '${loc.id}')"></label>
+                    ${loc.photos.map((p, pi) => `<div class="relative rounded-xl border aspect-square overflow-hidden"><img src="${p}" class="w-full h-full object-cover"><button onclick="removePhoto('${loc.id}', ${pi})" class="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center font-bold text-xs">X</button></div>`).join('')}
+                    <label class="cursor-pointer border-2 border-dashed rounded-xl flex items-center justify-center font-bold min-h-24 hover:bg-white text-slate-500 transition-colors">+ Foto<input type="file" class="hidden" accept="image/*" multiple onchange="handlePhotoUpload(event, '${loc.id}')"></label>
                     </div>
                 </div>`).join('');
         };
@@ -127,25 +142,77 @@
             });
         };
 
-        function carregarRelatorioParaEdicao(id) {
-            const rep = JSON.parse(localStorage.getItem('reports_db') || '[]').find(r => r.id === id);
-            if (!rep) return window.location.href = 'lista.html';
-            $('page-title').innerText = 'Editar Relatório'; $('report-building').value = rep.building || ''; $('employee-name').value = rep.employeeName || '';
-            $('report-date').value = rep.date || ''; $('report-summary').value = rep.summary || gerarTextoResumoPadrao(rep.employeeName);
-            selecionarPeriodo(rep.period || null); selecionarOpcaoPDF(rep.pdfDisplayOption || null);
-            locations = rep.locations || []; 
-            locations.forEach(l => l.sublocations = l.sublocations || []); 
-            resumoFoiEditadoManual = true; renderLocations();
+        async function carregarRelatorioParaEdicao(id) {
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/reports?id=eq.${id}&limit=1`, {
+                    headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+                });
+                const data = await res.json();
+                if (!data || data.length === 0) return window.location.href = 'lista.html';
+
+                const rep = data[0];
+                $('page-title').innerText = 'Editar Relatório'; 
+                $('report-building').value = rep.building || ''; 
+                $('employee-name').value = rep.employeename || '';
+                $('report-date').value = rep.date || ''; 
+                $('report-summary').value = rep.summary || gerarTextoResumoPadrao(rep.employeename);
+                selecionarPeriodo(rep.period || null); 
+                selecionarOpcaoPDF(rep.pdfdisplayoption || null);
+                locations = rep.locations || []; 
+                locations.forEach(l => l.sublocations = l.sublocations || []); 
+                resumoFoiEditadoManual = true; 
+                renderLocations();
+            } catch(err) { alert('Erro ao carregar relatório: ' + err.message); }
         }
 
-        function salvarRelatorio() {
+        async function salvarRelatorio() {
             const b = $('report-building').value.trim(), e = $('employee-name').value.trim(), d = $('report-date').value, s = $('report-summary').value.trim();
             if (!b || !e || !d) return alert('Preencha Prédio, Empregado e Data.');
             if (!selectedPeriod) return alert('Por favor, selecione o Tipo do Relatório (Daily, Weekly, Monthly).');
             if (!selectedPdfDisplayOption) return alert('Por favor, selecione o que vai aparecer no PDF.');
-            let db = JSON.parse(localStorage.getItem('reports_db') || '[]'), data = { id: editId || Date.now().toString(), staff: loggedUser, employeeName: e, building: b, date: d, period: selectedPeriod, pdfDisplayOption: selectedPdfDisplayOption, summary: s, locations };
-            if (editId) { const idx = db.findIndex(r => r.id === editId); if (idx > -1) db[idx] = data; } else db.push(data);
-            localStorage.setItem('reports_db', JSON.stringify(db)); window.location.href = 'lista.html';
+
+            const data = {
+                staff: loggedUser, 
+                employeename: e, 
+                building: b, 
+                date: d, 
+                period: selectedPeriod, 
+                pdfdisplayoption: selectedPdfDisplayOption, 
+                summary: s, 
+                locations: locations
+            };
+
+            try {
+                let url = `${SUPABASE_URL}/rest/v1/reports`;
+                let method = 'POST';
+                let headers = { 
+                    'apikey': SUPABASE_ANON_KEY, 
+                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                    'Content-Type': 'application/json',
+                    'Prefer': 'return=representation'
+                };
+
+                if (editId) {
+                    url += `?id=eq.${editId}`;
+                    method = 'PATCH';
+                }
+
+                const res = await fetch(url, {
+                    method,
+                    headers,
+                    body: JSON.stringify(data)
+                });
+
+                if (!res.ok) {
+                    const err = await res.text();
+                    throw new Error(err);
+                }
+
+                window.location.href = 'lista.html';
+            } catch(err) { 
+                console.error('Erro ao salvar:', err);
+                alert('Erro ao salvar: ' + err.message);
+            }
         }
     </script>
 </body>
