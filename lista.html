@@ -68,11 +68,11 @@
                                 <h3 class="text-lg font-extrabold text-slate-800">${rep.building || 'Prédio sem nome'}</h3>
                                 <span class="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">${rep.period || 'Daily'}</span>
                             </div>
-                            <p class="text-sm text-slate-500 mt-1"><strong>Staff:</strong> ${rep.employeeName || 'Não preenchido'} • <strong>Data:</strong> ${dataFormatada}</p>
+                            <p class="text-sm text-slate-500 mt-1"><strong>Empregado(a):</strong> ${rep.employeeName || 'Não preenchido'} • <strong>Data:</strong> ${dataFormatada}</p>
                         </div>
                         <div class="flex flex-wrap gap-2">
                             <button onclick="editarRelatorio('${rep.id}')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm transition-colors">Editar</button>
-                            <button onclick="baixarPDF('${rep.id}')" id="btn-pdf-${rep.id}" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl text-sm shadow-sm transition-colors">📄 PDF</button>
+                            <button onclick="baixarPDF('${rep.id}')" id="btn-pdf-${rep.id}" class="px-4 py-2 bg-[#547C44] hover:bg-[#436435] text-white font-bold rounded-xl text-sm shadow-sm transition-colors">📄 PDF</button>
                             <button onclick="excluirRelatorio('${rep.id}')" class="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-600 font-bold rounded-xl text-sm transition-colors">Excluir</button>
                         </div>
                     </div>
@@ -105,8 +105,10 @@
             const selectedPdfDisplayOption = rep.pdfDisplayOption || 'both';
             const locations = rep.locations || [];
             
-            // Aqui a mágica acontece para o PDF:
-            const staffGerador = formatarNomeStaff(rep.staff || 'Desconhecido');
+            // AQUI ESTÁ A MÁGICA DESTA ALTERAÇÃO:
+            // Pega quem está logado AGORA, e não quem criou o relatório no passado
+            const loggedUserAtual = localStorage.getItem('loggedUser');
+            const staffGeradorPDF = formatarNomeStaff(loggedUserAtual || 'Desconhecido');
 
             const btn = document.getElementById(`btn-pdf-${id}`);
             const txtOriginal = btn.innerText;
@@ -151,7 +153,8 @@
                 }
             };
 
-            addInfo('Supervisor / Staff:', staffGerador, y); y += 8;
+            // Imprime o nome de quem gerou o PDF
+            addInfo('Supervisor / Staff:', staffGeradorPDF, y); y += 8;
             addInfo('Cleaning Staff:', e, y); y += 8;
             
             if (selectedPdfDisplayOption==='date'||selectedPdfDisplayOption==='both') {
