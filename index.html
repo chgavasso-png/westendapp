@@ -13,30 +13,27 @@
         <img src="logo.png" alt="West End Cleaning Logo" class="h-24 mb-6 object-contain" onerror="this.style.display='none'">
         
         <h2 class="text-2xl font-black text-slate-800 mb-2">Acesso ao Sistema</h2>
-        <p class="text-sm text-slate-500 font-medium mb-8 text-center">Selecione seu usuário e digite a senha</p>
+        <p class="text-sm text-slate-500 font-medium mb-8 text-center">Quem é você?</p>
 
-        <div class="w-full space-y-5 flex flex-col items-center">
+        <div class="w-full space-y-6 flex flex-col items-center">
             
-            <!-- Seleção de Usuário ao invés de digitação -->
-            <div class="w-full">
-                <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 pl-1">Usuário</label>
-                <select id="username" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 focus:outline-none focus:border-[#547C44] focus:ring-1 focus:ring-[#547C44] transition-all cursor-pointer appearance-none">
-                    <option value="" disabled selected>Selecione quem você é...</option>
-                    <option value="Carlos">Carlos</option>
-                    <option value="Marcia">Marcia</option>
-                    <option value="Taynara">Taynara</option>
-                </select>
+            <!-- Botões de Seleção de Usuário -->
+            <div class="grid grid-cols-3 gap-3 w-full">
+                <button type="button" id="btn-Carlos" onclick="selecionarUsuario('Carlos')" class="user-btn py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-600 font-bold hover:bg-slate-100 transition-all font-medium text-sm">Carlos</button>
+                <button type="button" id="btn-Marcia" onclick="selecionarUsuario('Marcia')" class="user-btn py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-600 font-bold hover:bg-slate-100 transition-all font-medium text-sm">Marcia</button>
+                <button type="button" id="btn-Taynara" onclick="selecionarUsuario('Taynara')" class="user-btn py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-600 font-bold hover:bg-slate-100 transition-all font-medium text-sm">Taynara</button>
             </div>
 
             <!-- Senha -->
             <div class="w-full">
-                <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 pl-1">Senha</label>
-                <input type="password" id="password" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:outline-none focus:border-[#547C44] focus:ring-1 focus:ring-[#547C44] transition-all" placeholder="••••••••">
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 pl-1 text-center">Digite sua Senha</label>
+                <input type="password" id="password" class="w-full p-4 text-center bg-slate-50 border border-slate-200 rounded-xl font-bold focus:outline-none focus:border-[#547C44] focus:ring-2 focus:ring-[#547C44]/20 transition-all" placeholder="••••••••">
             </div>
 
-            <!-- Botões -->
-            <button onclick="fazerLogin()" class="w-full mt-2 py-4 bg-[#547C44] hover:bg-[#436435] text-white font-bold rounded-xl shadow-md transition-colors text-lg">
-                Entrar Seguramente
+            <!-- Botão Entrar -->
+            <button onclick="fazerLogin()" class="w-full mt-2 py-4 bg-[#547C44] hover:bg-[#436435] text-white font-bold rounded-xl shadow-md transition-colors text-lg flex items-center justify-center gap-2">
+                Entrar
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
             </button>
             
             <p id="error-msg" class="text-red-500 font-bold text-sm hidden mt-2 text-center"></p>
@@ -45,11 +42,11 @@
         </div>
     </div>
 
-    <!-- MODAL DE RECUPERAÇÃO DE SENHA (Fica escondido) -->
+    <!-- MODAL DE RECUPERAÇÃO DE SENHA -->
     <div id="modal-senha" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div class="bg-white p-8 rounded-3xl w-full max-w-sm shadow-2xl border border-slate-100">
             <h3 class="text-xl font-black text-slate-800 mb-1">Trocar Senha</h3>
-            <p class="text-sm text-slate-500 mb-6">Usuário selecionado: <span id="modal-user-name" class="font-bold text-[#547C44]"></span></p>
+            <p class="text-sm text-slate-500 mb-6">Usuário: <span id="modal-user-name" class="font-bold text-[#547C44]"></span></p>
 
             <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 pl-1">Sua palavra-chave secreta</label>
             <input type="password" id="modal-keyword" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#547C44] mb-4 transition-all">
@@ -67,7 +64,9 @@
     </div>
 
     <script>
-        // Configurações Padrão de Fábrica (Senha padrão: 866457)
+        // Configurações e Variável
+        let userSelecionado = null;
+        
         const configPadrao = {
             "Carlos": { pass: "866457", key: "rafael" },
             "Marcia": { pass: "866457", key: "gavasso" },
@@ -75,34 +74,45 @@
         };
 
         window.onload = function() {
-            // Se já estiver logado, pula o login
             if (localStorage.getItem('loggedUser')) window.location.href = 'menu.html';
-
-            // Carrega os dados ou cria os padrões de fábrica na memória do navegador
             if (!localStorage.getItem('users_credentials')) {
                 localStorage.setItem('users_credentials', JSON.stringify(configPadrao));
             }
         };
 
-        function getDB() {
-            return JSON.parse(localStorage.getItem('users_credentials')) || configPadrao;
+        function getDB() { return JSON.parse(localStorage.getItem('users_credentials')) || configPadrao; }
+
+        function selecionarUsuario(nome) {
+            userSelecionado = nome;
+            const err = document.getElementById('error-msg');
+            err.classList.add('hidden'); // limpa erros antigos
+            
+            // Reseta a cor de todos
+            document.querySelectorAll('.user-btn').forEach(btn => {
+                btn.classList.remove('bg-[#547C44]', 'text-white', 'border-[#547C44]', 'shadow-md');
+                btn.classList.add('bg-slate-50', 'text-slate-600', 'border-slate-200');
+            });
+            
+            // Colore o que foi clicado com a cor verde da logo
+            const btnFocus = document.getElementById(`btn-${nome}`);
+            btnFocus.classList.remove('bg-slate-50', 'text-slate-600', 'border-slate-200');
+            btnFocus.classList.add('bg-[#547C44]', 'text-white', 'border-[#547C44]', 'shadow-md');
         }
 
         function fazerLogin() {
-            const u = document.getElementById('username').value;
             const p = document.getElementById('password').value;
             const err = document.getElementById('error-msg');
             
-            if (!u) {
-                err.innerText = "Por favor, selecione seu usuário na lista acima.";
+            if (!userSelecionado) {
+                err.innerText = "Por favor, clique no seu nome primeiro.";
                 err.classList.remove('hidden');
                 return;
             }
 
             const db = getDB();
             
-            if (db[u] && db[u].pass === p) {
-                localStorage.setItem('loggedUser', u);
+            if (db[userSelecionado] && db[userSelecionado].pass === p) {
+                localStorage.setItem('loggedUser', userSelecionado);
                 window.location.href = 'menu.html';
             } else {
                 err.innerText = "Senha incorreta!";
@@ -112,11 +122,10 @@
 
         /* ----- FUNÇÕES DA SENHA SECRETA ----- */
         function abrirModalRecuperacao() {
-            const u = document.getElementById('username').value;
             const err = document.getElementById('error-msg');
 
-            if (!u) {
-                err.innerText = "Para trocar a senha, selecione seu nome na lista primeiro.";
+            if (!userSelecionado) {
+                err.innerText = "Para trocar a senha, clique no seu nome primeiro.";
                 err.classList.remove('hidden');
                 return;
             }
@@ -125,7 +134,7 @@
             document.getElementById('modal-error').classList.add('hidden');
             document.getElementById('modal-keyword').value = '';
             document.getElementById('modal-newpassword').value = '';
-            document.getElementById('modal-user-name').innerText = u;
+            document.getElementById('modal-user-name').innerText = userSelecionado;
             document.getElementById('modal-senha').classList.remove('hidden');
         }
 
@@ -134,13 +143,12 @@
         }
 
         function salvarNovaSenha() {
-            const u = document.getElementById('username').value;
             const keyDigitada = document.getElementById('modal-keyword').value.trim().toLowerCase();
             const novaSenha = document.getElementById('modal-newpassword').value.trim();
             const errModal = document.getElementById('modal-error');
 
             const db = getDB();
-            const keyReal = db[u].key;
+            const keyReal = db[userSelecionado].key;
 
             if (keyDigitada !== keyReal) {
                 errModal.innerText = "Palavra-chave incorreta!";
@@ -154,18 +162,14 @@
                 return;
             }
 
-            // Salva a nova senha na memória do navegador
-            db[u].pass = novaSenha;
+            db[userSelecionado].pass = novaSenha;
             localStorage.setItem('users_credentials', JSON.stringify(db));
 
             fecharModal();
-            
-            // Avisa que deu certo e limpa o campo de senha da tela principal
             document.getElementById('password').value = '';
             alert("Senha alterada com sucesso! Você já pode entrar usando sua nova senha.");
         }
 
-        // Permite logar apertando Enter na senha
         document.getElementById('password').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') fazerLogin();
         });
