@@ -44,7 +44,9 @@
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-5">
             <h3 class="text-lg font-bold text-slate-800">Cleaned Areas</h3>
             <div id="locations-list" class="space-y-6"></div>
-            <button onclick="addLocation()" class="w-full py-5 border-2 border-dashed rounded-2xl font-bold text-slate-500 hover:bg-slate-50 transition-colors">Add New Location</button>
+            <div class="flex gap-3">
+                <button onclick="addLocation()" class="flex-1 py-5 border-2 border-dashed rounded-2xl font-bold text-slate-500 hover:bg-slate-50 transition-colors">+ Add New Location</button>
+            </div>
         </div>
     </div>
 
@@ -61,15 +63,15 @@
         window.onload = function() {
             loggedUser = localStorage.getItem('loggedUser');
             if (!loggedUser) return window.location.href = 'index.html';
-            
+
             loggedFullName = localStorage.getItem('loggedFullName') || loggedUser;
             loggedRole = localStorage.getItem('loggedRole') || 'Staff';
-            
+
             $('logged-user-name').innerText = `${loggedFullName} | ${loggedRole}`;
-            
+
             editId = new URLSearchParams(window.location.search).get('id');
             $('report-summary').addEventListener('input', () => resumoFoiEditadoManual = true);
-            
+
             if (editId) carregarRelatorioParaEdicao(editId);
             else {
                 $('report-date').valueAsDate = new Date(); $('employee-name').value = '';
@@ -93,6 +95,15 @@
         const atualizarResumoPadrao = force => { const e = $('employee-name').value; if(force || !resumoFoiEditadoManual || !$('report-summary').value.trim() || $('report-summary').value.includes('Cleaning staff member')){ $('report-summary').value = gerarTextoResumoPadrao(e); resumoFoiEditadoManual = false; } };
 
         const addLocation = () => { locations.push({ id: Date.now().toString(), name: '', sublocations: [], photos: [] }); renderLocations(); };
+
+        // ===== NOVA FUNÇÃO PARA DELETAR LOCAL =====
+        const removeLocation = (id) => {
+            if (!confirm('Delete this location and all its photos?')) return;
+            locations = locations.filter(l => l.id !== id);
+            renderLocations();
+        };
+        // ===========================================
+
         const removePhoto = (id, pIdx) => { locations.find(l => l.id === id)?.photos.splice(pIdx, 1); renderLocations(); };
 
         const addSublocation = (id) => { const loc = locations.find(l => l.id === id); if(loc) { loc.sublocations = loc.sublocations || []; loc.sublocations.push(''); renderLocations(); } };
@@ -101,7 +112,13 @@
         const renderLocations = () => {
             $('locations-list').innerHTML = locations.map((loc, i) => `
                 <div class="p-4 bg-slate-50 rounded-2xl">
-                    <input value="${loc.name}" oninput="locations[${i}].name=this.value" class="w-full p-2 mb-2 font-bold rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-300" placeholder="Main Location Name (e.g., Reception)">
+                    <div class="flex justify-between items-center mb-2">
+                        <input value="${loc.name}" oninput="locations[${i}].name=this.value" class="w-full p-2 font-bold rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-300" placeholder="Main Location Name (e.g., Reception)">
+                        <button onclick="removeLocation('${loc.id}')" class="ml-3 px-3 py-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg font-bold text-sm transition-colors flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            Delete
+                        </button>
+                    </div>
 
                     <div class="mb-4 space-y-2">
                     ${(loc.sublocations || []).map((sub, si) => `
@@ -159,7 +176,6 @@
             if (!selectedPeriod) return alert('Please select the Report Type (Daily, Weekly, Monthly).');
             if (!selectedPdfDisplayOption) return alert('Please select what will appear in the PDF.');
 
-            // Formatamos o nome completo e o cargo para salvar no banco de dados.
             const fullProfile = `${loggedFullName} - ${loggedRole}`;
 
             const data = {
