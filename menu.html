@@ -1,106 +1,217 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Menu Principal - West End Cleaning</title>
+    <title>Main Menu - West End Cleaning</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
 </head>
 <body class="bg-slate-100 font-sans text-slate-900 min-h-screen">
 
-    <!-- Header Verde Corporativo -->
     <div class="bg-white shadow-sm border-b-4 border-[#547C44]">
-        <div class="max-w-5xl mx-auto px-6 py-4 flex justify-between items-center">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
             <div class="flex items-center gap-4">
                 <img src="logo.png" alt="Logo" class="h-12 object-contain" onerror="this.style.display='none'">
                 <div>
-                    <h2 class="text-xl font-extrabold text-slate-800">Painel Principal</h2>
+                    <h2 class="text-xl font-extrabold text-slate-800">Main Dashboard</h2>
                     <p class="text-xs text-slate-500 font-bold uppercase tracking-widest mt-0.5">West End System</p>
                 </div>
             </div>
-            <button onclick="fazerLogout()" class="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm transition-colors border border-slate-200">Sair</button>
+            <button onclick="logout()" class="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm transition-colors border border-slate-200">Logout</button>
         </div>
     </div>
 
-    <!-- Container do Menu -->
-    <div class="max-w-5xl mx-auto p-6 mt-10">
+    <div class="max-w-6xl mx-auto p-6 mt-10">
         
-        <!-- Welcome Card com a Cor Verde -->
         <div class="bg-[#547C44] text-white p-8 rounded-3xl shadow-lg mb-10 flex flex-col md:flex-row justify-between items-center gap-6">
             <div>
-                <h1 class="text-3xl font-black mb-1">Bem-vindo(a),</h1>
-                <p id="nome-usuario" class="text-xl font-medium opacity-90"></p>
+                <h1 class="text-3xl font-black mb-1">Welcome,</h1>
+                <p id="user-fullname" class="text-xl font-bold opacity-90"></p>
+                <p id="user-role" class="text-sm font-medium uppercase tracking-widest mt-1 opacity-75 bg-white/20 inline-block px-3 py-1 rounded-lg"></p>
             </div>
             <div class="bg-white/10 px-5 py-3 rounded-2xl border border-white/20 backdrop-blur-sm">
-                <p class="text-xs uppercase tracking-widest font-bold opacity-80 mb-1">Data Atual</p>
-                <p id="data-atual" class="font-bold text-lg"></p>
+                <p class="text-xs uppercase tracking-widest font-bold opacity-80 mb-1">Current Date</p>
+                <p id="current-date" class="font-bold text-lg"></p>
             </div>
         </div>
 
-        <!-- Botões do Menu (Agora com 3 colunas no desktop) -->
-        <h3 class="text-lg font-bold text-slate-800 mb-4 px-2">Acesso Rápido</h3>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <h3 class="text-lg font-bold text-slate-800 mb-4 px-2">Quick Access</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             
-            <!-- Botão 1: Novo Relatório -->
-            <button onclick="window.location.href='reports.html'" class="group bg-white p-8 rounded-3xl shadow-sm border border-slate-200 hover:shadow-md hover:border-[#547C44] transition-all text-left flex flex-col h-full relative overflow-hidden">
-                <div class="absolute top-0 right-0 w-24 h-24 bg-slate-50 rounded-bl-[100px] transition-colors group-hover:bg-[#547C44]/10 -z-10"></div>
-                <div class="w-14 h-14 bg-slate-100 text-[#547C44] rounded-2xl flex items-center justify-center font-bold text-3xl mb-6 shadow-inner group-hover:bg-[#547C44] group-hover:text-white transition-colors">
-                    +
-                </div>
-                <h3 class="text-2xl font-black text-slate-800 mb-2">Novo Relatório</h3>
-                <p class="text-slate-500 font-medium">Crie e preencha um novo relatório de limpeza com fotos e detalhes.</p>
+            <button onclick="window.location.href='reports.html'" class="group bg-white p-6 rounded-3xl shadow-sm border border-slate-200 hover:shadow-md hover:border-[#547C44] transition-all text-left flex flex-col h-full relative overflow-hidden">
+                <div class="w-12 h-12 bg-slate-100 text-[#547C44] rounded-2xl flex items-center justify-center font-bold text-2xl mb-4 shadow-inner group-hover:bg-[#547C44] group-hover:text-white transition-colors">+</div>
+                <h3 class="text-xl font-black text-slate-800 mb-2">New Report</h3>
+                <p class="text-slate-500 font-medium text-sm">Create and fill a new cleaning report with photos.</p>
             </button>
 
-            <!-- Botão 2: Relatórios Salvos -->
-            <button onclick="window.location.href='lista.html'" class="group bg-white p-8 rounded-3xl shadow-sm border border-slate-200 hover:shadow-md hover:border-[#547C44] transition-all text-left flex flex-col h-full relative overflow-hidden">
-                <div class="absolute top-0 right-0 w-24 h-24 bg-slate-50 rounded-bl-[100px] transition-colors group-hover:bg-[#547C44]/10 -z-10"></div>
-                <div class="w-14 h-14 bg-slate-100 text-[#547C44] rounded-2xl flex items-center justify-center mb-6 shadow-inner group-hover:bg-[#547C44] group-hover:text-white transition-colors">
-                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
-                </div>
-                <h3 class="text-2xl font-black text-slate-800 mb-2">Relatórios Salvos</h3>
-                <p class="text-slate-500 font-medium">Visualize os relatórios anteriores, edite ou exporte para PDF.</p>
+            <button onclick="window.location.href='lista.html'" class="group bg-white p-6 rounded-3xl shadow-sm border border-slate-200 hover:shadow-md hover:border-[#547C44] transition-all text-left flex flex-col h-full relative overflow-hidden">
+                <div class="w-12 h-12 bg-slate-100 text-[#547C44] rounded-2xl flex items-center justify-center mb-4 shadow-inner group-hover:bg-[#547C44] group-hover:text-white transition-colors">📄</div>
+                <h3 class="text-xl font-black text-slate-800 mb-2">Saved Reports</h3>
+                <p class="text-slate-500 font-medium text-sm">View, edit or export past reports to PDF.</p>
             </button>
 
-            <!-- Botão 3: Cleaning Schedule (NOVO) -->
-            <button onclick="window.location.href='schedule.html'" class="group bg-white p-8 rounded-3xl shadow-sm border border-slate-200 hover:shadow-md hover:border-[#547C44] transition-all text-left flex flex-col h-full relative overflow-hidden">
-                <div class="absolute top-0 right-0 w-24 h-24 bg-slate-50 rounded-bl-[100px] transition-colors group-hover:bg-[#547C44]/10 -z-10"></div>
-                <div class="w-14 h-14 bg-slate-100 text-[#547C44] rounded-2xl flex items-center justify-center mb-6 shadow-inner group-hover:bg-[#547C44] group-hover:text-white transition-colors">
-                    <!-- Ícone de Calendário -->
-                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                </div>
-                <h3 class="text-2xl font-black text-slate-800 mb-2">Cleaning Schedule</h3>
-                <p class="text-slate-500 font-medium">Acesse, edite e exporte o cronograma de limpeza da equipe.</p>
+            <button onclick="window.location.href='schedule.html'" class="group bg-white p-6 rounded-3xl shadow-sm border border-slate-200 hover:shadow-md hover:border-[#547C44] transition-all text-left flex flex-col h-full relative overflow-hidden">
+                <div class="w-12 h-12 bg-slate-100 text-[#547C44] rounded-2xl flex items-center justify-center mb-4 shadow-inner group-hover:bg-[#547C44] group-hover:text-white transition-colors">📅</div>
+                <h3 class="text-xl font-black text-slate-800 mb-2">Cleaning Schedule</h3>
+                <p class="text-slate-500 font-medium text-sm">Access, build and print official staff schedules.</p>
             </button>
 
+            <button onclick="openProfilesModal()" class="group bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-700 hover:shadow-md hover:bg-slate-900 transition-all text-left flex flex-col h-full relative overflow-hidden">
+                <div class="w-12 h-12 bg-slate-700 text-white rounded-2xl flex items-center justify-center mb-4 shadow-inner">🔒</div>
+                <h3 class="text-xl font-black text-white mb-2">Manage Profiles</h3>
+                <p class="text-slate-300 font-medium text-sm">Admin access to manage users, passwords and assign roles.</p>
+            </button>
+
+        </div>
+    </div>
+
+    <div id="modal-profiles" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-white p-8 rounded-3xl w-full max-w-2xl shadow-2xl border border-slate-100">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h3 class="text-2xl font-black text-slate-800">Profile Management</h3>
+                    <p class="text-sm text-slate-500">Edit roles or remove users from the system.</p>
+                </div>
+                <button onclick="closeProfilesModal()" class="text-slate-400 hover:text-slate-800 font-bold text-xl px-2">X</button>
+            </div>
+
+            <div id="admin-auth" class="bg-slate-50 p-6 rounded-xl border border-slate-200 mb-4 flex flex-col gap-3">
+                <label class="text-xs font-bold text-red-500 uppercase tracking-widest">Master Key Required</label>
+                <div class="flex gap-2">
+                    <input type="password" id="admin-key" class="w-full p-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-red-500" placeholder="Enter Master Key to unlock list">
+                    <button onclick="unlockProfiles()" class="px-6 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl transition-colors">Unlock</button>
+                </div>
+            </div>
+
+            <div id="admin-list" class="hidden">
+                <div class="max-h-[50vh] overflow-y-auto pr-2 space-y-3" id="profiles-container">
+                    </div>
+            </div>
         </div>
     </div>
 
     <script>
-        function formatarNomeStaff(nome) {
-            if (!nome) return '';
-            const n = nome.toLowerCase();
-            if (n.includes('taynara')) return 'Taynara - Support Manager';
-            if (n.includes('marcia')) return 'Marcia - Area Manager';
-            if (n.includes('carlos')) return 'Carlos - IT';
-            return nome; 
-        }
+        // FIREBASE CONFIG
+        const firebaseConfig = {
+            apiKey: "AIzaSyBSPim1j9yxA56AeWhWhdG_8TKzh_F-gZc",
+            authDomain: "westend-c6992.firebaseapp.com",
+            projectId: "westend-c6992",
+            storageBucket: "westend-c6992.firebasestorage.app",
+            messagingSenderId: "781546407326",
+            appId: "1:781546407326:web:ed4126214f41498153428f",
+            measurementId: "G-DEGC00501H"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        const MASTER_KEY = "admin123";
 
         window.onload = function() {
             let loggedUser = localStorage.getItem('loggedUser');
+            let fullName = localStorage.getItem('loggedFullName');
+            let role = localStorage.getItem('loggedRole');
+
             if (!loggedUser) {
                 window.location.href = 'index.html';
                 return;
             }
             
-            document.getElementById('nome-usuario').innerText = formatarNomeStaff(loggedUser);
+            document.getElementById('user-fullname').innerText = fullName || loggedUser;
+            document.getElementById('user-role').innerText = role || 'Staff';
             
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            document.getElementById('data-atual').innerText = new Date().toLocaleDateString('pt-BR', options);
+            document.getElementById('current-date').innerText = new Date().toLocaleDateString('en-US', options);
         };
 
-        function fazerLogout() {
-            localStorage.removeItem('loggedUser');
+        function logout() {
+            localStorage.clear();
             window.location.href = 'index.html';
+        }
+
+        /* --- ADMIN PROFILES LOGIC --- */
+        function openProfilesModal() {
+            document.getElementById('admin-key').value = '';
+            document.getElementById('admin-auth').classList.remove('hidden');
+            document.getElementById('admin-list').classList.add('hidden');
+            document.getElementById('modal-profiles').classList.remove('hidden');
+        }
+
+        function closeProfilesModal() {
+            document.getElementById('modal-profiles').classList.add('hidden');
+        }
+
+        function unlockProfiles() {
+            const key = document.getElementById('admin-key').value;
+            if(key === MASTER_KEY) {
+                document.getElementById('admin-auth').classList.add('hidden');
+                document.getElementById('admin-list').classList.remove('hidden');
+                fetchProfiles();
+            } else {
+                alert("Incorrect Master Key!");
+            }
+        }
+
+        async function fetchProfiles() {
+            const container = document.getElementById('profiles-container');
+            container.innerHTML = '<p class="text-center text-slate-500 py-4">Loading profiles...</p>';
+            
+            try {
+                const snapshot = await db.collection("users").get();
+                let html = '';
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const username = doc.id;
+                    const fn = data.fullName || username;
+                    const role = data.role || 'Cleaner';
+                    
+                    html += `
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex items-center justify-between">
+                            <div>
+                                <h4 class="font-bold text-slate-800 text-lg">${fn} <span class="text-xs font-normal text-slate-500 ml-1">(@${username})</span></h4>
+                                <select id="role-${username}" onchange="updateRole('${username}')" class="mt-1 bg-white border border-slate-300 text-slate-700 text-xs rounded px-2 py-1 font-bold outline-none">
+                                    <option value="Cleaner" ${role==='Cleaner'?'selected':''}>Cleaner</option>
+                                    <option value="Supervisor" ${role==='Supervisor'?'selected':''}>Supervisor</option>
+                                    <option value="Area Manager" ${role==='Area Manager'?'selected':''}>Area Manager</option>
+                                    <option value="Support Manager" ${role==='Support Manager'?'selected':''}>Support Manager</option>
+                                    <option value="IT System Admin" ${role==='IT System Admin'?'selected':''}>IT System Admin</option>
+                                </select>
+                            </div>
+                            <button onclick="deleteProfile('${username}')" class="bg-red-100 text-red-600 hover:bg-red-200 font-bold px-4 py-2 rounded-lg text-sm transition-colors">Delete</button>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            } catch(e) {
+                container.innerHTML = '<p class="text-center text-red-500">Error loading profiles.</p>';
+            }
+        }
+
+        async function updateRole(username) {
+            const newRole = document.getElementById(`role-${username}`).value;
+            try {
+                await db.collection("users").doc(username).update({ role: newRole });
+                
+                // Se ele alterou o próprio cargo, atualiza a tela
+                if(username === localStorage.getItem('loggedUser')) {
+                    localStorage.setItem('loggedRole', newRole);
+                    document.getElementById('user-role').innerText = newRole;
+                }
+            } catch(e) {
+                alert("Error updating role: " + e.message);
+            }
+        }
+
+        async function deleteProfile(username) {
+            if(confirm(`Are you sure you want to permanently delete the profile for @${username}?`)) {
+                try {
+                    await db.collection("users").doc(username).delete();
+                    fetchProfiles();
+                } catch(e) {
+                    alert("Error deleting: " + e.message);
+                }
+            }
         }
     </script>
 </body>
