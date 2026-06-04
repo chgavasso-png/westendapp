@@ -9,7 +9,7 @@
         <div class="max-w-5xl mx-auto px-6 py-4 flex justify-between items-center">
             <div class="flex items-center gap-4">
                 <a href="menu.html" class="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg></a>
-                <div><h2 id="page-title" class="text-xl font-extrabold text-slate-800">New Report</h2><p class="text-xs text-slate-500 font-medium uppercase mt-1">Staff: <span id="logged-user-name" class="font-bold text-slate-700"></span></p></div>
+                <div><h2 id="page-title" class="text-xl font-extrabold text-slate-800">New Report</h2><p class="text-xs text-slate-500 font-medium uppercase mt-1">Logged as: <span id="logged-user-name" class="font-bold text-slate-700"></span></p></div>
             </div>
             <div class="flex gap-3">
                 <button onclick="salvarRelatorio()" class="px-6 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl shadow-md transition-colors">Save Report</button>
@@ -21,7 +21,7 @@
             <h3 class="text-lg font-bold text-slate-800 border-b border-slate-100 pb-2">Information</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <input type="text" id="report-building" class="p-3 bg-slate-50 border rounded-xl font-medium" placeholder="Building / Property">
-                <input type="text" id="employee-name" oninput="atualizarResumoPadrao()" class="p-3 bg-slate-50 border rounded-xl font-medium" placeholder="Employee Name">
+                <input type="text" id="employee-name" oninput="atualizarResumoPadrao()" class="p-3 bg-slate-50 border rounded-xl font-medium" placeholder="Cleaning Staff Name">
                 <input type="date" id="report-date" class="p-3 bg-slate-50 border rounded-xl font-medium">
                 <div class="bg-slate-50 border rounded-xl p-3"><p class="text-xs font-extrabold text-slate-500 uppercase tracking-widest mb-3">Report Type</p>
                     <div class="grid grid-cols-3 gap-2">
@@ -49,39 +49,27 @@
     </div>
 
     <script>
-        // ===== SUPABASE CONFIG (REST API via fetch) =====
+        // ===== SUPABASE CONFIG =====
         const SUPABASE_URL = 'https://wkndzjnqypsyluhgrdil.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndrbmR6am5xeXBzeWx1aGdyZGlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NzU5MTQsImV4cCI6MjA5NTA1MTkxNH0.6W9dsBVCeLzT3EIHyQ5ZFmQhEOyj586K9po4cj9wJeA';
-        // ================================================
 
         const $ = id => document.getElementById(id);
-        let loggedUser = localStorage.getItem('loggedUser'), locations = [], editId = null;
+        let loggedUser = null, loggedFullName = null, loggedRole = null;
+        let locations = [], editId = null;
         let resumoFoiEditadoManual = false, selectedPeriod = null, selectedPdfDisplayOption = null;
 
-        // Funções globais (para onclick inline)
-        window.formatarNomeStaff = function(nome) {
-            if (!nome) return '';
-            const n = nome.toLowerCase();
-            if (n.includes('taynara')) return 'Taynara - Support Manager';
-            if (n.includes('marcia')) return 'Marcia - Area Manager';
-            if (n.includes('carlos')) return 'Carlos - IT';
-            return nome;
-        };
-
-        function formatarNomeStaff(nome) {
-            if (!nome) return '';
-            const n = nome.toLowerCase();
-            if (n.includes('taynara')) return 'Taynara - Support Manager';
-            if (n.includes('marcia')) return 'Marcia - Area Manager';
-            if (n.includes('carlos')) return 'Carlos - IT';
-            return nome;
-        }
-
         window.onload = function() {
+            loggedUser = localStorage.getItem('loggedUser');
             if (!loggedUser) return window.location.href = 'index.html';
-            $('logged-user-name').innerText = formatarNomeStaff(loggedUser);
+            
+            loggedFullName = localStorage.getItem('loggedFullName') || loggedUser;
+            loggedRole = localStorage.getItem('loggedRole') || 'Staff';
+            
+            $('logged-user-name').innerText = `${loggedFullName} | ${loggedRole}`;
+            
             editId = new URLSearchParams(window.location.search).get('id');
             $('report-summary').addEventListener('input', () => resumoFoiEditadoManual = true);
+            
             if (editId) carregarRelatorioParaEdicao(editId);
             else {
                 $('report-date').valueAsDate = new Date(); $('employee-name').value = '';
@@ -171,8 +159,11 @@
             if (!selectedPeriod) return alert('Please select the Report Type (Daily, Weekly, Monthly).');
             if (!selectedPdfDisplayOption) return alert('Please select what will appear in the PDF.');
 
+            // Formatamos o nome completo e o cargo para salvar no banco de dados.
+            const fullProfile = `${loggedFullName} - ${loggedRole}`;
+
             const data = {
-                staff: loggedUser, 
+                staff: fullProfile, 
                 employeename: e, 
                 building: b, 
                 date: d, 
@@ -203,14 +194,9 @@
                     body: JSON.stringify(data)
                 });
 
-                if (!res.ok) {
-                    const err = await res.text();
-                    throw new Error(err);
-                }
-
+                if (!res.ok) throw new Error(await res.text());
                 window.location.href = 'lista.html';
             } catch(err) { 
-                console.error('Error saving:', err);
                 alert('Error saving: ' + err.message);
             }
         }
