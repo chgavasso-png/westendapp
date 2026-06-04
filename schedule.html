@@ -1,21 +1,3 @@
-Entendido, Carlos! Fiz uma atualização completa no sistema para resolver todos esses pontos e mudar tudo para o inglês, deixando a ferramenta com um nível de qualidade e precisão de software profissional.
-
-Aqui está o que mudei com base no que você pediu:
-
-1. **Tudo em Inglês**: Desde os botões ("Save Changes", "Generate PDF", "Manage Staff") até os alertas.
-2. **Resumo de Dias e Horários (Summary)**:
-* Coloquei apenas **uma linha por padrão**. Você pode adicionar outras clicando num botão seguro "+ Add Shift Time" abaixo da tabela.
-* O botão de excluir agora fica bem posicionado à esquerda, sem bugar o texto.
-* O "Dia" agora é um **Menu Suspenso (Dropdown)**. Você não precisa digitar, basta clicar e escolher (Ex: *Monday to Thursday*, *Sunday*, etc.).
-* "Start Time" e "Finish Time" agora são seletores de relógio nativos (`<input type="time">`).
-
-
-3. **Título do Turno (Shift Title)**: O bug acontecia por causa do comportamento do texto editável no HTML puro. Troquei para um campo de input normal que se camufla perfeitamente na barra verde. Agora não vai saltar ou bugar quando você clicar para editar!
-4. **Salvamento Automático dos Inputs**: Programei uma função oculta que "congela" o que você selecionou nos relógios e menus suspensos na hora de salvar, para que quando você recarregue a página, seus horários não sumam.
-
-Copie e substitua todo o código do seu arquivo **`schedule.html`** por este abaixo:
-
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -30,8 +12,6 @@ Copie e substitua todo o código do seu arquivo **`schedule.html`** por este aba
             .no-print { display: none !important; }
             .a4-page { box-shadow: none !important; margin: 0 !important; padding: 10mm 15mm !important; width: 100% !important; max-width: 100% !important; border: none !important; }
             @page { size: A4; margin: 0mm; }
-            
-            /* Hide dropdown arrows and clock icons on print */
             .print-no-arrow { appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; }
             .print-no-icon::-webkit-calendar-picker-indicator { display: none !important; }
             input, select { border: none !important; background: transparent !important; }
@@ -116,7 +96,7 @@ Copie e substitua todo o código do seu arquivo **`schedule.html`** por este aba
                                 START TIME: <input type="time" value="19:00" class="font-bold text-slate-700 bg-transparent outline-none cursor-pointer print-no-icon">
                             </td>
                             <td class="py-2 w-1/3 text-right pr-4">
-                                FINISHING TIME: <input type="time" value="01:00" class="font-bold text-slate-700 bg-transparent outline-none cursor-pointer print-no-icon">
+                                FINISH TIME: <input type="time" value="01:00" class="font-bold text-slate-700 bg-transparent outline-none cursor-pointer print-no-icon">
                             </td>
                         </tr>
                     </tbody>
@@ -148,14 +128,21 @@ Copie e substitua todo o código do seu arquivo **`schedule.html`** por este aba
     <div id="modal-staff" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div class="bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border border-slate-100">
             <h3 class="text-xl font-black text-slate-800 mb-2">Staff Database</h3>
-            <p class="text-sm text-slate-500 mb-6">Add names to quickly select them in the tables.</p>
+            <p class="text-sm text-slate-500 mb-6">Add names and default schedules to auto-fill tables.</p>
             
-            <div class="flex gap-2 mb-4">
-                <input type="text" id="new-staff-name" class="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#547C44]" placeholder="Employee Name">
-                <button onclick="saveNewStaff()" class="px-5 bg-[#547C44] hover:bg-[#436435] text-white font-bold rounded-xl transition-colors">Add</button>
+            <div class="flex flex-col gap-3 mb-4 border-b pb-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1 pl-1">Employee Name</label>
+                    <input type="text" id="new-staff-name" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#547C44]" placeholder="E.g., Fernando">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1 pl-1">Default Time</label>
+                    <input type="text" id="new-staff-time" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#547C44]" placeholder="E.g., 19:00 - 01:00">
+                </div>
+                <button onclick="saveNewStaff()" class="w-full py-3 mt-1 bg-[#547C44] hover:bg-[#436435] text-white font-bold rounded-xl transition-colors">Add Employee</button>
             </div>
 
-            <ul id="staff-list" class="space-y-2 max-h-60 overflow-y-auto mb-6 bg-slate-50 p-3 rounded-xl border border-slate-200">
+            <ul id="staff-list" class="space-y-2 max-h-48 overflow-y-auto mb-6 bg-slate-50 p-3 rounded-xl border border-slate-200">
                 <!-- Injected List -->
             </ul>
 
@@ -169,11 +156,11 @@ Copie e substitua todo o código do seu arquivo **`schedule.html`** por este aba
             <h3 class="text-xl font-black text-slate-800 mb-4">Add to Shift</h3>
             
             <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 pl-1">Select Employee</label>
-            <select id="select-staff" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none mb-4 font-bold text-slate-700">
+            <select id="select-staff" onchange="autoFillTime(this)" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none mb-4 font-bold text-slate-700">
                 <!-- Injected Options -->
             </select>
 
-            <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 pl-1">Time</label>
+            <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 pl-1">Time (Auto-filled)</label>
             <input type="text" id="input-time" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none mb-6 font-bold" placeholder="E.g., 19:00 - 01:00">
 
             <div class="flex gap-3">
@@ -186,7 +173,10 @@ Copie e substitua todo o código do seu arquivo **`schedule.html`** por este aba
     <!-- SCRIPTS -->
     <script>
         // LOCAL DATABASE FOR STAFF
-        let dbStaff = JSON.parse(localStorage.getItem('we_staff_db') || '[]');
+        // Migration support for old data arrays
+        let rawDB = JSON.parse(localStorage.getItem('we_staff_db') || '[]');
+        let dbStaff = rawDB.map(item => typeof item === 'string' ? { name: item, time: '19:00 - 01:00' } : item);
+        
         let targetTable = null; 
 
         window.onload = function() {
@@ -211,10 +201,12 @@ Copie e substitua todo o código do seu arquivo **`schedule.html`** por este aba
         }
         function saveNewStaff() {
             const name = document.getElementById('new-staff-name').value.trim();
+            const time = document.getElementById('new-staff-time').value.trim();
             if(name) {
-                dbStaff.push(name);
+                dbStaff.push({ name: name, time: time });
                 localStorage.setItem('we_staff_db', JSON.stringify(dbStaff));
                 document.getElementById('new-staff-name').value = '';
+                document.getElementById('new-staff-time').value = '';
                 renderStaffList();
             }
         }
@@ -229,10 +221,13 @@ Copie e substitua todo o código do seu arquivo **`schedule.html`** por este aba
                 ul.innerHTML = '<li class="text-slate-400 text-sm text-center py-2">No staff saved.</li>';
                 return;
             }
-            ul.innerHTML = dbStaff.map((name, i) => `
+            ul.innerHTML = dbStaff.map((staff, i) => `
                 <li class="flex justify-between items-center bg-white p-2 px-3 border border-slate-200 rounded-lg">
-                    <span class="font-bold text-slate-700">${name}</span>
-                    <button onclick="deleteStaff(${i})" class="text-red-500 font-bold hover:bg-red-50 px-2 rounded transition-colors">X</button>
+                    <div>
+                        <span class="font-bold text-slate-700 block">${staff.name}</span>
+                        <span class="text-xs text-slate-500 font-medium">${staff.time || 'No default time set'}</span>
+                    </div>
+                    <button onclick="deleteStaff(${i})" class="text-red-500 font-bold hover:bg-red-50 px-2 py-1 rounded transition-colors">X</button>
                 </li>
             `).join('');
         }
@@ -264,7 +259,7 @@ Copie e substitua todo o código do seu arquivo **`schedule.html`** por este aba
                     START TIME: <input type="time" value="19:00" class="font-bold text-slate-700 bg-transparent outline-none cursor-pointer print-no-icon">
                 </td>
                 <td class="py-2 w-1/3 text-right pr-4">
-                    FINISHING TIME: <input type="time" value="01:00" class="font-bold text-slate-700 bg-transparent outline-none cursor-pointer print-no-icon">
+                    FINISH TIME: <input type="time" value="01:00" class="font-bold text-slate-700 bg-transparent outline-none cursor-pointer print-no-icon">
                 </td>
             `;
             tbody.appendChild(tr);
@@ -273,75 +268,49 @@ Copie e substitua todo o código do seu arquivo **`schedule.html`** por este aba
         function addBlock() {
             const container = document.getElementById('blocks-container');
             const block = document.createElement('div');
-            block.className = "mb-10 relative group/block";
+            block.className = "mb-10 shift-block";
             block.innerHTML = `
-                <button class="no-print absolute -left-10 top-1 text-red-500 hidden group-hover/block:block font-black text-2xl hover:scale-110" onclick="if(confirm('Delete this entire table?')) this.parentElement.remove()" title="Delete Table">X</button>
-                
                 <input type="text" value="SHIFT TITLE HERE (E.G., SUNDAYS SCHEDULES)" class="w-full bg-[#547C44] text-white font-bold py-2 px-4 text-center uppercase tracking-widest outline-none placeholder-white/70">
                 
                 <table class="w-full border-collapse border border-slate-300 mt-2 text-sm relative">
                     <thead>
                         <tr class="bg-slate-100 text-slate-600 uppercase">
-                            <th class="border border-slate-300 py-2 px-3 text-left w-1/4">
-                                <div contenteditable="true" class="inline-block outline-none">Employer</div> 
-                                <button class="no-print text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-1 rounded ml-2 transition-colors" onclick="addColumn(this)">+ Column</button>
-                            </th>
-                            <th class="border border-slate-300 py-2 px-3 text-left w-1/5"><div contenteditable="true" class="outline-none">Time</div></th>
-                            <th class="border border-slate-300 py-2 px-3 text-left"><div contenteditable="true" class="outline-none">Task</div></th>
+                            <th class="border border-slate-300 py-2 px-3 text-left w-1/4">Employer</th>
+                            <th class="border border-slate-300 py-2 px-3 text-left w-1/5">Time</th>
+                            <th class="border border-slate-300 py-2 px-3 text-left">Task</th>
                         </tr>
                     </thead>
                     <tbody>
                         <!-- Rows injected here -->
                     </tbody>
                 </table>
-                <button class="no-print mt-3 text-sm font-bold text-[#547C44] hover:underline" onclick="openRowModal(this)">+ Add Staff to this table</button>
+                <div class="no-print mt-3 flex items-center justify-between">
+                    <button class="text-sm font-bold text-[#547C44] hover:underline" onclick="openRowModal(this)">+ Add Staff to this table</button>
+                    <button class="text-sm font-bold text-red-500 hover:underline" onclick="if(confirm('Delete this entire table?')) this.closest('.shift-block').remove()">Delete Table</button>
+                </div>
             `;
             container.appendChild(block);
         }
 
-        function addColumn(btn) {
-            const colName = prompt("Enter new column name (e.g., Area, Notes):");
-            if (!colName) return;
-
-            const theadTr = btn.closest('thead').querySelector('tr');
-            const th = document.createElement('th');
-            th.className = "border border-slate-300 py-2 px-3 text-left relative group/th";
-            th.innerHTML = `<button class="no-print absolute right-1 top-1 text-red-400 text-xs hidden group-hover/th:block bg-red-50 px-1 rounded" onclick="removeColumn(this)">X</button><div contenteditable="true" class="outline-none">${colName}</div>`;
-            theadTr.appendChild(th);
-
-            const tbody = btn.closest('table').querySelector('tbody');
-            tbody.querySelectorAll('tr').forEach(tr => {
-                const td = document.createElement('td');
-                td.className = "border border-slate-300 py-3 px-3 align-top";
-                td.innerHTML = '<div contenteditable="true" class="outline-none min-h-[20px]"></div>';
-                tr.appendChild(td);
-            });
-        }
-
-        function removeColumn(btn) {
-            if(!confirm("Remove this column from all rows?")) return;
-            const th = btn.closest('th');
-            const trHead = th.parentElement;
-            const index = Array.from(trHead.children).indexOf(th);
-            
-            th.remove();
-            
-            const tbody = trHead.closest('table').querySelector('tbody');
-            tbody.querySelectorAll('tr').forEach(tr => {
-                if(tr.children[index]) tr.children[index].remove();
-            });
-        }
-
-        /* ================== ADD STAFF ROW ================== */
+        /* ================== ADD STAFF ROW & TASKS ================== */
         function openRowModal(btn) {
-            targetTable = btn.previousElementSibling.querySelector('tbody');
+            targetTable = btn.parentElement.previousElementSibling.querySelector('tbody');
             const select = document.getElementById('select-staff');
             
             select.innerHTML = '<option value="">-- Select Employee --</option>' + 
-                               dbStaff.map(n => `<option value="${n}">${n}</option>`).join('');
+                               dbStaff.map((s, i) => `<option value="${i}" data-time="${s.time}">${s.name}</option>`).join('');
             
             document.getElementById('input-time').value = '';
             document.getElementById('modal-row').classList.remove('hidden');
+        }
+
+        function autoFillTime(select) {
+            if(select.selectedIndex > 0) {
+                const time = select.options[select.selectedIndex].getAttribute('data-time');
+                document.getElementById('input-time').value = time || '';
+            } else {
+                document.getElementById('input-time').value = '';
+            }
         }
 
         function closeRowModal() {
@@ -350,16 +319,11 @@ Copie e substitua todo o código do seu arquivo **`schedule.html`** por este aba
         }
 
         function confirmNewRow() {
-            const emp = document.getElementById('select-staff').value;
-            const time = document.getElementById('input-time').value;
+            const select = document.getElementById('select-staff');
+            if(!select.value) return alert("Select an employee. If empty, click 'Manage Staff' to add them.");
             
-            if(!emp) return alert("Select an employee. If empty, click 'Manage Staff' to add them.");
-
-            const numCols = targetTable.parentElement.querySelectorAll('thead th').length;
-            let extraCols = '';
-            for(let i = 3; i < numCols; i++) {
-                extraCols += `<td class="border border-slate-300 py-3 px-3 align-top"><div contenteditable="true" class="outline-none min-h-[20px]"></div></td>`;
-            }
+            const emp = select.options[select.selectedIndex].text;
+            const time = document.getElementById('input-time').value;
 
             const tr = document.createElement('tr');
             tr.className = "group/row";
@@ -370,15 +334,32 @@ Copie e substitua todo o código do seu arquivo **`schedule.html`** por este aba
                 </td>
                 <td class="border border-slate-300 py-3 px-3 font-bold text-slate-600 align-top"><div contenteditable="true" class="outline-none">${time}</div></td>
                 <td class="border border-slate-300 py-3 px-3 align-top">
-                    <ul class="task-list outline-none" contenteditable="true">
-                        <li>Type your first task here...</li>
-                    </ul>
+                    <div class="task-group mb-4 relative group/cat">
+                        <button class="no-print absolute -left-6 top-0 text-red-500 font-bold hidden group-hover/cat:block" onclick="this.parentElement.remove()" title="Remove Category">X</button>
+                        <div class="font-bold text-[#547C44] outline-none uppercase" contenteditable="true">Category (e.g., Kitchen)</div>
+                        <ul class="task-list outline-none" contenteditable="true">
+                            <li>Type your first task here...</li>
+                        </ul>
+                    </div>
+                    <button class="no-print text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-1 rounded transition-colors" onclick="addCategoryToTask(this)">+ Add Category</button>
                 </td>
-                ${extraCols}
             `;
             
             targetTable.appendChild(tr);
             closeRowModal();
+        }
+
+        function addCategoryToTask(btn) {
+            const div = document.createElement('div');
+            div.className = "task-group mb-4 relative group/cat";
+            div.innerHTML = `
+                <button class="no-print absolute -left-6 top-0 text-red-500 font-bold hidden group-hover/cat:block" onclick="this.parentElement.remove()" title="Remove Category">X</button>
+                <div class="font-bold text-[#547C44] outline-none uppercase" contenteditable="true">New Category</div>
+                <ul class="task-list outline-none" contenteditable="true">
+                    <li>New task...</li>
+                </ul>
+            `;
+            btn.parentElement.insertBefore(div, btn);
         }
 
         /* ================== SAVE SYSTEM ================== */
@@ -413,5 +394,3 @@ Copie e substitua todo o código do seu arquivo **`schedule.html`** por este aba
     </script>
 </body>
 </html>
-
-```
