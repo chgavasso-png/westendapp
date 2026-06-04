@@ -3,200 +3,345 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cleaning Schedule - West End Cleaning</title>
+    <title>Gerador de Cronograma - West End</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Estilos específicos para impressão (Gerar PDF) */
+        /* Estilos de Impressão (Garante que o PDF saia perfeito e sem botões) */
         @media print {
             body { background-color: white !important; margin: 0; padding: 0; -webkit-print-color-adjust: exact; }
             .no-print { display: none !important; }
-            .a4-page { 
-                box-shadow: none !important; 
-                margin: 0 !important; 
-                padding: 10mm 15mm !important; 
-                width: 100% !important; 
-                max-width: 100% !important; 
-            }
+            .a4-page { box-shadow: none !important; margin: 0 !important; padding: 10mm 15mm !important; width: 100% !important; max-width: 100% !important; border: none !important; }
             @page { size: A4; margin: 0mm; }
         }
         
-        /* Oculta os botões de adicionar e remover quando imprimir */
-        .edit-controls { display: flex; }
-        @media print { .edit-controls { display: none !important; } }
-
-        /* Foco no texto editável */
-        [contenteditable="true"]:hover { background-color: rgba(84, 124, 68, 0.05); border-radius: 4px; cursor: text; }
-        [contenteditable="true"]:focus { background-color: rgba(84, 124, 68, 0.1); outline: 2px dashed #547C44; border-radius: 4px; }
+        /* Estilo interativo para os textos editáveis (Some na impressão) */
+        [contenteditable="true"]:hover { background-color: rgba(84, 124, 68, 0.05); cursor: text; border-radius: 4px; }
+        [contenteditable="true"]:focus { background-color: rgba(84, 124, 68, 0.05); outline: 1px dashed #547C44; border-radius: 4px; }
         
-        /* Estilo da lista de tarefas */
-        .task-list { list-style-type: disc; padding-left: 1.5rem; }
+        .task-list { list-style-type: disc; padding-left: 1.5rem; outline: none; min-height: 20px;}
         .task-list li { margin-bottom: 0.25rem; }
     </style>
 </head>
 <body class="bg-slate-100 font-sans text-slate-900 min-h-screen pb-20">
 
+    <!-- BARRA DE FERRAMENTAS -->
     <div class="no-print bg-white shadow-sm border-b border-slate-200 sticky top-0 z-50">
-        <div class="max-w-5xl mx-auto px-6 py-4 flex justify-between items-center">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-4">
                 <a href="menu.html" class="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors" title="Voltar ao Menu">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
                 </a>
                 <div>
-                    <h2 class="text-xl font-extrabold text-slate-800">Editor de Cronograma</h2>
-                    <p class="text-xs text-slate-500 font-medium uppercase mt-1">Dica: Clique em qualquer texto no documento abaixo para editar</p>
+                    <h2 class="text-xl font-extrabold text-slate-800">Construtor de Cronogramas</h2>
+                    <p class="text-xs text-slate-500 font-medium uppercase mt-1">Dica: Clique nos textos para digitar</p>
                 </div>
             </div>
             
-            <div class="flex gap-3">
-                <button onclick="salvarEstado()" class="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl border transition-colors">
+            <div class="flex flex-wrap gap-3">
+                <button onclick="abrirModalEquipe()" class="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl border transition-colors flex items-center gap-2">
+                    👥 Gerenciar Equipe
+                </button>
+                <button onclick="salvarCronograma()" class="px-5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold rounded-xl border border-blue-200 transition-colors">
                     💾 Guardar Alterações
                 </button>
                 <button onclick="window.print()" class="px-6 py-2 bg-[#547C44] hover:bg-[#436435] text-white font-bold rounded-xl shadow-md transition-colors flex items-center gap-2">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                    Imprimir / Baixar PDF
+                    Gerar PDF
+                </button>
+                <button onclick="limparTudo()" class="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl border border-red-200 transition-colors" title="Limpar Documento">
+                    Limpar
                 </button>
             </div>
         </div>
     </div>
 
-    <div class="mt-8 flex justify-center">
-        <div id="documento-a4" class="a4-page bg-white shadow-2xl w-[21cm] min-h-[29.7cm] p-[15mm] border border-slate-200 relative">
+    <!-- FOLHA A4 (DOCUMENTO PRINCIPAL) -->
+    <div class="mt-8 flex justify-center px-2">
+        <div id="documento-a4" class="a4-page bg-white shadow-2xl w-full max-w-[21cm] min-h-[29.7cm] p-[15mm] border border-slate-200 relative">
             
-            <div class="flex flex-col items-center mb-8 border-b-2 border-[#547C44] pb-6">
+            <!-- CABEÇALHO -->
+            <div class="flex flex-col items-center mb-8 border-b-2 border-[#547C44] pb-6 relative group">
                 <img src="logo.png" alt="West End Cleaning" class="h-28 object-contain mb-4" onerror="this.src='https://via.placeholder.com/200x100?text=Logo+West+End'">
-                <h1 class="text-3xl font-black text-[#547C44] uppercase tracking-wider" contenteditable="true">KING’S ROAD PARK</h1>
-                <h2 class="text-xl font-bold text-slate-600 tracking-widest uppercase mt-1" contenteditable="true">Cleaning Schedule</h2>
+                <!-- Nome do Prédio -->
+                <h1 class="text-3xl font-black text-[#547C44] uppercase tracking-wider text-center" contenteditable="true">NOME DO PRÉDIO AQUI</h1>
+                <h2 class="text-xl font-bold text-slate-600 tracking-widest uppercase mt-1 text-center" contenteditable="true">Cleaning Schedule</h2>
             </div>
 
-            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-8">
+            <!-- RESUMO DE HORÁRIOS GERAIS -->
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-8 relative group/resumo">
+                <button class="no-print absolute -left-10 top-2 text-[#547C44] font-bold text-xl hover:scale-110 hidden group-hover/resumo:block" onclick="addLinhaResumo()" title="Adicionar Linha de Resumo">+</button>
                 <table class="w-full text-sm font-bold text-slate-700">
-                    <tr class="border-b border-slate-200">
-                        <td class="py-2 w-1/3" contenteditable="true">SUNDAY</td>
-                        <td class="py-2 w-1/3" contenteditable="true">START TIME: 19:00</td>
-                        <td class="py-2 w-1/3" contenteditable="true">FINISHING TIME: 01:00</td>
-                    </tr>
-                    <tr>
-                        <td class="py-2" contenteditable="true">MONDAY TO THURSDAY</td>
-                        <td class="py-2" contenteditable="true">START TIME: 19:00</td>
-                        <td class="py-2" contenteditable="true">FINISHING TIME: 01:00</td>
-                    </tr>
-                </table>
-            </div>
-
-            <div class="mb-10">
-                <h3 class="bg-[#547C44] text-white font-bold py-2 px-4 text-center uppercase tracking-widest" contenteditable="true">SUNDAYS SCHEDULES</h3>
-                <table class="w-full border-collapse border border-slate-300 mt-2 text-sm">
-                    <thead>
-                        <tr class="bg-slate-100 text-slate-600 uppercase">
-                            <th class="border border-slate-300 py-2 px-3 text-left w-1/4">Employer</th>
-                            <th class="border border-slate-300 py-2 px-3 text-left w-1/5">Time</th>
-                            <th class="border border-slate-300 py-2 px-3 text-left">Task</th>
+                    <tbody id="tbody-resumo">
+                        <tr class="border-b border-slate-200 group/tr">
+                            <td class="py-2 w-1/3 relative"><button class="no-print absolute -left-6 top-2 text-red-500 font-bold hidden group-hover/tr:block" onclick="this.closest('tr').remove()">X</button><div contenteditable="true">SUNDAY</div></td>
+                            <td class="py-2 w-1/3"><div contenteditable="true">START TIME: 19:00</div></td>
+                            <td class="py-2 w-1/3"><div contenteditable="true">FINISHING TIME: 01:00</div></td>
                         </tr>
-                    </thead>
-                    <tbody id="tbody-sunday">
-                        <tr>
-                            <td class="border border-slate-300 py-3 px-3 font-bold align-top" contenteditable="true">Fernando</td>
-                            <td class="border border-slate-300 py-3 px-3 font-bold text-slate-600 align-top" contenteditable="true">19:30 – 00:00</td>
-                            <td class="border border-slate-300 py-3 px-3 align-top">
-                                <ul class="task-list" contenteditable="true">
-                                    <li>Deep Cleaning Swimming Pool area</li>
-                                    <li>Clean the floor around the pool using the Willmop.</li>
-                                    <li>Clean walls and skirting boards.</li>
-                                    <li>Clean and arrange sun beds around the pool.</li>
-                                    <li>Apply Vitalise on the floor to avoid limescale build-up.</li>
-                                    <li>Clean the jacuzzi area and chrome fittings.</li>
-                                    <li>Cleaning of Steam Room</li>
-                                    <li>Cleaning of Sauna</li>
-                                    <li>Descale steam outlets</li>
-                                    <li>Clean walls, floors, benches, jets, and drains</li>
-                                    <li>Sanitize doors, handrails, and handles</li>
-                                </ul>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="border border-slate-300 py-3 px-3 font-bold align-top" contenteditable="true">Brener</td>
-                            <td class="border border-slate-300 py-3 px-3 font-bold text-slate-600 align-top" contenteditable="true">19:00 – 01:00</td>
-                            <td class="border border-slate-300 py-3 px-3 align-top">
-                                <ul class="task-list" contenteditable="true">
-                                    <li>[Clique aqui para digitar as tarefas]</li>
-                                </ul>
-                            </td>
+                        <tr class="group/tr">
+                            <td class="py-2 w-1/3 relative"><button class="no-print absolute -left-6 top-2 text-red-500 font-bold hidden group-hover/tr:block" onclick="this.closest('tr').remove()">X</button><div contenteditable="true">MONDAY TO THURSDAY</div></td>
+                            <td class="py-2 w-1/3"><div contenteditable="true">START TIME: 19:00</div></td>
+                            <td class="py-2 w-1/3"><div contenteditable="true">FINISHING TIME: 01:00</div></td>
                         </tr>
                     </tbody>
                 </table>
             </div>
 
-            <div class="mb-10">
-                <h3 class="bg-[#547C44] text-white font-bold py-2 px-4 text-center uppercase tracking-widest" contenteditable="true">MONDAY TO THURSDAY SCHEDULES</h3>
-                <table class="w-full border-collapse border border-slate-300 mt-2 text-sm">
-                    <thead>
-                        <tr class="bg-slate-100 text-slate-600 uppercase">
-                            <th class="border border-slate-300 py-2 px-3 text-left w-1/4">Employer</th>
-                            <th class="border border-slate-300 py-2 px-3 text-left w-1/5">Time</th>
-                            <th class="border border-slate-300 py-2 px-3 text-left">Task</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tbody-week">
-                        <tr>
-                            <td class="border border-slate-300 py-3 px-3 font-bold align-top" contenteditable="true">Fernando</td>
-                            <td class="border border-slate-300 py-3 px-3 font-bold text-slate-600 align-top" contenteditable="true">19:30 – 00:00</td>
-                            <td class="border border-slate-300 py-3 px-3 align-top">
-                                <ul class="task-list" contenteditable="true">
-                                    <li>Swimming Pool area</li>
-                                    <li>Clean the floor around the pool using the Willmop.</li>
-                                    <li>Clean walls and skirting boards.</li>
-                                    <li>Clean and arrange sun beds around the pool.</li>
-                                    <li>Apply Vitalise on the floor to avoid limescale build-up.</li>
-                                    <li>Clean steam room and sauna.</li>
-                                    <li>Clean the jacuzzi area and chrome fittings.</li>
-                                </ul>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="border border-slate-300 py-3 px-3 font-bold align-top" contenteditable="true">Brener</td>
-                            <td class="border border-slate-300 py-3 px-3 font-bold text-slate-600 align-top" contenteditable="true">19:00 – 01:00</td>
-                            <td class="border border-slate-300 py-3 px-3 align-top">
-                                <ul class="task-list" contenteditable="true">
-                                    <li>[Clique aqui para digitar as tarefas]</li>
-                                </ul>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+            <!-- CONTAINER DOS BLOCOS DE TABELA -->
+            <div id="blocos-container">
+                <!-- Os blocos de cronograma serão inseridos aqui -->
+            </div>
+
+            <div class="no-print mt-6 text-center">
+                <button onclick="addBloco()" class="px-6 py-3 border-2 border-dashed border-[#547C44] text-[#547C44] font-bold rounded-2xl hover:bg-[#547C44] hover:text-white transition-all">
+                    + Adicionar Nova Tabela (Turno/Dia)
+                </button>
             </div>
 
             <div class="mt-12 text-center text-xs text-slate-400 border-t border-slate-200 pt-4">
                 Documento Oficial - West End Cleaning Services Ltd
             </div>
-
         </div>
     </div>
 
-    <script>
-        // Quando a página carregar, verifica se existe uma versão salva para não perder dados
-        window.onload = function() {
-            if (!localStorage.getItem('loggedUser')) {
-                window.location.href = 'index.html';
-            }
+    <!-- MODAL: GERENCIAR EQUIPE -->
+    <div id="modal-equipe" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border border-slate-100">
+            <h3 class="text-xl font-black text-slate-800 mb-2">Base de Empregados</h3>
+            <p class="text-sm text-slate-500 mb-6">Adicione os nomes para selecioná-los rapidamente nas tabelas.</p>
             
-            // Carrega o documento salvo anteriormente (se existir)
-            const docSalvo = localStorage.getItem('schedule_doc_html');
-            if (docSalvo) {
-                document.getElementById('documento-a4').innerHTML = docSalvo;
+            <div class="flex gap-2 mb-4">
+                <input type="text" id="novo-empregado" class="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#547C44]" placeholder="Nome do funcionário">
+                <button onclick="salvarNovoEmpregado()" class="px-5 bg-[#547C44] hover:bg-[#436435] text-white font-bold rounded-xl transition-colors">Adicionar</button>
+            </div>
+
+            <ul id="lista-empregados" class="space-y-2 max-h-60 overflow-y-auto mb-6 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                <!-- Lista injetada aqui -->
+            </ul>
+
+            <button onclick="fecharModalEquipe()" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors">Fechar</button>
+        </div>
+    </div>
+
+    <!-- MODAL: ADICIONAR LINHA NA TABELA (EMPREGADO) -->
+    <div id="modal-linha" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-white p-6 rounded-3xl w-full max-w-sm shadow-2xl border border-slate-100">
+            <h3 class="text-xl font-black text-slate-800 mb-4">Adicionar ao Turno</h3>
+            
+            <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 pl-1">Selecione o Empregado</label>
+            <select id="select-empregado" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none mb-4 font-bold text-slate-700">
+                <!-- Injetado -->
+            </select>
+
+            <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 pl-1">Horário (Time)</label>
+            <input type="text" id="input-horario" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none mb-6 font-bold" placeholder="Ex: 19:00 - 01:00">
+
+            <div class="flex gap-3">
+                <button onclick="fecharModalLinha()" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors">Cancelar</button>
+                <button onclick="confirmarNovaLinha()" class="flex-1 py-3 bg-[#547C44] hover:bg-[#436435] text-white font-bold rounded-xl shadow-md transition-colors">Inserir</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPTS MÁGICOS -->
+    <script>
+        // BANCO DE DADOS LOCAL DE EMPREGADOS
+        let dbEmpregados = JSON.parse(localStorage.getItem('we_staff_db') || '[]');
+        let tabelaAlvo = null; // Guarda em qual tabela a linha será inserida
+
+        window.onload = function() {
+            if (!localStorage.getItem('loggedUser')) window.location.href = 'index.html';
+            
+            // Carrega cronograma salvo, se existir
+            const htmlSalvo = localStorage.getItem('schedule_doc_html');
+            if (htmlSalvo) {
+                document.getElementById('documento-a4').innerHTML = htmlSalvo;
+            } else {
+                // Se não tiver salvo, cria pelo menos um bloco inicial vazio
+                addBloco();
             }
         };
 
-        // Função para guardar o documento editado na memória do navegador
-        function salvarEstado() {
-            const htmlAtual = document.getElementById('documento-a4').innerHTML;
-            localStorage.setItem('schedule_doc_html', htmlAtual);
-            alert("Cronograma salvo com sucesso no navegador! Você pode sair e voltar e ele continuará aqui.");
+        /* ================== GERENCIAR EQUIPE ================== */
+        function abrirModalEquipe() {
+            renderizarListaEquipe();
+            document.getElementById('modal-equipe').classList.remove('hidden');
+        }
+        function fecharModalEquipe() {
+            document.getElementById('modal-equipe').classList.add('hidden');
+        }
+        function salvarNovoEmpregado() {
+            const nome = document.getElementById('novo-empregado').value.trim();
+            if(nome) {
+                dbEmpregados.push(nome);
+                localStorage.setItem('we_staff_db', JSON.stringify(dbEmpregados));
+                document.getElementById('novo-empregado').value = '';
+                renderizarListaEquipe();
+            }
+        }
+        function deletarEmpregado(index) {
+            dbEmpregados.splice(index, 1);
+            localStorage.setItem('we_staff_db', JSON.stringify(dbEmpregados));
+            renderizarListaEquipe();
+        }
+        function renderizarListaEquipe() {
+            const ul = document.getElementById('lista-empregados');
+            if(dbEmpregados.length === 0) {
+                ul.innerHTML = '<li class="text-slate-400 text-sm text-center py-2">Nenhum empregado salvo.</li>';
+                return;
+            }
+            ul.innerHTML = dbEmpregados.map((nome, i) => `
+                <li class="flex justify-between items-center bg-white p-2 px-3 border border-slate-200 rounded-lg">
+                    <span class="font-bold text-slate-700">${nome}</span>
+                    <button onclick="deletarEmpregado(${i})" class="text-red-500 font-bold hover:bg-red-50 px-2 rounded transition-colors">X</button>
+                </li>
+            `).join('');
         }
 
-        // DICA MÁGICA PARA O PDF:
-        // O botão "Imprimir / Baixar PDF" usa a função window.print() do navegador.
-        // Quando a janela de impressão abrir, em "Destino" (Destination), basta escolher "Salvar como PDF".
-        // O CSS @media print que coloquei lá em cima garante que as cores, tabelas e fontes fiquem perfeitamente alinhadas na folha A4.
+        /* ================== ESTRUTURA DO CRONOGRAMA ================== */
+        
+        // Adiciona linha no Resumo do Topo
+        function addLinhaResumo() {
+            const tbody = document.getElementById('tbody-resumo');
+            const tr = document.createElement('tr');
+            tr.className = "border-b border-slate-200 group/tr";
+            tr.innerHTML = `
+                <td class="py-2 w-1/3 relative"><button class="no-print absolute -left-6 top-2 text-red-500 font-bold hidden group-hover/tr:block" onclick="this.closest('tr').remove()">X</button><div contenteditable="true">DIA / TURNO</div></td>
+                <td class="py-2 w-1/3"><div contenteditable="true">START: 00:00</div></td>
+                <td class="py-2 w-1/3"><div contenteditable="true">FINISH: 00:00</div></td>
+            `;
+            tbody.appendChild(tr);
+        }
+
+        // Adiciona um Novo Bloco (Tabela Inteira)
+        function addBloco() {
+            const container = document.getElementById('blocos-container');
+            const block = document.createElement('div');
+            block.className = "mb-10 relative group/bloco";
+            block.innerHTML = `
+                <button class="no-print absolute -left-10 top-1 text-red-500 hidden group-hover/bloco:block font-black text-2xl hover:scale-110" onclick="if(confirm('Apagar esta tabela inteira?')) this.parentElement.remove()" title="Excluir Tabela">X</button>
+                
+                <h3 class="bg-[#547C44] text-white font-bold py-2 px-4 text-center uppercase tracking-widest outline-none" contenteditable="true">TÍTULO DO TURNO AQUI (Ex: SUNDAYS)</h3>
+                
+                <table class="w-full border-collapse border border-slate-300 mt-2 text-sm relative">
+                    <thead>
+                        <tr class="bg-slate-100 text-slate-600 uppercase">
+                            <th class="border border-slate-300 py-2 px-3 text-left w-1/4">
+                                <div contenteditable="true" class="inline-block outline-none">Employer</div> 
+                                <button class="no-print text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-1 rounded ml-2 transition-colors" onclick="addColuna(this)">+ Coluna</button>
+                            </th>
+                            <th class="border border-slate-300 py-2 px-3 text-left w-1/5"><div contenteditable="true" class="outline-none">Time</div></th>
+                            <th class="border border-slate-300 py-2 px-3 text-left"><div contenteditable="true" class="outline-none">Task</div></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Linhas entram aqui -->
+                    </tbody>
+                </table>
+                <button class="no-print mt-3 text-sm font-bold text-[#547C44] hover:underline" onclick="abrirModalLinha(this)">+ Adicionar Empregado nesta tabela</button>
+            `;
+            container.appendChild(block);
+        }
+
+        // Adiciona Nova Coluna Dinâmica numa tabela específica
+        function addColuna(btn) {
+            const nomeColuna = prompt("Digite o nome da nova coluna (Ex: Área, Observação):");
+            if (!nomeColuna) return;
+
+            const theadTr = btn.closest('thead').querySelector('tr');
+            const th = document.createElement('th');
+            th.className = "border border-slate-300 py-2 px-3 text-left relative group/th";
+            th.innerHTML = `<button class="no-print absolute right-1 top-1 text-red-400 text-xs hidden group-hover/th:block" onclick="removerColuna(this)">X</button><div contenteditable="true" class="outline-none">${nomeColuna}</div>`;
+            theadTr.appendChild(th);
+
+            const tbody = btn.closest('table').querySelector('tbody');
+            tbody.querySelectorAll('tr').forEach(tr => {
+                const td = document.createElement('td');
+                td.className = "border border-slate-300 py-3 px-3 align-top";
+                td.innerHTML = '<div contenteditable="true" class="outline-none min-h-[20px]"></div>';
+                tr.appendChild(td);
+            });
+        }
+
+        function removerColuna(btn) {
+            if(!confirm("Remover esta coluna de todas as linhas?")) return;
+            const th = btn.closest('th');
+            const trHead = th.parentElement;
+            const index = Array.from(trHead.children).indexOf(th);
+            
+            // Remove o TH
+            th.remove();
+            
+            // Remove o TD correspondente em todas as linhas
+            const tbody = trHead.closest('table').querySelector('tbody');
+            tbody.querySelectorAll('tr').forEach(tr => {
+                if(tr.children[index]) tr.children[index].remove();
+            });
+        }
+
+        /* ================== INSERIR LINHA DE EMPREGADO ================== */
+        function abrirModalLinha(btn) {
+            tabelaAlvo = btn.previousElementSibling.querySelector('tbody');
+            const select = document.getElementById('select-empregado');
+            
+            select.innerHTML = '<option value="">-- Selecione o Empregado --</option>' + 
+                               dbEmpregados.map(n => `<option value="${n}">${n}</option>`).join('');
+            
+            document.getElementById('input-horario').value = '';
+            document.getElementById('modal-linha').classList.remove('hidden');
+        }
+
+        function fecharModalLinha() {
+            document.getElementById('modal-linha').classList.add('hidden');
+            tabelaAlvo = null;
+        }
+
+        function confirmarNovaLinha() {
+            const emp = document.getElementById('select-empregado').value;
+            const time = document.getElementById('input-horario').value;
+            
+            if(!emp) return alert("Selecione um empregado salvo. Se a lista estiver vazia, feche e clique em 'Gerenciar Equipe'.");
+
+            // Verifica quantas colunas a tabela tem (caso o usuário tenha adicionado colunas extras)
+            const numColunas = tabelaAlvo.parentElement.querySelectorAll('thead th').length;
+            
+            let colunasExtrasHTML = '';
+            for(let i = 3; i < numColunas; i++) {
+                colunasExtrasHTML += `<td class="border border-slate-300 py-3 px-3 align-top"><div contenteditable="true" class="outline-none min-h-[20px]"></div></td>`;
+            }
+
+            const tr = document.createElement('tr');
+            tr.className = "group/linha";
+            tr.innerHTML = `
+                <td class="border border-slate-300 py-3 px-3 font-bold align-top relative">
+                    <button class="no-print absolute -left-6 top-3 text-red-500 font-bold hidden group-hover/linha:block" onclick="this.closest('tr').remove()" title="Excluir Empregado">X</button>
+                    <div contenteditable="true" class="outline-none">${emp}</div>
+                </td>
+                <td class="border border-slate-300 py-3 px-3 font-bold text-slate-600 align-top"><div contenteditable="true" class="outline-none">${time}</div></td>
+                <td class="border border-slate-300 py-3 px-3 align-top">
+                    <ul class="task-list outline-none" contenteditable="true">
+                        <li>Digite a primeira tarefa aqui...</li>
+                    </ul>
+                </td>
+                ${colunasExtrasHTML}
+            `;
+            
+            tabelaAlvo.appendChild(tr);
+            fecharModalLinha();
+        }
+
+        /* ================== SISTEMA DE SALVAMENTO ================== */
+        function salvarCronograma() {
+            const folhaHTML = document.getElementById('documento-a4').innerHTML;
+            localStorage.setItem('schedule_doc_html', folhaHTML);
+            alert("Sucesso! Cronograma guardado no seu navegador.");
+        }
+
+        function limparTudo() {
+            if(confirm("ATENÇÃO: Isso apagará todas as tabelas e textos do documento atual. Tem certeza?")) {
+                localStorage.removeItem('schedule_doc_html');
+                window.location.reload();
+            }
+        }
     </script>
 </body>
 </html>
