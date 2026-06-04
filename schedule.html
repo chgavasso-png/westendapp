@@ -26,28 +26,10 @@
         [contenteditable="true"]:focus { background-color: rgba(84, 124, 68, 0.05); outline: 1px dashed #547C44; border-radius: 4px; }
         .task-list { list-style-type: disc; padding-left: 1.5rem; outline: none; min-height: 20px;}
         .task-list li { margin-bottom: 0.25rem; }
-
-        /* BUGFIX: Conserta o botão "X" de remover categoria (Até para documentos antigos salvos) */
-        .task-group button[title="Remove Category"] {
-            position: static !important;
-            float: right !important;
-            background-color: #fee2e2 !important; /* bg-red-100 */
-            color: #ef4444 !important; /* text-red-500 */
-            padding: 2px 8px !important;
-            border-radius: 4px !important;
-            font-size: 0.75rem !important;
-            margin-left: 10px !important;
-            cursor: pointer;
-        }
-        .task-group button[title="Remove Category"]:hover {
-            background-color: #fca5a5 !important;
-            color: #b91c1c !important;
-        }
     </style>
 </head>
 <body class="bg-slate-100 font-sans text-slate-900 h-screen overflow-hidden flex w-full">
 
-    <!-- SIDEBAR -->
     <div id="sidebar" class="w-72 bg-white border-r border-slate-200 flex flex-col h-full shadow-lg z-40 relative">
         <div class="p-5 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
             <h3 class="font-black text-slate-800 text-lg">Saved Schedules</h3>
@@ -65,10 +47,8 @@
         </div>
     </div>
 
-    <!-- MAIN CONTENT -->
     <div id="main-content" class="flex-1 flex flex-col h-full overflow-y-auto relative bg-slate-100">
         
-        <!-- TOOLBAR -->
         <div class="no-print bg-white shadow-sm border-b border-slate-200 sticky top-0 z-50">
             <div class="max-w-[1200px] mx-auto px-6 py-4 flex flex-col xl:flex-row justify-between items-center gap-4">
                 <div>
@@ -94,7 +74,6 @@
             </div>
         </div>
 
-        <!-- A4 SHEET -->
         <div class="mt-8 mb-20 flex justify-center px-4">
             <div id="document-a4" class="a4-page bg-white shadow-2xl w-full max-w-[21cm] min-h-[29.7cm] p-[15mm] border border-slate-200 relative">
                 
@@ -104,19 +83,16 @@
                     <h2 class="text-xl font-bold text-slate-600 tracking-widest uppercase mt-1 text-center" contenteditable="true">Cleaning Schedule</h2>
                 </div>
 
-                <!-- SUMMARY CONTAINER -->
                 <div id="summary-container" class="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-8 relative">
                     <table class="w-full text-sm font-bold text-slate-700">
                         <tbody id="tbody-summary">
-                            <!-- Rows go here -->
-                        </tbody>
+                            </tbody>
                     </table>
                 </div>
                 <button onclick="addSummaryRow()" class="no-print -mt-6 mb-8 ml-2 text-xs font-bold text-[#547C44] hover:underline flex items-center gap-1">
                     + Add Shift Time
                 </button>
 
-                <!-- SHIFT BLOCKS CONTAINER -->
                 <div id="blocks-container"></div>
 
                 <div class="no-print mt-6 text-center">
@@ -125,7 +101,6 @@
                     </button>
                 </div>
 
-                <!-- FOOTER -->
                 <div class="mt-12 text-center border-t border-slate-200 pt-6">
                     <p class="text-xs text-slate-400 mb-2">Official Document - West End Cleaning Services Ltd</p>
                     <p class="text-sm font-bold text-slate-700">
@@ -138,7 +113,6 @@
         </div>
     </div>
 
-    <!-- MODAL: MANAGE STAFF -->
     <div id="modal-staff" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div class="bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border border-slate-100">
             <h3 class="text-xl font-black text-slate-800 mb-2">Staff Database</h3>
@@ -157,7 +131,6 @@
         </div>
     </div>
 
-    <!-- MODAL: TASK LIBRARY -->
     <div id="modal-tasks" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div class="bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border border-slate-100">
             <h3 class="text-xl font-black text-slate-800 mb-2">Task Library</h3>
@@ -173,7 +146,6 @@
         </div>
     </div>
 
-    <!-- MODAL: ADD ROW TO TABLE -->
     <div id="modal-row" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div class="bg-white p-6 rounded-3xl w-full max-w-sm shadow-2xl border border-slate-100">
             <h3 class="text-xl font-black text-slate-800 mb-4">Add to Shift</h3>
@@ -188,7 +160,6 @@
         </div>
     </div>
 
-    <!-- MODAL: PICK TASK TO INSERT -->
     <div id="modal-pick-task" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div class="bg-white p-6 rounded-3xl w-full max-w-sm shadow-2xl border border-slate-100">
             <h3 class="text-xl font-black text-slate-800 mb-4">Insert Category</h3>
@@ -221,11 +192,18 @@
         let currentScheduleId = null;
         
         window.onload = function() {
-            if (!localStorage.getItem('loggedUser')) window.location.href = 'index.html';
+            let loggedUser = localStorage.getItem('loggedUser');
+            if (!loggedUser) window.location.href = 'index.html';
             
-            // Assinatura Automática no PDF
-            document.getElementById('doc-author-name').innerText = localStorage.getItem('loggedFullName') || 'Staff';
-            document.getElementById('doc-author-role').innerText = localStorage.getItem('loggedRole') || '';
+            // Lógica aperfeiçoada para garantir que o nome e cargo apareçam
+            let fullName = localStorage.getItem('loggedFullName');
+            if (!fullName || fullName === 'undefined') fullName = loggedUser; // Fallback
+            
+            let role = localStorage.getItem('loggedRole');
+            if (!role || role === 'undefined') role = 'Supervisor'; // Fallback
+
+            document.getElementById('doc-author-name').innerText = fullName;
+            document.getElementById('doc-author-role').innerText = role;
 
             fetchStaffFromFirebase(); 
             fetchTasksFromFirebase();
@@ -367,7 +345,7 @@
                 </li>`).join('');
         }
 
-        /* ====== PICK TASK MODAL ====== */
+        /* ====== PICK TASK MODAL (BUGFIX) ====== */
         function openPickTaskModal(btn) {
             targetTaskCell = btn.closest('td');
             const sel = document.getElementById('select-task-template');
@@ -388,12 +366,13 @@
                 tasksHtml = tmpl.tasks.map(t => `<li>${t}</li>`).join('');
             }
 
+            // NOVA ESTRUTURA PARA EVITAR O BUG DO HOVER
             const div = document.createElement('div');
-            div.className = "task-group mb-4 group/cat";
+            div.className = "task-group mb-4 group/cat relative border border-transparent hover:border-slate-200 rounded-lg p-1 -mx-1";
             div.innerHTML = `
                 <div class="flex items-center justify-between mb-1">
                     <div class="font-bold text-[#547C44] outline-none uppercase flex-1" contenteditable="true">${catName}</div>
-                    <button class="no-print hidden group-hover/cat:block" onclick="this.closest('.task-group').remove()" title="Remove Category">Remove</button>
+                    <button class="no-print opacity-0 group-hover/cat:opacity-100 bg-red-100 text-red-600 text-xs px-2 py-1 rounded transition-opacity" onclick="this.closest('.task-group').remove()">Remove</button>
                 </div>
                 <ul class="task-list outline-none" contenteditable="true">${tasksHtml}</ul>
             `;
@@ -437,7 +416,7 @@
             }
         }
 
-        /* ====== SUMMARY ROWS & BUG FIX ====== */
+        /* ====== SUMMARY ROWS ====== */
         function checkSummaryVisibility() {
             const tbody = document.getElementById('tbody-summary');
             const container = document.getElementById('summary-container');
@@ -580,10 +559,10 @@
                 </td>
                 ${tdTimeHtml}
                 <td class="border border-slate-300 py-3 px-3 align-top task-cell">
-                    <div class="task-group mb-4 group/cat">
+                    <div class="task-group mb-4 relative p-2 border border-transparent hover:border-slate-200 rounded-lg group/cat">
                         <div class="flex items-center justify-between mb-1">
                             <div class="font-bold text-[#547C44] outline-none uppercase flex-1" contenteditable="true">Category (e.g., Kitchen)</div>
-                            <button class="no-print hidden group-hover/cat:block" onclick="this.closest('.task-group').remove()" title="Remove Category">Remove</button>
+                            <button class="no-print opacity-0 group-hover/cat:opacity-100 bg-red-100 text-red-600 text-xs px-2 py-1 rounded transition-opacity" onclick="this.closest('.task-group').remove()">Remove</button>
                         </div>
                         <ul class="task-list outline-none" contenteditable="true">
                             <li>Type your first task here...</li>
