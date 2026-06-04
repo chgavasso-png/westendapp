@@ -33,7 +33,7 @@
         const SUPABASE_URL = 'https://wkndzjnqypsyluhgrdil.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndrbmR6am5xeXBzeWx1aGdyZGlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NzU5MTQsImV4cCI6MjA5NTA1MTkxNH0.6W9dsBVCeLzT3EIHyQ5ZFmQhEOyj586K9po4cj9wJeA';
 
-        // Sistema inteligente que lê os novos nomes completos e traduz os antigos para não quebrar o histórico
+        // Mantém a visualização de quem CRIO o report para exibir na lista da tela
         function formatarNomePerfil(nome) {
             if (!nome) return 'Unknown Profile';
             if (nome.includes('-')) return nome; 
@@ -87,7 +87,7 @@
                                 <span class="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">${rep.period || 'Daily'}</span>
                             </div>
                             <p class="text-sm text-slate-500 mt-1"><strong>Cleaner:</strong> ${rep.employeename || 'Not provided'} • <strong>Date:</strong> ${dataFormatada}</p>
-                            <p class="text-xs text-slate-400 mt-1"><strong>Prepared by:</strong> ${formatarNomePerfil(rep.staff)}</p>
+                            <p class="text-xs text-slate-400 mt-1"><strong>Originally created by:</strong> ${formatarNomePerfil(rep.staff)}</p>
                         </div>
                         <div class="flex flex-wrap gap-2">
                             <button onclick="editarRelatorio('${rep.id}')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm transition-colors">Edit</button>
@@ -116,7 +116,7 @@
             } catch(err) { alert('Error deleting: ' + err.message); }
         }
 
-        /* LÓGICA DO PDF */
+        /* LÓGICA DO PDF - ATUALIZADA PARA INJETAR O USUÁRIO ATUAL */
         async function baixarPDF(id) {
             const btn = document.getElementById(`btn-pdf-${id}`);
             const txtOriginal = btn.innerText;
@@ -144,8 +144,10 @@
                 const selectedPdfDisplayOption = rep.pdfdisplayoption || 'both';
                 const locations = rep.locations || [];
 
-                // Puxa o nome de quem CRIO o relatório original para o PDF
-                const staffGeradorPDF = formatarNomePerfil(rep.staff);
+                // BUGFIX: PUXA FORÇADAMENTE O NOME DA PESSOA LOGADA PARA ASSINAR O PDF
+                let fullNameLogado = localStorage.getItem('loggedFullName') || localStorage.getItem('loggedUser');
+                let roleLogado = localStorage.getItem('loggedRole') || 'Staff';
+                const staffGeradorPDF = `${fullNameLogado} - ${roleLogado}`;
 
                 const doc = new window.jspdf.jsPDF(); 
                 let y = 20;
