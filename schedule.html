@@ -1,20 +1,43 @@
+Entendido, Carlos! Fiz uma atualização completa no sistema para resolver todos esses pontos e mudar tudo para o inglês, deixando a ferramenta com um nível de qualidade e precisão de software profissional.
+
+Aqui está o que mudei com base no que você pediu:
+
+1. **Tudo em Inglês**: Desde os botões ("Save Changes", "Generate PDF", "Manage Staff") até os alertas.
+2. **Resumo de Dias e Horários (Summary)**:
+* Coloquei apenas **uma linha por padrão**. Você pode adicionar outras clicando num botão seguro "+ Add Shift Time" abaixo da tabela.
+* O botão de excluir agora fica bem posicionado à esquerda, sem bugar o texto.
+* O "Dia" agora é um **Menu Suspenso (Dropdown)**. Você não precisa digitar, basta clicar e escolher (Ex: *Monday to Thursday*, *Sunday*, etc.).
+* "Start Time" e "Finish Time" agora são seletores de relógio nativos (`<input type="time">`).
+
+
+3. **Título do Turno (Shift Title)**: O bug acontecia por causa do comportamento do texto editável no HTML puro. Troquei para um campo de input normal que se camufla perfeitamente na barra verde. Agora não vai saltar ou bugar quando você clicar para editar!
+4. **Salvamento Automático dos Inputs**: Programei uma função oculta que "congela" o que você selecionou nos relógios e menus suspensos na hora de salvar, para que quando você recarregue a página, seus horários não sumam.
+
+Copie e substitua todo o código do seu arquivo **`schedule.html`** por este abaixo:
+
+```html
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador de Cronograma - West End</title>
+    <title>Schedule Builder - West End</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Estilos de Impressão (Garante que o PDF saia perfeito e sem botões) */
+        /* Print Styles - Ensures perfect A4 PDF generation */
         @media print {
             body { background-color: white !important; margin: 0; padding: 0; -webkit-print-color-adjust: exact; }
             .no-print { display: none !important; }
             .a4-page { box-shadow: none !important; margin: 0 !important; padding: 10mm 15mm !important; width: 100% !important; max-width: 100% !important; border: none !important; }
             @page { size: A4; margin: 0mm; }
+            
+            /* Hide dropdown arrows and clock icons on print */
+            .print-no-arrow { appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; }
+            .print-no-icon::-webkit-calendar-picker-indicator { display: none !important; }
+            input, select { border: none !important; background: transparent !important; }
         }
         
-        /* Estilo interativo para os textos editáveis (Some na impressão) */
+        /* Interactive text styles (disappears on print) */
         [contenteditable="true"]:hover { background-color: rgba(84, 124, 68, 0.05); cursor: text; border-radius: 4px; }
         [contenteditable="true"]:focus { background-color: rgba(84, 124, 68, 0.05); outline: 1px dashed #547C44; border-radius: 4px; }
         
@@ -24,233 +47,266 @@
 </head>
 <body class="bg-slate-100 font-sans text-slate-900 min-h-screen pb-20">
 
-    <!-- BARRA DE FERRAMENTAS -->
+    <!-- TOOLBAR (NO-PRINT) -->
     <div class="no-print bg-white shadow-sm border-b border-slate-200 sticky top-0 z-50">
         <div class="max-w-6xl mx-auto px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-4">
-                <a href="menu.html" class="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors" title="Voltar ao Menu">
+                <a href="menu.html" class="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors" title="Back to Menu">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
                 </a>
                 <div>
-                    <h2 class="text-xl font-extrabold text-slate-800">Construtor de Cronogramas</h2>
-                    <p class="text-xs text-slate-500 font-medium uppercase mt-1">Dica: Clique nos textos para digitar</p>
+                    <h2 class="text-xl font-extrabold text-slate-800">Schedule Builder</h2>
+                    <p class="text-xs text-slate-500 font-medium uppercase mt-1">Tip: Click on texts to edit</p>
                 </div>
             </div>
             
             <div class="flex flex-wrap gap-3">
-                <button onclick="abrirModalEquipe()" class="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl border transition-colors flex items-center gap-2">
-                    👥 Gerenciar Equipe
+                <button onclick="openStaffModal()" class="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl border transition-colors flex items-center gap-2">
+                    👥 Manage Staff
                 </button>
-                <button onclick="salvarCronograma()" class="px-5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold rounded-xl border border-blue-200 transition-colors">
-                    💾 Guardar Alterações
+                <button onclick="saveSchedule()" class="px-5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold rounded-xl border border-blue-200 transition-colors">
+                    💾 Save Changes
                 </button>
                 <button onclick="window.print()" class="px-6 py-2 bg-[#547C44] hover:bg-[#436435] text-white font-bold rounded-xl shadow-md transition-colors flex items-center gap-2">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                    Gerar PDF
+                    Generate PDF
                 </button>
-                <button onclick="limparTudo()" class="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl border border-red-200 transition-colors" title="Limpar Documento">
-                    Limpar
+                <button onclick="clearAll()" class="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl border border-red-200 transition-colors" title="Clear Document">
+                    Clear
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- FOLHA A4 (DOCUMENTO PRINCIPAL) -->
+    <!-- A4 SHEET (MAIN DOCUMENT) -->
     <div class="mt-8 flex justify-center px-2">
-        <div id="documento-a4" class="a4-page bg-white shadow-2xl w-full max-w-[21cm] min-h-[29.7cm] p-[15mm] border border-slate-200 relative">
+        <div id="document-a4" class="a4-page bg-white shadow-2xl w-full max-w-[21cm] min-h-[29.7cm] p-[15mm] border border-slate-200 relative">
             
-            <!-- CABEÇALHO -->
+            <!-- HEADER -->
             <div class="flex flex-col items-center mb-8 border-b-2 border-[#547C44] pb-6 relative group">
                 <img src="logo.png" alt="West End Cleaning" class="h-28 object-contain mb-4" onerror="this.src='https://via.placeholder.com/200x100?text=Logo+West+End'">
-                <!-- Nome do Prédio -->
-                <h1 class="text-3xl font-black text-[#547C44] uppercase tracking-wider text-center" contenteditable="true">NOME DO PRÉDIO AQUI</h1>
+                <!-- Building Name -->
+                <input type="text" value="BUILDING NAME HERE" class="w-full text-3xl font-black text-[#547C44] uppercase tracking-wider text-center outline-none bg-transparent" placeholder="BUILDING NAME HERE">
                 <h2 class="text-xl font-bold text-slate-600 tracking-widest uppercase mt-1 text-center" contenteditable="true">Cleaning Schedule</h2>
             </div>
 
-            <!-- RESUMO DE HORÁRIOS GERAIS -->
-            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-8 relative group/resumo">
-                <button class="no-print absolute -left-10 top-2 text-[#547C44] font-bold text-xl hover:scale-110 hidden group-hover/resumo:block" onclick="addLinhaResumo()" title="Adicionar Linha de Resumo">+</button>
+            <!-- SUMMARY OF HOURS -->
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-8 relative">
                 <table class="w-full text-sm font-bold text-slate-700">
-                    <tbody id="tbody-resumo">
+                    <tbody id="tbody-summary">
+                        <!-- Initial Default Row -->
                         <tr class="border-b border-slate-200 group/tr">
-                            <td class="py-2 w-1/3 relative"><button class="no-print absolute -left-6 top-2 text-red-500 font-bold hidden group-hover/tr:block" onclick="this.closest('tr').remove()">X</button><div contenteditable="true">SUNDAY</div></td>
-                            <td class="py-2 w-1/3"><div contenteditable="true">START TIME: 19:00</div></td>
-                            <td class="py-2 w-1/3"><div contenteditable="true">FINISHING TIME: 01:00</div></td>
-                        </tr>
-                        <tr class="group/tr">
-                            <td class="py-2 w-1/3 relative"><button class="no-print absolute -left-6 top-2 text-red-500 font-bold hidden group-hover/tr:block" onclick="this.closest('tr').remove()">X</button><div contenteditable="true">MONDAY TO THURSDAY</div></td>
-                            <td class="py-2 w-1/3"><div contenteditable="true">START TIME: 19:00</div></td>
-                            <td class="py-2 w-1/3"><div contenteditable="true">FINISHING TIME: 01:00</div></td>
+                            <td class="py-2 w-1/3 relative pl-8">
+                                <button class="no-print absolute left-0 top-1.5 text-red-500 font-bold hidden group-hover/tr:block bg-red-50 px-2 rounded hover:bg-red-100" onclick="this.closest('tr').remove()" title="Remove Row">X</button>
+                                <select class="font-bold text-slate-700 bg-transparent outline-none cursor-pointer print-no-arrow w-full">
+                                    <option>SUNDAY</option>
+                                    <option>MONDAY</option>
+                                    <option>TUESDAY</option>
+                                    <option>WEDNESDAY</option>
+                                    <option>THURSDAY</option>
+                                    <option>FRIDAY</option>
+                                    <option>SATURDAY</option>
+                                    <option>MONDAY TO THURSDAY</option>
+                                    <option>MONDAY TO FRIDAY</option>
+                                    <option>WEEKENDS</option>
+                                    <option>EVERYDAY</option>
+                                </select>
+                            </td>
+                            <td class="py-2 w-1/3 text-center">
+                                START TIME: <input type="time" value="19:00" class="font-bold text-slate-700 bg-transparent outline-none cursor-pointer print-no-icon">
+                            </td>
+                            <td class="py-2 w-1/3 text-right pr-4">
+                                FINISHING TIME: <input type="time" value="01:00" class="font-bold text-slate-700 bg-transparent outline-none cursor-pointer print-no-icon">
+                            </td>
                         </tr>
                     </tbody>
                 </table>
-            </div>
-
-            <!-- CONTAINER DOS BLOCOS DE TABELA -->
-            <div id="blocos-container">
-                <!-- Os blocos de cronograma serão inseridos aqui -->
-            </div>
-
-            <div class="no-print mt-6 text-center">
-                <button onclick="addBloco()" class="px-6 py-3 border-2 border-dashed border-[#547C44] text-[#547C44] font-bold rounded-2xl hover:bg-[#547C44] hover:text-white transition-all">
-                    + Adicionar Nova Tabela (Turno/Dia)
+                <button onclick="addSummaryRow()" class="no-print mt-3 text-xs font-bold text-[#547C44] hover:underline flex items-center gap-1">
+                    + Add Shift Time
                 </button>
             </div>
 
+            <!-- SHIFT BLOCKS CONTAINER -->
+            <div id="blocks-container">
+                <!-- Shift blocks will be inserted here -->
+            </div>
+
+            <div class="no-print mt-6 text-center">
+                <button onclick="addBlock()" class="px-6 py-3 border-2 border-dashed border-[#547C44] text-[#547C44] font-bold rounded-2xl hover:bg-[#547C44] hover:text-white transition-all">
+                    + Add New Table (Shift/Day)
+                </button>
+            </div>
+
+            <!-- FOOTER -->
             <div class="mt-12 text-center text-xs text-slate-400 border-t border-slate-200 pt-4">
-                Documento Oficial - West End Cleaning Services Ltd
+                Official Document - West End Cleaning Services Ltd
             </div>
         </div>
     </div>
 
-    <!-- MODAL: GERENCIAR EQUIPE -->
-    <div id="modal-equipe" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <!-- MODAL: MANAGE STAFF -->
+    <div id="modal-staff" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div class="bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border border-slate-100">
-            <h3 class="text-xl font-black text-slate-800 mb-2">Base de Empregados</h3>
-            <p class="text-sm text-slate-500 mb-6">Adicione os nomes para selecioná-los rapidamente nas tabelas.</p>
+            <h3 class="text-xl font-black text-slate-800 mb-2">Staff Database</h3>
+            <p class="text-sm text-slate-500 mb-6">Add names to quickly select them in the tables.</p>
             
             <div class="flex gap-2 mb-4">
-                <input type="text" id="novo-empregado" class="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#547C44]" placeholder="Nome do funcionário">
-                <button onclick="salvarNovoEmpregado()" class="px-5 bg-[#547C44] hover:bg-[#436435] text-white font-bold rounded-xl transition-colors">Adicionar</button>
+                <input type="text" id="new-staff-name" class="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#547C44]" placeholder="Employee Name">
+                <button onclick="saveNewStaff()" class="px-5 bg-[#547C44] hover:bg-[#436435] text-white font-bold rounded-xl transition-colors">Add</button>
             </div>
 
-            <ul id="lista-empregados" class="space-y-2 max-h-60 overflow-y-auto mb-6 bg-slate-50 p-3 rounded-xl border border-slate-200">
-                <!-- Lista injetada aqui -->
+            <ul id="staff-list" class="space-y-2 max-h-60 overflow-y-auto mb-6 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                <!-- Injected List -->
             </ul>
 
-            <button onclick="fecharModalEquipe()" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors">Fechar</button>
+            <button onclick="closeStaffModal()" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors">Close</button>
         </div>
     </div>
 
-    <!-- MODAL: ADICIONAR LINHA NA TABELA (EMPREGADO) -->
-    <div id="modal-linha" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <!-- MODAL: ADD ROW TO TABLE (STAFF) -->
+    <div id="modal-row" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div class="bg-white p-6 rounded-3xl w-full max-w-sm shadow-2xl border border-slate-100">
-            <h3 class="text-xl font-black text-slate-800 mb-4">Adicionar ao Turno</h3>
+            <h3 class="text-xl font-black text-slate-800 mb-4">Add to Shift</h3>
             
-            <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 pl-1">Selecione o Empregado</label>
-            <select id="select-empregado" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none mb-4 font-bold text-slate-700">
-                <!-- Injetado -->
+            <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 pl-1">Select Employee</label>
+            <select id="select-staff" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none mb-4 font-bold text-slate-700">
+                <!-- Injected Options -->
             </select>
 
-            <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 pl-1">Horário (Time)</label>
-            <input type="text" id="input-horario" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none mb-6 font-bold" placeholder="Ex: 19:00 - 01:00">
+            <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 pl-1">Time</label>
+            <input type="text" id="input-time" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none mb-6 font-bold" placeholder="E.g., 19:00 - 01:00">
 
             <div class="flex gap-3">
-                <button onclick="fecharModalLinha()" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors">Cancelar</button>
-                <button onclick="confirmarNovaLinha()" class="flex-1 py-3 bg-[#547C44] hover:bg-[#436435] text-white font-bold rounded-xl shadow-md transition-colors">Inserir</button>
+                <button onclick="closeRowModal()" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors">Cancel</button>
+                <button onclick="confirmNewRow()" class="flex-1 py-3 bg-[#547C44] hover:bg-[#436435] text-white font-bold rounded-xl shadow-md transition-colors">Insert</button>
             </div>
         </div>
     </div>
 
-    <!-- SCRIPTS MÁGICOS -->
+    <!-- SCRIPTS -->
     <script>
-        // BANCO DE DADOS LOCAL DE EMPREGADOS
-        let dbEmpregados = JSON.parse(localStorage.getItem('we_staff_db') || '[]');
-        let tabelaAlvo = null; // Guarda em qual tabela a linha será inserida
+        // LOCAL DATABASE FOR STAFF
+        let dbStaff = JSON.parse(localStorage.getItem('we_staff_db') || '[]');
+        let targetTable = null; 
 
         window.onload = function() {
             if (!localStorage.getItem('loggedUser')) window.location.href = 'index.html';
             
-            // Carrega cronograma salvo, se existir
-            const htmlSalvo = localStorage.getItem('schedule_doc_html');
-            if (htmlSalvo) {
-                document.getElementById('documento-a4').innerHTML = htmlSalvo;
+            // Load saved schedule if exists
+            const savedHtml = localStorage.getItem('schedule_doc_html');
+            if (savedHtml) {
+                document.getElementById('document-a4').innerHTML = savedHtml;
             } else {
-                // Se não tiver salvo, cria pelo menos um bloco inicial vazio
-                addBloco();
+                addBlock();
             }
         };
 
-        /* ================== GERENCIAR EQUIPE ================== */
-        function abrirModalEquipe() {
-            renderizarListaEquipe();
-            document.getElementById('modal-equipe').classList.remove('hidden');
+        /* ================== MANAGE STAFF ================== */
+        function openStaffModal() {
+            renderStaffList();
+            document.getElementById('modal-staff').classList.remove('hidden');
         }
-        function fecharModalEquipe() {
-            document.getElementById('modal-equipe').classList.add('hidden');
+        function closeStaffModal() {
+            document.getElementById('modal-staff').classList.add('hidden');
         }
-        function salvarNovoEmpregado() {
-            const nome = document.getElementById('novo-empregado').value.trim();
-            if(nome) {
-                dbEmpregados.push(nome);
-                localStorage.setItem('we_staff_db', JSON.stringify(dbEmpregados));
-                document.getElementById('novo-empregado').value = '';
-                renderizarListaEquipe();
+        function saveNewStaff() {
+            const name = document.getElementById('new-staff-name').value.trim();
+            if(name) {
+                dbStaff.push(name);
+                localStorage.setItem('we_staff_db', JSON.stringify(dbStaff));
+                document.getElementById('new-staff-name').value = '';
+                renderStaffList();
             }
         }
-        function deletarEmpregado(index) {
-            dbEmpregados.splice(index, 1);
-            localStorage.setItem('we_staff_db', JSON.stringify(dbEmpregados));
-            renderizarListaEquipe();
+        function deleteStaff(index) {
+            dbStaff.splice(index, 1);
+            localStorage.setItem('we_staff_db', JSON.stringify(dbStaff));
+            renderStaffList();
         }
-        function renderizarListaEquipe() {
-            const ul = document.getElementById('lista-empregados');
-            if(dbEmpregados.length === 0) {
-                ul.innerHTML = '<li class="text-slate-400 text-sm text-center py-2">Nenhum empregado salvo.</li>';
+        function renderStaffList() {
+            const ul = document.getElementById('staff-list');
+            if(dbStaff.length === 0) {
+                ul.innerHTML = '<li class="text-slate-400 text-sm text-center py-2">No staff saved.</li>';
                 return;
             }
-            ul.innerHTML = dbEmpregados.map((nome, i) => `
+            ul.innerHTML = dbStaff.map((name, i) => `
                 <li class="flex justify-between items-center bg-white p-2 px-3 border border-slate-200 rounded-lg">
-                    <span class="font-bold text-slate-700">${nome}</span>
-                    <button onclick="deletarEmpregado(${i})" class="text-red-500 font-bold hover:bg-red-50 px-2 rounded transition-colors">X</button>
+                    <span class="font-bold text-slate-700">${name}</span>
+                    <button onclick="deleteStaff(${i})" class="text-red-500 font-bold hover:bg-red-50 px-2 rounded transition-colors">X</button>
                 </li>
             `).join('');
         }
 
-        /* ================== ESTRUTURA DO CRONOGRAMA ================== */
+        /* ================== SCHEDULE STRUCTURE ================== */
         
-        // Adiciona linha no Resumo do Topo
-        function addLinhaResumo() {
-            const tbody = document.getElementById('tbody-resumo');
+        function addSummaryRow() {
+            const tbody = document.getElementById('tbody-summary');
             const tr = document.createElement('tr');
             tr.className = "border-b border-slate-200 group/tr";
             tr.innerHTML = `
-                <td class="py-2 w-1/3 relative"><button class="no-print absolute -left-6 top-2 text-red-500 font-bold hidden group-hover/tr:block" onclick="this.closest('tr').remove()">X</button><div contenteditable="true">DIA / TURNO</div></td>
-                <td class="py-2 w-1/3"><div contenteditable="true">START: 00:00</div></td>
-                <td class="py-2 w-1/3"><div contenteditable="true">FINISH: 00:00</div></td>
+                <td class="py-2 w-1/3 relative pl-8">
+                    <button class="no-print absolute left-0 top-1.5 text-red-500 font-bold hidden group-hover/tr:block bg-red-50 px-2 rounded hover:bg-red-100" onclick="this.closest('tr').remove()" title="Remove Row">X</button>
+                    <select class="font-bold text-slate-700 bg-transparent outline-none cursor-pointer print-no-arrow w-full">
+                        <option>SUNDAY</option>
+                        <option>MONDAY</option>
+                        <option>TUESDAY</option>
+                        <option>WEDNESDAY</option>
+                        <option>THURSDAY</option>
+                        <option>FRIDAY</option>
+                        <option>SATURDAY</option>
+                        <option>MONDAY TO THURSDAY</option>
+                        <option>MONDAY TO FRIDAY</option>
+                        <option>WEEKENDS</option>
+                        <option>EVERYDAY</option>
+                    </select>
+                </td>
+                <td class="py-2 w-1/3 text-center">
+                    START TIME: <input type="time" value="19:00" class="font-bold text-slate-700 bg-transparent outline-none cursor-pointer print-no-icon">
+                </td>
+                <td class="py-2 w-1/3 text-right pr-4">
+                    FINISHING TIME: <input type="time" value="01:00" class="font-bold text-slate-700 bg-transparent outline-none cursor-pointer print-no-icon">
+                </td>
             `;
             tbody.appendChild(tr);
         }
 
-        // Adiciona um Novo Bloco (Tabela Inteira)
-        function addBloco() {
-            const container = document.getElementById('blocos-container');
+        function addBlock() {
+            const container = document.getElementById('blocks-container');
             const block = document.createElement('div');
-            block.className = "mb-10 relative group/bloco";
+            block.className = "mb-10 relative group/block";
             block.innerHTML = `
-                <button class="no-print absolute -left-10 top-1 text-red-500 hidden group-hover/bloco:block font-black text-2xl hover:scale-110" onclick="if(confirm('Apagar esta tabela inteira?')) this.parentElement.remove()" title="Excluir Tabela">X</button>
+                <button class="no-print absolute -left-10 top-1 text-red-500 hidden group-hover/block:block font-black text-2xl hover:scale-110" onclick="if(confirm('Delete this entire table?')) this.parentElement.remove()" title="Delete Table">X</button>
                 
-                <h3 class="bg-[#547C44] text-white font-bold py-2 px-4 text-center uppercase tracking-widest outline-none" contenteditable="true">TÍTULO DO TURNO AQUI (Ex: SUNDAYS)</h3>
+                <input type="text" value="SHIFT TITLE HERE (E.G., SUNDAYS SCHEDULES)" class="w-full bg-[#547C44] text-white font-bold py-2 px-4 text-center uppercase tracking-widest outline-none placeholder-white/70">
                 
                 <table class="w-full border-collapse border border-slate-300 mt-2 text-sm relative">
                     <thead>
                         <tr class="bg-slate-100 text-slate-600 uppercase">
                             <th class="border border-slate-300 py-2 px-3 text-left w-1/4">
                                 <div contenteditable="true" class="inline-block outline-none">Employer</div> 
-                                <button class="no-print text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-1 rounded ml-2 transition-colors" onclick="addColuna(this)">+ Coluna</button>
+                                <button class="no-print text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-1 rounded ml-2 transition-colors" onclick="addColumn(this)">+ Column</button>
                             </th>
                             <th class="border border-slate-300 py-2 px-3 text-left w-1/5"><div contenteditable="true" class="outline-none">Time</div></th>
                             <th class="border border-slate-300 py-2 px-3 text-left"><div contenteditable="true" class="outline-none">Task</div></th>
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- Linhas entram aqui -->
+                        <!-- Rows injected here -->
                     </tbody>
                 </table>
-                <button class="no-print mt-3 text-sm font-bold text-[#547C44] hover:underline" onclick="abrirModalLinha(this)">+ Adicionar Empregado nesta tabela</button>
+                <button class="no-print mt-3 text-sm font-bold text-[#547C44] hover:underline" onclick="openRowModal(this)">+ Add Staff to this table</button>
             `;
             container.appendChild(block);
         }
 
-        // Adiciona Nova Coluna Dinâmica numa tabela específica
-        function addColuna(btn) {
-            const nomeColuna = prompt("Digite o nome da nova coluna (Ex: Área, Observação):");
-            if (!nomeColuna) return;
+        function addColumn(btn) {
+            const colName = prompt("Enter new column name (e.g., Area, Notes):");
+            if (!colName) return;
 
             const theadTr = btn.closest('thead').querySelector('tr');
             const th = document.createElement('th');
             th.className = "border border-slate-300 py-2 px-3 text-left relative group/th";
-            th.innerHTML = `<button class="no-print absolute right-1 top-1 text-red-400 text-xs hidden group-hover/th:block" onclick="removerColuna(this)">X</button><div contenteditable="true" class="outline-none">${nomeColuna}</div>`;
+            th.innerHTML = `<button class="no-print absolute right-1 top-1 text-red-400 text-xs hidden group-hover/th:block bg-red-50 px-1 rounded" onclick="removeColumn(this)">X</button><div contenteditable="true" class="outline-none">${colName}</div>`;
             theadTr.appendChild(th);
 
             const tbody = btn.closest('table').querySelector('tbody');
@@ -262,82 +318,94 @@
             });
         }
 
-        function removerColuna(btn) {
-            if(!confirm("Remover esta coluna de todas as linhas?")) return;
+        function removeColumn(btn) {
+            if(!confirm("Remove this column from all rows?")) return;
             const th = btn.closest('th');
             const trHead = th.parentElement;
             const index = Array.from(trHead.children).indexOf(th);
             
-            // Remove o TH
             th.remove();
             
-            // Remove o TD correspondente em todas as linhas
             const tbody = trHead.closest('table').querySelector('tbody');
             tbody.querySelectorAll('tr').forEach(tr => {
                 if(tr.children[index]) tr.children[index].remove();
             });
         }
 
-        /* ================== INSERIR LINHA DE EMPREGADO ================== */
-        function abrirModalLinha(btn) {
-            tabelaAlvo = btn.previousElementSibling.querySelector('tbody');
-            const select = document.getElementById('select-empregado');
+        /* ================== ADD STAFF ROW ================== */
+        function openRowModal(btn) {
+            targetTable = btn.previousElementSibling.querySelector('tbody');
+            const select = document.getElementById('select-staff');
             
-            select.innerHTML = '<option value="">-- Selecione o Empregado --</option>' + 
-                               dbEmpregados.map(n => `<option value="${n}">${n}</option>`).join('');
+            select.innerHTML = '<option value="">-- Select Employee --</option>' + 
+                               dbStaff.map(n => `<option value="${n}">${n}</option>`).join('');
             
-            document.getElementById('input-horario').value = '';
-            document.getElementById('modal-linha').classList.remove('hidden');
+            document.getElementById('input-time').value = '';
+            document.getElementById('modal-row').classList.remove('hidden');
         }
 
-        function fecharModalLinha() {
-            document.getElementById('modal-linha').classList.add('hidden');
-            tabelaAlvo = null;
+        function closeRowModal() {
+            document.getElementById('modal-row').classList.add('hidden');
+            targetTable = null;
         }
 
-        function confirmarNovaLinha() {
-            const emp = document.getElementById('select-empregado').value;
-            const time = document.getElementById('input-horario').value;
+        function confirmNewRow() {
+            const emp = document.getElementById('select-staff').value;
+            const time = document.getElementById('input-time').value;
             
-            if(!emp) return alert("Selecione um empregado salvo. Se a lista estiver vazia, feche e clique em 'Gerenciar Equipe'.");
+            if(!emp) return alert("Select an employee. If empty, click 'Manage Staff' to add them.");
 
-            // Verifica quantas colunas a tabela tem (caso o usuário tenha adicionado colunas extras)
-            const numColunas = tabelaAlvo.parentElement.querySelectorAll('thead th').length;
-            
-            let colunasExtrasHTML = '';
-            for(let i = 3; i < numColunas; i++) {
-                colunasExtrasHTML += `<td class="border border-slate-300 py-3 px-3 align-top"><div contenteditable="true" class="outline-none min-h-[20px]"></div></td>`;
+            const numCols = targetTable.parentElement.querySelectorAll('thead th').length;
+            let extraCols = '';
+            for(let i = 3; i < numCols; i++) {
+                extraCols += `<td class="border border-slate-300 py-3 px-3 align-top"><div contenteditable="true" class="outline-none min-h-[20px]"></div></td>`;
             }
 
             const tr = document.createElement('tr');
-            tr.className = "group/linha";
+            tr.className = "group/row";
             tr.innerHTML = `
                 <td class="border border-slate-300 py-3 px-3 font-bold align-top relative">
-                    <button class="no-print absolute -left-6 top-3 text-red-500 font-bold hidden group-hover/linha:block" onclick="this.closest('tr').remove()" title="Excluir Empregado">X</button>
+                    <button class="no-print absolute -left-6 top-3 text-red-500 font-bold hidden group-hover/row:block bg-red-50 px-2 rounded" onclick="this.closest('tr').remove()" title="Delete Staff Row">X</button>
                     <div contenteditable="true" class="outline-none">${emp}</div>
                 </td>
                 <td class="border border-slate-300 py-3 px-3 font-bold text-slate-600 align-top"><div contenteditable="true" class="outline-none">${time}</div></td>
                 <td class="border border-slate-300 py-3 px-3 align-top">
                     <ul class="task-list outline-none" contenteditable="true">
-                        <li>Digite a primeira tarefa aqui...</li>
+                        <li>Type your first task here...</li>
                     </ul>
                 </td>
-                ${colunasExtrasHTML}
+                ${extraCols}
             `;
             
-            tabelaAlvo.appendChild(tr);
-            fecharModalLinha();
+            targetTable.appendChild(tr);
+            closeRowModal();
         }
 
-        /* ================== SISTEMA DE SALVAMENTO ================== */
-        function salvarCronograma() {
-            const folhaHTML = document.getElementById('documento-a4').innerHTML;
-            localStorage.setItem('schedule_doc_html', folhaHTML);
-            alert("Sucesso! Cronograma guardado no seu navegador.");
+        /* ================== SAVE SYSTEM ================== */
+        // Synchronizes input and select states into their HTML attributes so they save correctly inside innerHTML
+        function syncInputsBeforeSave() {
+            document.querySelectorAll('#document-a4 input').forEach(inp => {
+                if(inp.type !== 'file') {
+                    inp.setAttribute('value', inp.value);
+                }
+            });
+            document.querySelectorAll('#document-a4 select').forEach(sel => {
+                Array.from(sel.options).forEach(opt => {
+                    if(opt.selected) opt.setAttribute('selected', 'selected');
+                    else opt.removeAttribute('selected');
+                });
+            });
         }
 
-        function limparTudo() {
-            if(confirm("ATENÇÃO: Isso apagará todas as tabelas e textos do documento atual. Tem certeza?")) {
+        function saveSchedule() {
+            syncInputsBeforeSave();
+            const documentHtml = document.getElementById('document-a4').innerHTML;
+            localStorage.setItem('schedule_doc_html', documentHtml);
+            alert("Success! The schedule has been saved to your browser.");
+        }
+
+        function clearAll() {
+            if(confirm("WARNING: This will delete all tables and texts from the current document. Are you sure?")) {
                 localStorage.removeItem('schedule_doc_html');
                 window.location.reload();
             }
@@ -345,3 +413,5 @@
     </script>
 </body>
 </html>
+
+```
