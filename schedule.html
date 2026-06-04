@@ -1,3 +1,12 @@
+Na versão anterior que enviei, a lista de empregados (Staff) ficou de propósito guardada apenas na memória do navegador (`localStorage`) para poupar as requisições à base de dados.
+
+No entanto, tem toda a razão: para que o sistema fique 100% na cloud e possa aceder à lista de funcionários a partir de qualquer computador ou telemóvel, **a equipa também deve estar guardada no Firebase**.
+
+Fiz essa atualização! Agora o sistema cria automaticamente uma coleção chamada `staff` no seu Firebase. Sempre que adicionar ou remover um funcionário, isso vai direto para a cloud em tempo real.
+
+Substitua todo o conteúdo do seu **`schedule.html`** por este código atualizado:
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -203,9 +212,7 @@
         const db = firebase.firestore();
         // ==========================================
 
-        let rawDB = JSON.parse(localStorage.getItem('we_staff_db') || '[]');
-        let dbStaff = rawDB.map(item => typeof item === 'string' ? { name: item, time: '19:00 - 01:00' } : item);
-        
+        let dbStaff = []; // Now fetching from Firebase
         let targetTable = null; 
         let currentScheduleId = null;
         const emptyDocumentHTML = document.getElementById('document-a4').innerHTML;
@@ -213,9 +220,10 @@
         window.onload = function() {
             if (!localStorage.getItem('loggedUser')) window.location.href = 'index.html';
             addBlock();
+            fetchStaffFromFirebase(); // Puxar staff logo ao iniciar
         };
 
-        /* ================== FIREBASE LOGIC ================== */
+        /* ================== FIREBASE LOGIC (SCHEDULES) ================== */
         function updateStatusName(name) {
             document.getElementById('current-schedule-name').innerText = name || 'Unsaved Document';
         }
@@ -238,32 +246,27 @@
 
             try {
                 if (!currentScheduleId) {
-                    // Novo Arquivo
                     const name = prompt("Enter a name for this schedule (E.g., King's Road Park):");
                     if (!name) throw new Error("Canceled");
                     
-                    currentScheduleId = Date.now().toString();
-                    
-                    await db.collection("schedules").doc(currentScheduleId).set({
+                    const docRef = await db.collection("schedules").add({
                         name: name,
                         html_data: documentHtml,
                         timestamp: firebase.firestore.FieldValue.serverTimestamp()
                     });
+                    currentScheduleId = docRef.id;
                     
                     updateStatusName(name);
                     alert("Success! Schedule saved to database.");
                 } else {
-                    // Atualizar Arquivo Existente
                     await db.collection("schedules").doc(currentScheduleId).update({
                         html_data: documentHtml,
                         timestamp: firebase.firestore.FieldValue.serverTimestamp()
                     });
-                    
                     alert("Success! Document updated.");
                 }
             } catch(e) {
-                if(e.message !== "Canceled") alert("Error saving: " + e.message + "\n(Certifique-se de que o Firestore está configurado em 'Test Mode')");
-                if(e.message !== "Canceled" && !currentScheduleId) currentScheduleId = null;
+                if(e.message !== "Canceled") alert("Error saving: " + e.message);
             } finally {
                 btnSave.innerText = "💾 Save";
                 btnSave.disabled = false;
@@ -277,7 +280,6 @@
 
             try {
                 const snapshot = await db.collection("schedules").orderBy("timestamp", "desc").get();
-                
                 if(snapshot.empty) {
                     list.innerHTML = '<div class="text-center text-slate-400 font-bold py-4">No schedules saved yet.</div>';
                 } else {
@@ -308,7 +310,6 @@
         async function loadSchedule(id, name) {
             try {
                 document.getElementById('saved-schedules-list').innerHTML = '<div class="text-center text-[#547C44] font-bold py-4">Downloading document...</div>';
-                
                 const docSnap = await db.collection("schedules").doc(id).get();
                 
                 if(docSnap.exists) {
@@ -329,57 +330,83 @@
             if(confirm("Are you sure you want to delete this schedule permanently?")) {
                 try {
                     await db.collection("schedules").doc(id).delete();
-                    
                     if(currentScheduleId === id) createNewSchedule();
-                    openSavedSchedulesModal(); // refresh
+                    openSavedSchedulesModal(); 
                 } catch(e) {
                     alert("Error: " + e.message);
                 }
             }
         }
 
-        /* ================== UI LOGIC (STAFF, ROWS, BLOCKS) ================== */
-        function openStaffModal() {
+        /* ================== FIREBASE LOGIC (STAFF) ================== */
+        async function fetchStaffFromFirebase() {
+            try {
+                const snapshot = await db.collection("staff").get();
+                dbStaff = [];
+                snapshot.forEach(doc => {
+                    dbStaff.push({ id: doc.id, ...doc.data() });
+                });
+            } catch (e) {
+                console.error("Error loading staff: ", e);
+            }
+        }
+
+        async function openStaffModal() {
+            await fetchStaffFromFirebase();
             renderStaffList();
             document.getElementById('modal-staff').classList.remove('hidden');
         }
+
         function closeStaffModal() {
             document.getElementById('modal-staff').classList.add('hidden');
         }
-        function saveNewStaff() {
+
+        async function saveNewStaff() {
             const name = document.getElementById('new-staff-name').value.trim();
             const start = document.getElementById('new-staff-start').value;
             const finish = document.getElementById('new-staff-finish').value;
             const time = (start && finish) ? `${start} - ${finish}` : '';
+            
             if(name) {
-                dbStaff.push({ name: name, time: time });
-                localStorage.setItem('we_staff_db', JSON.stringify(dbStaff));
-                document.getElementById('new-staff-name').value = '';
-                renderStaffList();
+                try {
+                    const docRef = await db.collection("staff").add({ name, time });
+                    dbStaff.push({ id: docRef.id, name, time });
+                    document.getElementById('new-staff-name').value = '';
+                    renderStaffList();
+                } catch(e) {
+                    alert("Error adding staff: " + e.message);
+                }
             }
         }
-        function deleteStaff(index) {
-            dbStaff.splice(index, 1);
-            localStorage.setItem('we_staff_db', JSON.stringify(dbStaff));
-            renderStaffList();
+
+        async function deleteStaff(id) {
+            try {
+                await db.collection("staff").doc(id).delete();
+                dbStaff = dbStaff.filter(s => s.id !== id);
+                renderStaffList();
+            } catch(e) {
+                alert("Error deleting staff: " + e.message);
+            }
         }
+
         function renderStaffList() {
             const ul = document.getElementById('staff-list');
             if(dbStaff.length === 0) {
                 ul.innerHTML = '<li class="text-slate-400 text-sm text-center py-2">No staff saved.</li>';
                 return;
             }
-            ul.innerHTML = dbStaff.map((staff, i) => `
+            ul.innerHTML = dbStaff.map(staff => `
                 <li class="flex justify-between items-center bg-white p-2 px-3 border border-slate-200 rounded-lg">
                     <div>
                         <span class="font-bold text-slate-700 block">${staff.name}</span>
                         <span class="text-xs text-slate-500 font-medium">${staff.time || 'No default time set'}</span>
                     </div>
-                    <button onclick="deleteStaff(${i})" class="text-red-500 font-bold hover:bg-red-50 px-2 py-1 rounded transition-colors">X</button>
+                    <button onclick="deleteStaff('${staff.id}')" class="text-red-500 font-bold hover:bg-red-50 px-2 py-1 rounded transition-colors">X</button>
                 </li>
             `).join('');
         }
 
+        /* ================== SCHEDULE STRUCTURE ================== */
         function addSummaryRow() {
             const tbody = document.getElementById('tbody-summary');
             const tr = document.createElement('tr');
@@ -439,7 +466,7 @@
             targetTable = btn.parentElement.previousElementSibling.querySelector('tbody');
             const select = document.getElementById('select-staff');
             select.innerHTML = '<option value="">-- Select Employee --</option>' + 
-                               dbStaff.map((s, i) => `<option value="${i}" data-time="${s.time}">${s.name}</option>`).join('');
+                               dbStaff.map(s => `<option value="${s.id}" data-time="${s.time}">${s.name}</option>`).join('');
             
             document.getElementById('input-time').value = '';
             document.getElementById('modal-row').classList.remove('hidden');
@@ -503,7 +530,6 @@
             btn.parentElement.insertBefore(div, btn);
         }
 
-        // Fix inputs before saving
         function syncInputsBeforeSave() {
             document.querySelectorAll('#document-a4 input').forEach(inp => {
                 if(inp.type !== 'file') inp.setAttribute('value', inp.value);
