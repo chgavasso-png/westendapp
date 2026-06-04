@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
-    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Relatório - Sistema</title>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Report - System</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-100 font-sans text-slate-900 min-h-screen pb-20">
@@ -9,42 +9,42 @@
         <div class="max-w-5xl mx-auto px-6 py-4 flex justify-between items-center">
             <div class="flex items-center gap-4">
                 <a href="menu.html" class="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg></a>
-                <div><h2 id="page-title" class="text-xl font-extrabold text-slate-800">Novo Relatório</h2><p class="text-xs text-slate-500 font-medium uppercase mt-1">Staff: <span id="logged-user-name" class="font-bold text-slate-700"></span></p></div>
+                <div><h2 id="page-title" class="text-xl font-extrabold text-slate-800">New Report</h2><p class="text-xs text-slate-500 font-medium uppercase mt-1">Staff: <span id="logged-user-name" class="font-bold text-slate-700"></span></p></div>
             </div>
             <div class="flex gap-3">
-                <button onclick="salvarRelatorio()" class="px-6 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl shadow-md transition-colors">Guardar Relatório</button>
+                <button onclick="salvarRelatorio()" class="px-6 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl shadow-md transition-colors">Save Report</button>
             </div>
         </div>
     </div>
     <div class="max-w-5xl mx-auto p-6 space-y-6 mt-4">
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-5">
-            <h3 class="text-lg font-bold text-slate-800 border-b border-slate-100 pb-2">Informações</h3>
+            <h3 class="text-lg font-bold text-slate-800 border-b border-slate-100 pb-2">Information</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <input type="text" id="report-building" class="p-3 bg-slate-50 border rounded-xl font-medium" placeholder="Prédio / Ponto">
-                <input type="text" id="employee-name" oninput="atualizarResumoPadrao()" class="p-3 bg-slate-50 border rounded-xl font-medium" placeholder="Nome do empregado que executou">
+                <input type="text" id="report-building" class="p-3 bg-slate-50 border rounded-xl font-medium" placeholder="Building / Property">
+                <input type="text" id="employee-name" oninput="atualizarResumoPadrao()" class="p-3 bg-slate-50 border rounded-xl font-medium" placeholder="Employee Name">
                 <input type="date" id="report-date" class="p-3 bg-slate-50 border rounded-xl font-medium">
-                <div class="bg-slate-50 border rounded-xl p-3"><p class="text-xs font-extrabold text-slate-500 uppercase tracking-widest mb-3">Tipo do relatório</p>
+                <div class="bg-slate-50 border rounded-xl p-3"><p class="text-xs font-extrabold text-slate-500 uppercase tracking-widest mb-3">Report Type</p>
                     <div class="grid grid-cols-3 gap-2">
                     <button type="button" id="period-daily" onclick="selecionarPeriodo('Daily')" class="period-btn px-3 py-2 rounded-xl font-bold text-sm border transition-all hover:bg-slate-200">Daily</button>
                     <button type="button" id="period-weekly" onclick="selecionarPeriodo('Weekly')" class="period-btn px-3 py-2 rounded-xl font-bold text-sm border transition-all hover:bg-slate-200">Weekly</button>
                     <button type="button" id="period-monthly" onclick="selecionarPeriodo('Monthly')" class="period-btn px-3 py-2 rounded-xl font-bold text-sm border transition-all hover:bg-slate-200">Monthly</button>
                     </div>
                 </div>
-                <div class="md:col-span-2 bg-slate-50 border rounded-xl p-4"><p class="text-xs font-extrabold text-slate-500 uppercase tracking-widest mb-3">Escolha o que vai aparecer no PDF</p>
+                <div class="md:col-span-2 bg-slate-50 border rounded-xl p-4"><p class="text-xs font-extrabold text-slate-500 uppercase tracking-widest mb-3">Select what will appear in the PDF</p>
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
-                    <button type="button" id="display-date" onclick="selecionarOpcaoPDF('date')" class="pdf-option-btn px-3 py-3 rounded-xl font-bold text-sm border transition-all hover:bg-slate-200">Mostrar Data</button>
-                    <button type="button" id="display-period" onclick="selecionarOpcaoPDF('period')" class="pdf-option-btn px-3 py-3 rounded-xl font-bold text-sm border transition-all hover:bg-slate-200">Mostrar Tipo</button>
-                    <button type="button" id="display-both" onclick="selecionarOpcaoPDF('both')" class="pdf-option-btn px-3 py-3 rounded-xl font-bold text-sm border transition-all hover:bg-slate-200">Mostrar os Dois</button>
-                    <button type="button" id="display-none" onclick="selecionarOpcaoPDF('none')" class="pdf-option-btn px-3 py-3 rounded-xl font-bold text-sm border transition-all hover:bg-slate-200">Não Mostrar</button>
+                    <button type="button" id="display-date" onclick="selecionarOpcaoPDF('date')" class="pdf-option-btn px-3 py-3 rounded-xl font-bold text-sm border transition-all hover:bg-slate-200">Show Date</button>
+                    <button type="button" id="display-period" onclick="selecionarOpcaoPDF('period')" class="pdf-option-btn px-3 py-3 rounded-xl font-bold text-sm border transition-all hover:bg-slate-200">Show Type</button>
+                    <button type="button" id="display-both" onclick="selecionarOpcaoPDF('both')" class="pdf-option-btn px-3 py-3 rounded-xl font-bold text-sm border transition-all hover:bg-slate-200">Show Both</button>
+                    <button type="button" id="display-none" onclick="selecionarOpcaoPDF('none')" class="pdf-option-btn px-3 py-3 rounded-xl font-bold text-sm border transition-all hover:bg-slate-200">Show Neither</button>
                     </div>
                 </div>
-                <textarea id="report-summary" rows="4" class="md:col-span-2 p-3 bg-slate-50 border rounded-xl font-medium" placeholder="Resumo do Trabalho"></textarea>
+                <textarea id="report-summary" rows="4" class="md:col-span-2 p-3 bg-slate-50 border rounded-xl font-medium" placeholder="Summary of Work"></textarea>
             </div>
         </div>
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-5">
-            <h3 class="text-lg font-bold text-slate-800">Áreas Limpas</h3>
+            <h3 class="text-lg font-bold text-slate-800">Cleaned Areas</h3>
             <div id="locations-list" class="space-y-6"></div>
-            <button onclick="addLocation()" class="w-full py-5 border-2 border-dashed rounded-2xl font-bold text-slate-500 hover:bg-slate-50 transition-colors">Adicionar Novo Local</button>
+            <button onclick="addLocation()" class="w-full py-5 border-2 border-dashed rounded-2xl font-bold text-slate-500 hover:bg-slate-50 transition-colors">Add New Location</button>
         </div>
     </div>
 
@@ -101,7 +101,7 @@
 
         const selecionarPeriodo = val => { selectedPeriod = val; atualizarEstiloBotoes('.period-btn', 'period', val); };
         const selecionarOpcaoPDF = val => { selectedPdfDisplayOption = val; atualizarEstiloBotoes('.pdf-option-btn', 'display', val); };
-        const gerarTextoResumoPadrao = nome => `Cleaning staff member ${nome?.trim() || '[nome do empregado]'} carried out cleaning tasks in the following areas using appropriate machinery and equipment. The work included floor cleaning and dust removal with the machine`;
+        const gerarTextoResumoPadrao = nome => `Cleaning staff member ${nome?.trim() || '[employee name]'} carried out cleaning tasks in the following areas using appropriate machinery and equipment. The work included floor cleaning and dust removal with the machine.`;
         const atualizarResumoPadrao = force => { const e = $('employee-name').value; if(force || !resumoFoiEditadoManual || !$('report-summary').value.trim() || $('report-summary').value.includes('Cleaning staff member')){ $('report-summary').value = gerarTextoResumoPadrao(e); resumoFoiEditadoManual = false; } };
 
         const addLocation = () => { locations.push({ id: Date.now().toString(), name: '', sublocations: [], photos: [] }); renderLocations(); };
@@ -113,21 +113,21 @@
         const renderLocations = () => {
             $('locations-list').innerHTML = locations.map((loc, i) => `
                 <div class="p-4 bg-slate-50 rounded-2xl">
-                    <input value="${loc.name}" oninput="locations[${i}].name=this.value" class="w-full p-2 mb-2 font-bold rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-300" placeholder="Nome do Local Principal (ex: Recepção)">
+                    <input value="${loc.name}" oninput="locations[${i}].name=this.value" class="w-full p-2 mb-2 font-bold rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-300" placeholder="Main Location Name (e.g., Reception)">
 
                     <div class="mb-4 space-y-2">
                     ${(loc.sublocations || []).map((sub, si) => `
                     <div class="flex gap-2 ml-4 pl-3 border-l-2 border-slate-300 opacity-95">
-                    <input value="${sub}" oninput="locations[${i}].sublocations[${si}]=this.value" class="w-full p-2 text-sm rounded-lg border focus:outline-none focus:ring-2 focus:ring-slate-300" placeholder="Sub-local (ex: Mesas, Piso)">
+                    <input value="${sub}" oninput="locations[${i}].sublocations[${si}]=this.value" class="w-full p-2 text-sm rounded-lg border focus:outline-none focus:ring-2 focus:ring-slate-300" placeholder="Sub-location (e.g., Desks, Floor)">
                     <button onclick="removeSublocation('${loc.id}', ${si})" class="px-3 bg-red-100/50 hover:bg-red-100 text-red-500 rounded-lg font-bold transition-colors">X</button>
                     </div>
                     `).join('')}
-                    <button onclick="addSublocation('${loc.id}')" class="ml-4 text-xs font-bold text-slate-500 hover:text-slate-800 uppercase tracking-widest">+ Adicionar Sub-local</button>
+                    <button onclick="addSublocation('${loc.id}')" class="ml-4 text-xs font-bold text-slate-500 hover:text-slate-800 uppercase tracking-widest">+ Add Sub-location</button>
                     </div>
 
                     <div class="grid grid-cols-5 gap-4">
                     ${loc.photos.map((p, pi) => `<div class="relative rounded-xl border aspect-square overflow-hidden"><img src="${p}" class="w-full h-full object-cover"><button onclick="removePhoto('${loc.id}', ${pi})" class="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center font-bold text-xs">X</button></div>`).join('')}
-                    <label class="cursor-pointer border-2 border-dashed rounded-xl flex items-center justify-center font-bold min-h-24 hover:bg-white text-slate-500 transition-colors">+ Foto<input type="file" class="hidden" accept="image/*" multiple onchange="handlePhotoUpload(event, '${loc.id}')"></label>
+                    <label class="cursor-pointer border-2 border-dashed rounded-xl flex items-center justify-center font-bold min-h-24 hover:bg-white text-slate-500 transition-colors">+ Photo<input type="file" class="hidden" accept="image/*" multiple onchange="handlePhotoUpload(event, '${loc.id}')"></label>
                     </div>
                 </div>`).join('');
         };
@@ -151,7 +151,7 @@
                 if (!data || data.length === 0) return window.location.href = 'lista.html';
 
                 const rep = data[0];
-                $('page-title').innerText = 'Editar Relatório'; 
+                $('page-title').innerText = 'Edit Report'; 
                 $('report-building').value = rep.building || ''; 
                 $('employee-name').value = rep.employeename || '';
                 $('report-date').value = rep.date || ''; 
@@ -162,14 +162,14 @@
                 locations.forEach(l => l.sublocations = l.sublocations || []); 
                 resumoFoiEditadoManual = true; 
                 renderLocations();
-            } catch(err) { alert('Erro ao carregar relatório: ' + err.message); }
+            } catch(err) { alert('Error loading report: ' + err.message); }
         }
 
         async function salvarRelatorio() {
             const b = $('report-building').value.trim(), e = $('employee-name').value.trim(), d = $('report-date').value, s = $('report-summary').value.trim();
-            if (!b || !e || !d) return alert('Preencha Prédio, Empregado e Data.');
-            if (!selectedPeriod) return alert('Por favor, selecione o Tipo do Relatório (Daily, Weekly, Monthly).');
-            if (!selectedPdfDisplayOption) return alert('Por favor, selecione o que vai aparecer no PDF.');
+            if (!b || !e || !d) return alert('Please fill in Building, Employee, and Date.');
+            if (!selectedPeriod) return alert('Please select the Report Type (Daily, Weekly, Monthly).');
+            if (!selectedPdfDisplayOption) return alert('Please select what will appear in the PDF.');
 
             const data = {
                 staff: loggedUser, 
@@ -210,8 +210,8 @@
 
                 window.location.href = 'lista.html';
             } catch(err) { 
-                console.error('Erro ao salvar:', err);
-                alert('Erro ao salvar: ' + err.message);
+                console.error('Error saving:', err);
+                alert('Error saving: ' + err.message);
             }
         }
     </script>
