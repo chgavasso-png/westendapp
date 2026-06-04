@@ -10,10 +10,10 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
 
     <style>
-        /* Print Styles - Ensures perfect A4 PDF generation */
         @media print {
             body { background-color: white !important; margin: 0; padding: 0; -webkit-print-color-adjust: exact; overflow: visible !important; }
             .no-print, #sidebar { display: none !important; }
+            .print-hidden { display: none !important; }
             #main-content { margin: 0 !important; width: 100% !important; overflow: visible !important; display: block !important;}
             .a4-page { box-shadow: none !important; margin: 0 !important; padding: 10mm 15mm !important; width: 100% !important; max-width: 100% !important; border: none !important; }
             @page { size: A4; margin: 0mm; }
@@ -22,16 +22,15 @@
             input, select { border: none !important; background: transparent !important; }
         }
         
-        /* Interactive text styles */
         [contenteditable="true"]:hover { background-color: rgba(84, 124, 68, 0.05); cursor: text; border-radius: 4px; }
         [contenteditable="true"]:focus { background-color: rgba(84, 124, 68, 0.05); outline: 1px dashed #547C44; border-radius: 4px; }
-        
         .task-list { list-style-type: disc; padding-left: 1.5rem; outline: none; min-height: 20px;}
         .task-list li { margin-bottom: 0.25rem; }
     </style>
 </head>
 <body class="bg-slate-100 font-sans text-slate-900 h-screen overflow-hidden flex w-full">
 
+    <!-- SIDEBAR -->
     <div id="sidebar" class="w-72 bg-white border-r border-slate-200 flex flex-col h-full shadow-lg z-40 relative">
         <div class="p-5 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
             <h3 class="font-black text-slate-800 text-lg">Saved Schedules</h3>
@@ -39,22 +38,20 @@
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
             </button>
         </div>
-        <div class="p-4 bg-white border-b border-slate-100">
-            <p class="text-xs text-slate-500 font-medium">Select a schedule from the database to open and edit.</p>
-        </div>
         <div id="sidebar-list" class="flex-1 overflow-y-auto p-3 space-y-2 bg-slate-50">
             <div class="text-center text-slate-400 font-bold py-4 text-sm">Loading from Firebase...</div>
         </div>
         <div class="p-4 border-t border-slate-200 bg-white">
             <a href="menu.html" class="flex items-center justify-center gap-2 w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl transition-colors">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
                 Back to Menu
             </a>
         </div>
     </div>
 
+    <!-- MAIN CONTENT -->
     <div id="main-content" class="flex-1 flex flex-col h-full overflow-y-auto relative bg-slate-100">
         
+        <!-- TOOLBAR -->
         <div class="no-print bg-white shadow-sm border-b border-slate-200 sticky top-0 z-50">
             <div class="max-w-[1200px] mx-auto px-6 py-4 flex flex-col xl:flex-row justify-between items-center gap-4">
                 <div>
@@ -63,7 +60,10 @@
                 </div>
                 
                 <div class="flex flex-wrap items-center justify-center gap-2">
-                    <button onclick="openStaffModal()" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl border transition-colors flex items-center gap-2">
+                    <button onclick="openTasksModal()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl border transition-colors flex items-center gap-2">
+                        📋 Task Library
+                    </button>
+                    <button onclick="openStaffModal()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl border transition-colors flex items-center gap-2">
                         👥 Manage Staff
                     </button>
                     <div class="h-6 border-l border-slate-300 mx-2 hidden md:block"></div>
@@ -71,56 +71,36 @@
                         💾 Save Changes
                     </button>
                     <button onclick="window.print()" class="px-6 py-2.5 bg-[#547C44] hover:bg-[#436435] text-white font-bold text-sm rounded-xl shadow-md transition-colors flex items-center gap-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                         Export to PDF
                     </button>
                 </div>
             </div>
         </div>
 
+        <!-- A4 SHEET -->
         <div class="mt-8 mb-20 flex justify-center px-4">
             <div id="document-a4" class="a4-page bg-white shadow-2xl w-full max-w-[21cm] min-h-[29.7cm] p-[15mm] border border-slate-200 relative">
                 
                 <div class="flex flex-col items-center mb-8 border-b-2 border-[#547C44] pb-6 relative group">
-                    <img src="logo.png" alt="West End Cleaning" class="h-28 object-contain mb-4" onerror="this.src='https://via.placeholder.com/200x100?text=Logo+West+End'">
-                    <input type="text" value="BUILDING NAME HERE" class="w-full text-3xl font-black text-[#547C44] uppercase tracking-wider text-center outline-none bg-transparent" placeholder="BUILDING NAME HERE">
+                    <img src="logo.png" alt="West End Cleaning" class="h-28 object-contain mb-4">
+                    <input type="text" value="BUILDING NAME HERE" class="w-full text-3xl font-black text-[#547C44] uppercase tracking-wider text-center outline-none bg-transparent">
                     <h2 class="text-xl font-bold text-slate-600 tracking-widest uppercase mt-1 text-center" contenteditable="true">Cleaning Schedule</h2>
                 </div>
 
-                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-8 relative">
+                <!-- SUMMARY CONTAINER (Hides entirely on PDF if empty) -->
+                <div id="summary-container" class="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-8 relative">
                     <table class="w-full text-sm font-bold text-slate-700">
                         <tbody id="tbody-summary">
-                            <tr class="border-b border-slate-200 group/tr">
-                                <td class="py-2 w-1/3 relative pl-8">
-                                    <button class="no-print absolute left-0 top-1.5 text-red-500 font-bold hidden group-hover/tr:block bg-red-50 px-2 rounded hover:bg-red-100" onclick="this.closest('tr').remove()" title="Remove Row">X</button>
-                                    <select class="font-bold text-slate-700 bg-transparent outline-none cursor-pointer print-no-arrow w-full">
-                                        <option>WEEKDAYS (MON-FRI)</option>
-                                        <option>WEEKENDS (SAT-SUN)</option>
-                                        <option>EVERYDAY</option>
-                                        <option>MONDAY TO THURSDAY</option>
-                                        <option>SUNDAY</option>
-                                        <option>MONDAY</option>
-                                        <option>TUESDAY</option>
-                                        <option>WEDNESDAY</option>
-                                        <option>THURSDAY</option>
-                                        <option>FRIDAY</option>
-                                        <option>SATURDAY</option>
-                                    </select>
-                                </td>
-                                <td class="py-2 w-1/3 text-center">
-                                    START TIME: <input type="time" value="19:00" class="font-bold text-slate-700 bg-transparent outline-none cursor-pointer print-no-icon">
-                                </td>
-                                <td class="py-2 w-1/3 text-right pr-4">
-                                    FINISH TIME: <input type="time" value="01:00" class="font-bold text-slate-700 bg-transparent outline-none cursor-pointer print-no-icon">
-                                </td>
-                            </tr>
+                            <!-- Rows go here -->
                         </tbody>
                     </table>
-                    <button onclick="addSummaryRow()" class="no-print mt-3 text-xs font-bold text-[#547C44] hover:underline flex items-center gap-1">
-                        + Add Shift Time
-                    </button>
                 </div>
+                <!-- Button to add shift time (outside the hidden box) -->
+                <button onclick="addSummaryRow()" class="no-print -mt-6 mb-8 ml-2 text-xs font-bold text-[#547C44] hover:underline flex items-center gap-1">
+                    + Add Shift Time
+                </button>
 
+                <!-- SHIFT BLOCKS CONTAINER -->
                 <div id="blocks-container"></div>
 
                 <div class="no-print mt-6 text-center">
@@ -136,56 +116,70 @@
         </div>
     </div>
 
+    <!-- MODAL: MANAGE STAFF -->
     <div id="modal-staff" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div class="bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border border-slate-100">
             <h3 class="text-xl font-black text-slate-800 mb-2">Staff Database</h3>
-            <p class="text-sm text-slate-500 mb-6">Add names and default schedules to auto-fill tables.</p>
             
             <div class="flex flex-col gap-3 mb-4 border-b pb-4">
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1 pl-1">Employee Name</label>
-                    <input type="text" id="new-staff-name" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#547C44]" placeholder="E.g., Fernando">
+                <input type="text" id="new-staff-name" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none" placeholder="Employee Name">
+                <div class="flex items-center gap-2">
+                    <input type="time" id="new-staff-start" value="19:00" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold">
+                    <span class="font-bold text-slate-400">to</span>
+                    <input type="time" id="new-staff-finish" value="01:00" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold">
                 </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1 pl-1">Default Time</label>
-                    <div class="flex items-center gap-2">
-                        <input type="time" id="new-staff-start" value="19:00" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#547C44] font-bold text-slate-700">
-                        <span class="font-bold text-slate-400">to</span>
-                        <input type="time" id="new-staff-finish" value="01:00" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#547C44] font-bold text-slate-700">
-                    </div>
-                </div>
-                <button onclick="saveNewStaff()" class="w-full py-3 mt-1 bg-[#547C44] hover:bg-[#436435] text-white font-bold rounded-xl transition-colors">Add Employee</button>
+                <button onclick="saveNewStaff()" class="w-full py-3 mt-1 bg-[#547C44] hover:bg-[#436435] text-white font-bold rounded-xl">Add Employee</button>
             </div>
-
-            <ul id="staff-list" class="space-y-2 max-h-48 overflow-y-auto mb-6 bg-slate-50 p-3 rounded-xl border border-slate-200">
-                </ul>
-
-            <button onclick="closeStaffModal()" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors">Close</button>
+            <ul id="staff-list" class="space-y-2 max-h-48 overflow-y-auto mb-6"></ul>
+            <button onclick="closeStaffModal()" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl">Close</button>
         </div>
     </div>
 
+    <!-- MODAL: TASK LIBRARY (NEW) -->
+    <div id="modal-tasks" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border border-slate-100">
+            <h3 class="text-xl font-black text-slate-800 mb-2">Task Library</h3>
+            <p class="text-sm text-slate-500 mb-4">Save categories and sub-tasks to reuse later.</p>
+            
+            <div class="flex flex-col gap-3 mb-4 border-b pb-4">
+                <input type="text" id="new-task-cat" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none font-bold text-[#547C44]" placeholder="Category Name (e.g. KITCHEN)">
+                <textarea id="new-task-subs" rows="3" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none text-sm" placeholder="Sub-tasks (One per line)&#10;Clean floor&#10;Wash dishes"></textarea>
+                <button onclick="saveNewTaskTemplate()" class="w-full py-3 mt-1 bg-[#547C44] hover:bg-[#436435] text-white font-bold rounded-xl">Save to Library</button>
+            </div>
+            <ul id="tasks-lib-list" class="space-y-2 max-h-48 overflow-y-auto mb-6"></ul>
+            <button onclick="closeTasksModal()" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl">Close</button>
+        </div>
+    </div>
+
+    <!-- MODAL: ADD ROW TO TABLE -->
     <div id="modal-row" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div class="bg-white p-6 rounded-3xl w-full max-w-sm shadow-2xl border border-slate-100">
             <h3 class="text-xl font-black text-slate-800 mb-4">Add to Shift</h3>
-            
-            <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 pl-1">Select Employee</label>
-            <select id="select-staff" onchange="autoFillTime(this)" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none mb-4 font-bold text-slate-700">
-                </select>
-
-            <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 pl-1">Time (Auto-filled)</label>
-            <input type="text" id="input-time" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none mb-6 font-bold" placeholder="E.g., 19:00 - 01:00">
-
+            <label class="block text-xs font-bold text-slate-500 uppercase mb-2 pl-1">Select Employee</label>
+            <select id="select-staff" onchange="autoFillTime(this)" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl mb-4 font-bold"></select>
+            <label class="block text-xs font-bold text-slate-500 uppercase mb-2 pl-1">Time</label>
+            <input type="text" id="input-time" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl mb-6 font-bold">
             <div class="flex gap-3">
-                <button onclick="closeRowModal()" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors">Cancel</button>
-                <button onclick="confirmNewRow()" class="flex-1 py-3 bg-[#547C44] hover:bg-[#436435] text-white font-bold rounded-xl shadow-md transition-colors">Insert</button>
+                <button onclick="closeRowModal()" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl">Cancel</button>
+                <button onclick="confirmNewRow()" class="flex-1 py-3 bg-[#547C44] hover:bg-[#436435] text-white font-bold rounded-xl">Insert</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: PICK TASK TO INSERT -->
+    <div id="modal-pick-task" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-white p-6 rounded-3xl w-full max-w-sm shadow-2xl border border-slate-100">
+            <h3 class="text-xl font-black text-slate-800 mb-4">Insert Category</h3>
+            <select id="select-task-template" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl mb-6 font-bold"></select>
+            <div class="flex gap-3">
+                <button onclick="closePickTaskModal()" class="flex-1 py-3 bg-slate-100 font-bold rounded-xl">Cancel</button>
+                <button onclick="confirmPickTask()" class="flex-1 py-3 bg-[#547C44] text-white font-bold rounded-xl">Add Task</button>
             </div>
         </div>
     </div>
 
     <script>
-        // ==========================================
-        // FIREBASE CONFIGURATION
-        // ==========================================
+        // CONFIGURAÇÃO FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyBSPim1j9yxA56AeWhWhdG_8TKzh_F-gZc",
             authDomain: "westend-c6992.firebaseapp.com",
@@ -195,24 +189,26 @@
             appId: "1:781546407326:web:ed4126214f41498153428f",
             measurementId: "G-DEGC00501H"
         };
-
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
-        // ==========================================
 
         let dbStaff = []; 
+        let dbTasks = []; // Para a Library de Tasks
         let targetTable = null; 
+        let targetTaskCell = null; // Onde a task selecionada vai ser inserida
         let currentScheduleId = null;
-        const emptyDocumentHTML = document.getElementById('document-a4').innerHTML;
-
+        
         window.onload = function() {
             if (!localStorage.getItem('loggedUser')) window.location.href = 'index.html';
-            addBlock();
             fetchStaffFromFirebase(); 
-            loadSidebarSchedules(); // Carrega a lista na lateral assim que a página abre
+            fetchTasksFromFirebase();
+            loadSidebarSchedules(); 
+            addSummaryRow();
+            addBlock();
+            checkSummaryVisibility();
         };
 
-        /* ================== FIREBASE LOGIC (SIDEBAR SCHEDULES) ================== */
+        /* ====== FIREBASE SCHEDULES ====== */
         function updateStatusName(name) {
             document.getElementById('current-schedule-name').innerText = name || 'Unsaved Document';
         }
@@ -220,10 +216,12 @@
         function createNewSchedule() {
             if(confirm("Start a new document? Unsaved changes will be lost.")) {
                 currentScheduleId = null;
-                document.getElementById('document-a4').innerHTML = emptyDocumentHTML;
-                updateStatusName(null);
+                document.getElementById('tbody-summary').innerHTML = '';
+                document.getElementById('blocks-container').innerHTML = '';
+                addSummaryRow();
                 addBlock();
-                loadSidebarSchedules(); // Refresh to remove active highlight
+                updateStatusName(null);
+                loadSidebarSchedules();
             }
         }
 
@@ -231,66 +229,50 @@
             syncInputsBeforeSave();
             const documentHtml = document.getElementById('document-a4').innerHTML;
             const btnSave = document.getElementById('btn-save');
-            btnSave.innerText = "⏳ Saving...";
-            btnSave.disabled = true;
+            btnSave.innerText = "⏳ Saving..."; btnSave.disabled = true;
 
             try {
                 if (!currentScheduleId) {
                     const name = prompt("Enter a name for this schedule (E.g., King's Road Park):");
                     if (!name) throw new Error("Canceled");
-                    
                     const docRef = await db.collection("schedules").add({
-                        name: name,
-                        html_data: documentHtml,
-                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        name: name, html_data: documentHtml, timestamp: firebase.firestore.FieldValue.serverTimestamp()
                     });
                     currentScheduleId = docRef.id;
                     updateStatusName(name);
                 } else {
                     await db.collection("schedules").doc(currentScheduleId).update({
-                        html_data: documentHtml,
-                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        html_data: documentHtml, timestamp: firebase.firestore.FieldValue.serverTimestamp()
                     });
                 }
-                alert("Success! Schedule saved to database.");
-                loadSidebarSchedules(); // Atualiza a barra lateral
+                loadSidebarSchedules(); 
             } catch(e) {
                 if(e.message !== "Canceled") alert("Error saving: " + e.message);
             } finally {
-                btnSave.innerHTML = `💾 Save Changes`;
-                btnSave.disabled = false;
+                btnSave.innerHTML = `💾 Save Changes`; btnSave.disabled = false;
             }
         }
 
         async function loadSidebarSchedules() {
             const list = document.getElementById('sidebar-list');
-            list.innerHTML = '<div class="text-center text-slate-400 font-bold py-4 text-sm">Loading...</div>';
-
             try {
                 const snapshot = await db.collection("schedules").orderBy("timestamp", "desc").get();
                 if(snapshot.empty) {
-                    list.innerHTML = '<div class="text-center text-slate-400 font-medium py-4 text-sm">No schedules saved yet.</div>';
+                    list.innerHTML = '<div class="text-center text-slate-400 font-medium py-4 text-sm">No schedules saved.</div>';
                 } else {
                     let html = '';
                     snapshot.forEach(doc => {
                         const data = doc.data();
-                        const isCurrent = currentScheduleId === doc.id;
-                        const bgClass = isCurrent ? 'bg-[#547C44]/10 border-[#547C44]' : 'bg-white border-slate-200 hover:border-[#547C44]';
-                        
+                        const bgClass = currentScheduleId === doc.id ? 'bg-[#547C44]/10 border-[#547C44]' : 'bg-white border-slate-200 hover:border-[#547C44]';
                         html += `
                             <div class="group flex justify-between items-center p-3 rounded-xl border transition-colors cursor-pointer ${bgClass}" onclick="loadSchedule('${doc.id}', '${data.name}')">
                                 <span class="font-bold text-slate-800 text-sm truncate pr-2">${data.name}</span>
-                                <button onclick="event.stopPropagation(); deleteSchedule('${doc.id}')" class="text-red-400 hover:text-red-600 hidden group-hover:block px-2" title="Delete">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                </button>
-                            </div>
-                        `;
+                                <button onclick="event.stopPropagation(); deleteSchedule('${doc.id}')" class="text-red-400 hover:text-red-600 hidden group-hover:block px-2">X</button>
+                            </div>`;
                     });
                     list.innerHTML = html;
                 }
-            } catch(e) {
-                list.innerHTML = `<div class="text-center text-red-500 font-bold py-4 text-sm">Error: ${e.message}</div>`;
-            }
+            } catch(e) {}
         }
 
         async function loadSchedule(id, name) {
@@ -300,103 +282,157 @@
                     document.getElementById('document-a4').innerHTML = docSnap.data().html_data;
                     currentScheduleId = id;
                     updateStatusName(name);
-                    loadSidebarSchedules(); // Re-render to highlight active item
-                } else {
-                    throw new Error("Document not found");
+                    loadSidebarSchedules(); 
+                    checkSummaryVisibility();
                 }
-            } catch(e) {
-                alert("Error opening schedule: " + e.message);
-            }
+            } catch(e) { alert("Error: " + e.message); }
         }
 
         async function deleteSchedule(id) {
-            if(confirm("Are you sure you want to delete this schedule permanently?")) {
-                try {
-                    await db.collection("schedules").doc(id).delete();
-                    if(currentScheduleId === id) createNewSchedule();
-                    loadSidebarSchedules(); // refresh
-                } catch(e) {
-                    alert("Error: " + e.message);
-                }
+            if(confirm("Delete this schedule permanently?")) {
+                await db.collection("schedules").doc(id).delete();
+                if(currentScheduleId === id) createNewSchedule();
+                loadSidebarSchedules();
             }
         }
 
-        /* ================== FIREBASE LOGIC (STAFF) ================== */
-        async function fetchStaffFromFirebase() {
-            try {
-                const snapshot = await db.collection("staff").get();
-                dbStaff = [];
-                snapshot.forEach(doc => {
-                    dbStaff.push({ id: doc.id, ...doc.data() });
-                });
-            } catch (e) {
-                console.error("Error loading staff: ", e);
-            }
+        /* ====== FIREBASE TASKS LIBRARY ====== */
+        async function fetchTasksFromFirebase() {
+            const snap = await db.collection("task_templates").get();
+            dbTasks = [];
+            snap.forEach(doc => dbTasks.push({ id: doc.id, ...doc.data() }));
         }
 
-        async function openStaffModal() {
-            await fetchStaffFromFirebase();
-            renderStaffList();
-            document.getElementById('modal-staff').classList.remove('hidden');
+        function openTasksModal() {
+            renderTasksList();
+            document.getElementById('modal-tasks').classList.remove('hidden');
         }
+        function closeTasksModal() { document.getElementById('modal-tasks').classList.add('hidden'); }
 
-        function closeStaffModal() {
-            document.getElementById('modal-staff').classList.add('hidden');
-        }
-
-        async function saveNewStaff() {
-            const name = document.getElementById('new-staff-name').value.trim();
-            const start = document.getElementById('new-staff-start').value;
-            const finish = document.getElementById('new-staff-finish').value;
-            const time = (start && finish) ? `${start} - ${finish}` : '';
+        async function saveNewTaskTemplate() {
+            const cat = document.getElementById('new-task-cat').value.trim();
+            const subsText = document.getElementById('new-task-subs').value;
+            const subs = subsText.split('\n').map(s=>s.trim()).filter(s=>s!=='');
             
-            if(name) {
-                try {
-                    const docRef = await db.collection("staff").add({ name, time });
-                    dbStaff.push({ id: docRef.id, name, time });
-                    document.getElementById('new-staff-name').value = '';
-                    renderStaffList();
-                } catch(e) {
-                    alert("Error adding staff: " + e.message);
-                }
+            if(cat) {
+                const docRef = await db.collection("task_templates").add({ category: cat, tasks: subs });
+                dbTasks.push({ id: docRef.id, category: cat, tasks: subs });
+                document.getElementById('new-task-cat').value = ''; document.getElementById('new-task-subs').value = '';
+                renderTasksList();
             }
         }
-
-        async function deleteStaff(id) {
-            try {
-                await db.collection("staff").doc(id).delete();
-                dbStaff = dbStaff.filter(s => s.id !== id);
-                renderStaffList();
-            } catch(e) {
-                alert("Error deleting staff: " + e.message);
-            }
+        
+        async function deleteTaskTemplate(id) {
+            await db.collection("task_templates").doc(id).delete();
+            dbTasks = dbTasks.filter(t => t.id !== id);
+            renderTasksList();
         }
 
-        function renderStaffList() {
-            const ul = document.getElementById('staff-list');
-            if(dbStaff.length === 0) {
-                ul.innerHTML = '<li class="text-slate-400 text-sm text-center py-2">No staff saved.</li>';
-                return;
-            }
-            ul.innerHTML = dbStaff.map(staff => `
-                <li class="flex justify-between items-center bg-white p-2 px-3 border border-slate-200 rounded-lg">
+        function renderTasksList() {
+            const ul = document.getElementById('tasks-lib-list');
+            ul.innerHTML = dbTasks.map(t => `
+                <li class="flex justify-between items-center bg-white p-3 border border-slate-200 rounded-lg">
                     <div>
-                        <span class="font-bold text-slate-700 block">${staff.name}</span>
-                        <span class="text-xs text-slate-500 font-medium">${staff.time || 'No default time set'}</span>
+                        <span class="font-bold text-[#547C44] block">${t.category}</span>
+                        <span class="text-xs text-slate-500">${t.tasks.length} sub-tasks</span>
                     </div>
-                    <button onclick="deleteStaff('${staff.id}')" class="text-red-500 font-bold hover:bg-red-50 px-2 py-1 rounded transition-colors">X</button>
-                </li>
-            `).join('');
+                    <button onclick="deleteTaskTemplate('${t.id}')" class="text-red-500 font-bold px-2 py-1">X</button>
+                </li>`).join('');
         }
 
-        /* ================== SCHEDULE STRUCTURE ================== */
+        /* ====== PICK TASK MODAL ====== */
+        function openPickTaskModal(btn) {
+            targetTaskCell = btn.closest('td');
+            const sel = document.getElementById('select-task-template');
+            sel.innerHTML = `<option value="blank">-- Create Blank Category --</option>` +
+                            dbTasks.map((t, i) => `<option value="${i}">${t.category}</option>`).join('');
+            document.getElementById('modal-pick-task').classList.remove('hidden');
+        }
+        function closePickTaskModal() { document.getElementById('modal-pick-task').classList.add('hidden'); }
+        
+        function confirmPickTask() {
+            const val = document.getElementById('select-task-template').value;
+            let catName = "New Category";
+            let tasksHtml = "<li>New task...</li>";
+
+            if (val !== "blank") {
+                const tmpl = dbTasks[val];
+                catName = tmpl.category;
+                tasksHtml = tmpl.tasks.map(t => `<li>${t}</li>`).join('');
+            }
+
+            const div = document.createElement('div');
+            div.className = "task-group mb-4";
+            div.innerHTML = `
+                <div class="flex items-center gap-2 mb-1">
+                    <div class="font-bold text-[#547C44] outline-none uppercase" contenteditable="true">${catName}</div>
+                    <button class="no-print text-red-400 hover:text-red-600 font-bold text-xs bg-red-50 px-2 rounded" onclick="this.closest('.task-group').remove()" title="Remove Category">X</button>
+                </div>
+                <ul class="task-list outline-none" contenteditable="true">${tasksHtml}</ul>
+            `;
+            
+            // Insert before the "+ Add Category" button
+            const btn = targetTaskCell.querySelector('.add-cat-btn');
+            targetTaskCell.insertBefore(div, btn);
+            closePickTaskModal();
+        }
+
+        /* ====== TIME COLUMN TOGGLE ====== */
+        function toggleTimeColumn(btn) {
+            const table = btn.closest('.shift-block').querySelector('table');
+            const theadTr = table.querySelector('thead tr');
+            const tbody = table.querySelector('tbody');
+
+            let timeIndex = -1;
+            Array.from(theadTr.children).forEach((th, i) => { if(th.getAttribute('data-col') === 'time') timeIndex = i; });
+
+            if(timeIndex !== -1) {
+                // Remove it
+                theadTr.children[timeIndex].remove();
+                Array.from(tbody.children).forEach(tr => { if(tr.children[timeIndex]) tr.children[timeIndex].remove(); });
+            } else {
+                // Add it back at index 1
+                const th = document.createElement('th');
+                th.className = "border border-slate-300 py-2 px-3 text-left w-1/5";
+                th.setAttribute('data-col', 'time');
+                th.innerHTML = `<div contenteditable="true" class="outline-none">Time</div>`;
+                theadTr.insertBefore(th, theadTr.children[1]);
+
+                Array.from(tbody.children).forEach(tr => {
+                    const td = document.createElement('td');
+                    td.className = "border border-slate-300 py-3 px-3 font-bold text-slate-600 align-top";
+                    td.setAttribute('data-col', 'time');
+                    td.innerHTML = `<div contenteditable="true" class="outline-none">19:00 - 01:00</div>`;
+                    tr.insertBefore(td, tr.children[1]);
+                });
+            }
+        }
+
+        /* ====== SUMMARY ROWS & BUG FIX ====== */
+        function checkSummaryVisibility() {
+            const tbody = document.getElementById('tbody-summary');
+            const container = document.getElementById('summary-container');
+            if(tbody.children.length === 0) {
+                container.classList.add('print-hidden');
+                container.classList.add('hidden'); 
+            } else {
+                container.classList.remove('print-hidden');
+                container.classList.remove('hidden');
+            }
+        }
+
+        function removeSummary(btn) {
+            btn.closest('tr').remove();
+            checkSummaryVisibility();
+        }
+
         function addSummaryRow() {
             const tbody = document.getElementById('tbody-summary');
             const tr = document.createElement('tr');
             tr.className = "border-b border-slate-200 group/tr";
             tr.innerHTML = `
                 <td class="py-2 w-1/3 relative pl-8">
-                    <button class="no-print absolute left-0 top-1.5 text-red-500 font-bold hidden group-hover/tr:block bg-red-50 px-2 rounded hover:bg-red-100" onclick="this.closest('tr').remove()" title="Remove Row">X</button>
+                    <button class="no-print absolute left-0 top-1.5 text-red-500 font-bold hidden group-hover/tr:block bg-red-50 px-2 rounded" onclick="removeSummary(this)">X</button>
                     <select class="font-bold text-slate-700 bg-transparent outline-none cursor-pointer print-no-arrow w-full">
                         <option>WEEKDAYS (MON-FRI)</option>
                         <option>WEEKENDS (SAT-SUN)</option>
@@ -411,16 +447,14 @@
                         <option>SATURDAY</option>
                     </select>
                 </td>
-                <td class="py-2 w-1/3 text-center">
-                    START TIME: <input type="time" value="19:00" class="font-bold text-slate-700 bg-transparent outline-none cursor-pointer print-no-icon">
-                </td>
-                <td class="py-2 w-1/3 text-right pr-4">
-                    FINISH TIME: <input type="time" value="01:00" class="font-bold text-slate-700 bg-transparent outline-none cursor-pointer print-no-icon">
-                </td>
+                <td class="py-2 w-1/3 text-center">START TIME: <input type="time" value="19:00" class="font-bold text-slate-700 bg-transparent outline-none print-no-icon"></td>
+                <td class="py-2 w-1/3 text-right pr-4">FINISH TIME: <input type="time" value="01:00" class="font-bold text-slate-700 bg-transparent outline-none print-no-icon"></td>
             `;
             tbody.appendChild(tr);
+            checkSummaryVisibility();
         }
 
+        /* ====== CORE BUILDER ====== */
         function addBlock() {
             const container = document.getElementById('blocks-container');
             const block = document.createElement('div');
@@ -431,120 +465,96 @@
                     <thead>
                         <tr class="bg-slate-100 text-slate-600 uppercase">
                             <th class="border border-slate-300 py-2 px-3 text-left w-1/4">Employer</th>
-                            
-                            <th class="border border-slate-300 py-2 px-3 text-left w-1/5 relative group/th">
-                                <button class="no-print absolute right-1 top-1 text-red-400 text-xs hidden group-hover/th:block bg-red-50 px-1 rounded" onclick="removeColumn(this)" title="Remove Time Column">X</button>
-                                <div contenteditable="true" class="outline-none">Time</div>
-                            </th>
-                            
+                            <th class="border border-slate-300 py-2 px-3 text-left w-1/5" data-col="time"><div contenteditable="true" class="outline-none">Time</div></th>
                             <th class="border border-slate-300 py-2 px-3 text-left">Task</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
                 </table>
                 <div class="no-print mt-3 flex items-center justify-between">
-                    <button class="text-sm font-bold text-[#547C44] hover:underline" onclick="openRowModal(this)">+ Add Staff to this table</button>
-                    <button class="text-sm font-bold text-red-500 hover:underline" onclick="if(confirm('Delete this entire table?')) this.closest('.shift-block').remove()">Delete Table</button>
+                    <div class="flex gap-4">
+                        <button class="text-sm font-bold text-[#547C44] hover:underline" onclick="openRowModal(this)">+ Add Staff</button>
+                        <button class="text-sm font-bold text-slate-500 hover:underline" onclick="toggleTimeColumn(this)">⏱️ Toggle Time Column</button>
+                    </div>
+                    <button class="text-sm font-bold text-red-500 hover:underline" onclick="if(confirm('Delete entire table?')) this.closest('.shift-block').remove()">Delete Table</button>
                 </div>
             `;
             container.appendChild(block);
         }
 
-        function removeColumn(btn) {
-            if(!confirm("Are you sure you want to completely remove this column?")) return;
-            const th = btn.closest('th');
-            const trHead = th.parentElement;
-            const index = Array.from(trHead.children).indexOf(th);
-            
-            th.remove();
-            
-            const tbody = trHead.closest('table').querySelector('tbody');
-            tbody.querySelectorAll('tr').forEach(tr => {
-                if(tr.children[index]) tr.children[index].remove();
-            });
+        /* ====== STAFF LOGIC ====== */
+        async function fetchStaffFromFirebase() {
+            const snap = await db.collection("staff").get();
+            dbStaff = [];
+            snap.forEach(doc => dbStaff.push({ id: doc.id, ...doc.data() }));
+        }
+        function openStaffModal() { renderStaffList(); document.getElementById('modal-staff').classList.remove('hidden'); }
+        function closeStaffModal() { document.getElementById('modal-staff').classList.add('hidden'); }
+        async function saveNewStaff() {
+            const n = document.getElementById('new-staff-name').value;
+            const s = document.getElementById('new-staff-start').value;
+            const f = document.getElementById('new-staff-finish').value;
+            const time = (s&&f) ? `${s} - ${f}` : '';
+            if(n) {
+                const doc = await db.collection("staff").add({ name: n, time });
+                dbStaff.push({ id: doc.id, name: n, time });
+                document.getElementById('new-staff-name').value = ''; renderStaffList();
+            }
+        }
+        async function deleteStaff(id) {
+            await db.collection("staff").doc(id).delete();
+            dbStaff = dbStaff.filter(s => s.id !== id); renderStaffList();
+        }
+        function renderStaffList() {
+            document.getElementById('staff-list').innerHTML = dbStaff.map(s => `
+                <li class="flex justify-between items-center bg-white p-2 px-3 border border-slate-200 rounded-lg">
+                    <div><span class="font-bold text-slate-700 block">${s.name}</span><span class="text-xs text-slate-500">${s.time}</span></div>
+                    <button onclick="deleteStaff('${s.id}')" class="text-red-500 font-bold px-2 py-1">X</button>
+                </li>`).join('');
         }
 
+        /* ====== ROW INSERTION ====== */
         function openRowModal(btn) {
             targetTable = btn.parentElement.previousElementSibling.querySelector('tbody');
             const select = document.getElementById('select-staff');
-            select.innerHTML = '<option value="">-- Select Employee --</option>' + 
-                               dbStaff.map(s => `<option value="${s.id}" data-time="${s.time}">${s.name}</option>`).join('');
-            
+            select.innerHTML = '<option value="">-- Select Employee --</option>' + dbStaff.map(s => `<option value="${s.id}" data-time="${s.time}">${s.name}</option>`).join('');
             document.getElementById('input-time').value = '';
             document.getElementById('modal-row').classList.remove('hidden');
         }
-
         function autoFillTime(select) {
-            if(select.selectedIndex > 0) {
-                const time = select.options[select.selectedIndex].getAttribute('data-time');
-                document.getElementById('input-time').value = time || '';
-            } else {
-                document.getElementById('input-time').value = '';
-            }
+            if(select.selectedIndex > 0) document.getElementById('input-time').value = select.options[select.selectedIndex].getAttribute('data-time') || '';
+            else document.getElementById('input-time').value = '';
         }
-
-        function closeRowModal() {
-            document.getElementById('modal-row').classList.add('hidden');
-            targetTable = null;
-        }
-
+        function closeRowModal() { document.getElementById('modal-row').classList.add('hidden'); }
         function confirmNewRow() {
             const select = document.getElementById('select-staff');
-            if(!select.value) return alert("Select an employee. If empty, click 'Manage Staff' to add them.");
-            
+            if(!select.value) return alert("Select an employee.");
             const emp = select.options[select.selectedIndex].text;
             const time = document.getElementById('input-time').value;
 
-            // Verifica se a coluna "Time" ainda existe ou foi excluída
-            const temColunaTime = targetTable.parentElement.querySelectorAll('th').length >= 3;
-            const tdTimeHtml = temColunaTime ? `<td class="border border-slate-300 py-3 px-3 font-bold text-slate-600 align-top"><div contenteditable="true" class="outline-none">${time}</div></td>` : '';
+            const timeColExists = targetTable.closest('table').querySelector('thead th[data-col="time"]');
+            const tdTimeHtml = timeColExists ? `<td class="border border-slate-300 py-3 px-3 font-bold text-slate-600 align-top" data-col="time"><div contenteditable="true" class="outline-none">${time}</div></td>` : '';
 
             const tr = document.createElement('tr');
             tr.className = "group/row";
             tr.innerHTML = `
                 <td class="border border-slate-300 py-3 px-3 font-bold align-top relative">
-                    <button class="no-print absolute -left-6 top-3 text-red-500 font-bold hidden group-hover/row:block bg-red-50 px-2 rounded" onclick="this.closest('tr').remove()" title="Delete Staff Row">X</button>
+                    <button class="no-print absolute -left-6 top-3 text-red-500 font-bold hidden group-hover/row:block bg-red-50 px-2 rounded" onclick="this.closest('tr').remove()">X</button>
                     <div contenteditable="true" class="outline-none">${emp}</div>
                 </td>
                 ${tdTimeHtml}
-                <td class="border border-slate-300 py-3 px-3 align-top">
-                    <div class="task-group mb-4 relative group/cat">
-                        <button class="no-print absolute -left-6 top-0 text-red-500 font-bold hidden group-hover/cat:block" onclick="this.parentElement.remove()" title="Remove Category">X</button>
-                        <div class="font-bold text-[#547C44] outline-none uppercase" contenteditable="true">Category (e.g., Kitchen)</div>
-                        <ul class="task-list outline-none" contenteditable="true">
-                            <li>Type your first task here...</li>
-                        </ul>
-                    </div>
-                    <button class="no-print text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-1 rounded transition-colors" onclick="addCategoryToTask(this)">+ Add Category</button>
+                <td class="border border-slate-300 py-3 px-3 align-top task-cell">
+                    <button class="add-cat-btn no-print text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-1 rounded transition-colors" onclick="openPickTaskModal(this)">+ Add Category</button>
                 </td>
             `;
-            
             targetTable.appendChild(tr);
             closeRowModal();
         }
 
-        function addCategoryToTask(btn) {
-            const div = document.createElement('div');
-            div.className = "task-group mb-4 relative group/cat";
-            div.innerHTML = `
-                <button class="no-print absolute -left-6 top-0 text-red-500 font-bold hidden group-hover/cat:block" onclick="this.parentElement.remove()" title="Remove Category">X</button>
-                <div class="font-bold text-[#547C44] outline-none uppercase" contenteditable="true">New Category</div>
-                <ul class="task-list outline-none" contenteditable="true">
-                    <li>New task...</li>
-                </ul>
-            `;
-            btn.parentElement.insertBefore(div, btn);
-        }
-
         function syncInputsBeforeSave() {
-            document.querySelectorAll('#document-a4 input').forEach(inp => {
-                if(inp.type !== 'file') inp.setAttribute('value', inp.value);
-            });
+            document.querySelectorAll('#document-a4 input').forEach(inp => { if(inp.type !== 'file') inp.setAttribute('value', inp.value); });
             document.querySelectorAll('#document-a4 select').forEach(sel => {
-                Array.from(sel.options).forEach(opt => {
-                    if(opt.selected) opt.setAttribute('selected', 'selected');
-                    else opt.removeAttribute('selected');
-                });
+                Array.from(sel.options).forEach(opt => { if(opt.selected) opt.setAttribute('selected', 'selected'); else opt.removeAttribute('selected'); });
             });
         }
     </script>
