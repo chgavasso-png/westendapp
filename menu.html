@@ -1,293 +1,324 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Menu Principal</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            min-height: 100vh;
-            color: #fff;
-        }
-        .header {
-            background: rgba(255,255,255,0.1);
-            padding: 20px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .header h1 { font-size: 24px; }
-        .header-right { display: flex; gap: 10px; align-items: center; }
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            transition: all 0.3s;
-        }
-        .btn-primary {
-            background: #4361ee;
-            color: #fff;
-        }
-        .btn-primary:hover { background: #3730a3; }
-        .btn-danger {
-            background: #ef233c;
-            color: #fff;
-        }
-        .btn-secondary {
-            background: rgba(255,255,255,0.2);
-            color: #fff;
-        }
-        .btn-secondary:hover { background: rgba(255,255,255,0.3); }
-        .user-info {
-            background: rgba(255,255,255,0.1);
-            padding: 10px 15px;
-            border-radius: 8px;
-            font-size: 14px;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 40px auto;
-            padding: 0 20px;
-        }
-        .menu-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 25px;
-        }
-        .menu-card {
-            background: rgba(255,255,255,0.08);
-            border-radius: 16px;
-            padding: 30px;
-            cursor: pointer;
-            transition: all 0.3s;
-            border: 2px solid transparent;
-        }
-        .menu-card:hover {
-            transform: translateY(-5px);
-            border-color: #4361ee;
-            background: rgba(255,255,255,0.12);
-        }
-        .menu-icon {
-            font-size: 50px;
-            margin-bottom: 15px;
-        }
-        .menu-title {
-            font-size: 22px;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-        .menu-desc {
-            color: rgba(255,255,255,0.7);
-            font-size: 14px;
-            line-height: 1.5;
-        }
-        /* Modal Login */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.8);
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-        .modal.active { display: flex; }
-        .modal-content {
-            background: #1a1a2e;
-            padding: 40px;
-            border-radius: 16px;
-            width: 400px;
-            max-width: 90%;
-            text-align: center;
-        }
-        .modal-content h2 { margin-bottom: 25px; font-size: 24px; }
-        .form-group { margin-bottom: 15px; text-align: left; }
-        .form-group label { display: block; margin-bottom: 5px; font-size: 14px; }
-        .form-group input, .form-group select {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid rgba(255,255,255,0.2);
-            border-radius: 8px;
-            background: rgba(255,255,255,0.1);
-            color: #fff;
-            font-size: 14px;
-        }
-        .form-group input:focus, .form-group select:focus {
-            outline: none;
-            border-color: #4361ee;
-        }
-        .modal-buttons { display: flex; gap: 10px; margin-top: 20px; }
-        .modal-buttons .btn { flex: 1; }
-        .error-msg {
-            background: rgba(239,35,60,0.2);
-            color: #ef233c;
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            font-size: 14px;
-            display: none;
-        }
-    </style>
+    <title>Main Menu - West End Cleaning</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
 </head>
-<body>
-    <div class="header">
-        <h1>🏠 Menu Principal</h1>
-        <div class="header-right" id="headerRight">
-            <button class="btn btn-primary" onclick="showLoginModal()">Entrar</button>
+<body class="bg-slate-100 font-sans text-slate-900 min-h-screen">
+
+    <div class="bg-white shadow-sm border-b-4 border-[#547C44]">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <img src="logo.png" alt="Logo" class="h-12 object-contain" onerror="this.style.display='none'">
+                <div>
+                    <h2 class="text-xl font-extrabold text-slate-800">Main Dashboard</h2>
+                    <p class="text-xs text-slate-500 font-bold uppercase tracking-widest mt-0.5">West End System</p>
+                </div>
+            </div>
+            <button onclick="logout()" class="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm transition-colors border border-slate-200">Logout</button>
         </div>
     </div>
 
-    <div class="container">
-        <div class="menu-grid" id="menuGrid"></div>
+    <div class="max-w-6xl mx-auto p-6 mt-10">
+
+        <div class="bg-[#547C44] text-white p-8 rounded-3xl shadow-lg mb-10 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div>
+                <h1 class="text-3xl font-black mb-1">Welcome,</h1>
+                <p id="user-fullname" class="text-xl font-bold opacity-90"></p>
+                <p id="user-role" class="text-sm font-medium uppercase tracking-widest mt-1 opacity-75 bg-white/20 inline-block px-3 py-1 rounded-lg"></p>
+            </div>
+            <div class="bg-white/10 px-5 py-3 rounded-2xl border border-white/20 backdrop-blur-sm">
+                <p class="text-xs uppercase tracking-widest font-bold opacity-80 mb-1">Current Date</p>
+                <p id="current-date" class="font-bold text-lg"></p>
+            </div>
+        </div>
+
+        <h3 class="text-lg font-bold text-slate-800 mb-4 px-2">Quick Access</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+            <button onclick="window.location.href='reports.html'" class="group bg-white p-6 rounded-3xl shadow-sm border border-slate-200 hover:shadow-md hover:border-[#547C44] transition-all text-left flex flex-col h-full relative overflow-hidden">
+                <div class="w-12 h-12 bg-slate-100 text-[#547C44] rounded-2xl flex items-center justify-center font-bold text-2xl mb-4 shadow-inner group-hover:bg-[#547C44] group-hover:text-white transition-colors">+</div>
+                <h3 class="text-xl font-black text-slate-800 mb-2">New Report</h3>
+                <p class="text-slate-500 font-medium text-sm">Create and fill a new cleaning report with photos.</p>
+            </button>
+
+            <button onclick="window.location.href='lista.html'" class="group bg-white p-6 rounded-3xl shadow-sm border border-slate-200 hover:shadow-md hover:border-[#547C44] transition-all text-left flex flex-col h-full relative overflow-hidden">
+                <div class="w-12 h-12 bg-slate-100 text-[#547C44] rounded-2xl flex items-center justify-center mb-4 shadow-inner group-hover:bg-[#547C44] group-hover:text-white transition-colors">📄</div>
+                <h3 class="text-xl font-black text-slate-800 mb-2">Saved Reports</h3>
+                <p class="text-slate-500 font-medium text-sm">View, edit or export past reports to PDF.</p>
+            </button>
+
+            <button onclick="window.location.href='schedule.html'" class="group bg-white p-6 rounded-3xl shadow-sm border border-slate-200 hover:shadow-md hover:border-[#547C44] transition-all text-left flex flex-col h-full relative overflow-hidden">
+                <div class="w-12 h-12 bg-slate-100 text-[#547C44] rounded-2xl flex items-center justify-center mb-4 shadow-inner group-hover:bg-[#547C44] group-hover:text-white transition-colors">📅</div>
+                <h3 class="text-xl font-black text-slate-800 mb-2">Cleaning Schedule</h3>
+                <p class="text-slate-500 font-medium text-sm">Access, build and print official staff schedules.</p>
+            </button>
+
+            <button onclick="openProfilesModal()" class="group bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-700 hover:shadow-md hover:bg-slate-900 transition-all text-left flex flex-col h-full relative overflow-hidden">
+                <div class="w-12 h-12 bg-slate-700 text-white rounded-2xl flex items-center justify-center mb-4 shadow-inner">🔒</div>
+                <h3 class="text-xl font-black text-white mb-2">Manage Profiles</h3>
+                <p class="text-slate-300 font-medium text-sm">Admin access to manage users, passwords and assign roles.</p>
+            </button>
+
+        </div>
     </div>
 
-    <!-- Modal Login -->
-    <div class="modal" id="loginModal">
-        <div class="modal-content">
-            <h2>🔐 Login</h2>
-            <div class="error-msg" id="loginError">Credenciais inválidas</div>
-            <div class="form-group">
-                <label>Usuário</label>
-                <input type="text" id="loginUser" placeholder="Seu nome de usuário">
+    <div id="modal-profiles" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-white p-8 rounded-3xl w-full max-w-2xl shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h3 class="text-2xl font-black text-slate-800">Profile Management</h3>
+                    <p class="text-sm text-slate-500">Edit roles or manage system configuration.</p>
+                </div>
+                <button onclick="closeProfilesModal()" class="text-slate-400 hover:text-slate-800 font-bold text-xl px-2">X</button>
             </div>
-            <div class="form-group">
-                <label>Senha</label>
-                <input type="password" id="loginPass" placeholder="Sua senha">
+
+            <!-- Admin Auth -->
+            <div id="admin-auth" class="bg-slate-50 p-6 rounded-xl border border-slate-200 mb-4 flex flex-col gap-3">
+                <label class="text-xs font-bold text-red-500 uppercase tracking-widest">Master Key Required</label>
+                <div class="flex gap-2">
+                    <input type="password" id="admin-key" class="w-full p-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-red-500" placeholder="Enter Master Key to unlock list">
+                    <button onclick="unlockProfiles()" class="px-6 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl transition-colors">Unlock</button>
+                </div>
             </div>
-            <div class="modal-buttons">
-                <button class="btn btn-secondary" onclick="closeLoginModal()">Cancelar</button>
-                <button class="btn btn-primary" onclick="doLogin()">Login</button>
+
+            <!-- Unlocked Content -->
+            <div id="admin-list" class="hidden">
+
+                <!-- Tabs -->
+                <div class="flex gap-2 mb-6 border-b border-slate-200">
+                    <button onclick="switchTab('users')" id="tab-users" class="px-4 py-2 font-bold text-sm border-b-2 border-[#547C44] text-[#547C44]">👥 Users</button>
+                    <button onclick="switchTab('roles')" id="tab-roles" class="px-4 py-2 font-bold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-700">🏷️ Roles</button>
+                </div>
+
+                <!-- Tab Users -->
+                <div id="content-users" class="tab-content">
+                    <div class="max-h-[40vh] overflow-y-auto pr-2 space-y-3" id="profiles-container"></div>
+                </div>
+
+                <!-- Tab Roles -->
+                <div id="content-roles" class="tab-content hidden">
+                    <div class="mb-4 flex gap-2">
+                        <input type="text" id="new-role-name" class="flex-1 p-3 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:border-[#547C44]" placeholder="New role name (e.g. Manager)">
+                        <button onclick="addNewRole()" class="px-6 bg-[#547C44] hover:bg-[#456638] text-white font-bold rounded-xl transition-colors">Add Role</button>
+                    </div>
+                    <div id="roles-container" class="space-y-2 max-h-[35vh] overflow-y-auto pr-2"></div>
+                </div>
+
             </div>
         </div>
     </div>
 
     <script>
-        // Supabase Config
-        const SB_URL = 'https://wkndzjnqypsyluhgrdil.supabase.co';
-        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndrbmR6am5xeXBzeWx1aGdyZGlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NzU5MTQsImV4cCI6MjA5NTA1MTkxNH0.6W9dsBVCeLzT3EIHyQ5ZFmQhEOyj586K9po4cj9wJeA';
+        // FIREBASE CONFIG
+        const firebaseConfig = {
+            apiKey: "AIzaSyBSPim1j9yxA56AeWhWhdG_8TKzh_F-gZc",
+            authDomain: "westend-c6992.firebaseapp.com",
+            projectId: "westend-c6992",
+            storageBucket: "westend-c6992.firebasestorage.app",
+            messagingSenderId: "781546407326",
+            appId: "1:781546407326:web:ed4126214f41498153428f",
+            measurementId: "G-DEGC00501H"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
 
-        // Menu fixo (visível para todos)
-        const menuItems = [
-            { id: 'r1', icon: '📋', title: 'Meus Relatórios', desc: 'Ver e gerenciar todos os relatórios' },
-            { id: 'r2', icon: '➕', title: 'Criar Relatório', desc: 'Criar um novo relatório de limpeza' },
-            { id: 'r3', icon: '👥', title: 'Gerenciar Usuários', desc: 'Gerenciar usuários do sistema', roles: ['Admin', 'IT System Admin'] },
-            { id: 'r4', icon: '⚙️', title: 'Configurações', desc: 'Configurações do sistema', roles: ['IT System Admin'] }
-        ];
+        const MASTER_KEY = "admin123";
 
-        // Verificar sessão
-        let currentUser = null;
-        const session = localStorage.getItem('session');
-        if (session) {
-            currentUser = JSON.parse(session);
-        }
+        // Roles padrão e customizados
+        let customRoles = JSON.parse(localStorage.getItem('customRoles')) || [];
+        const defaultRoles = ['Cleaner', 'Supervisor', 'Area Manager', 'Support Manager', 'IT System Admin'];
 
-        // Render menu
-        function renderMenu() {
-            const grid = document.getElementById('menuGrid');
-            grid.innerHTML = menuItems.map(item => {
-                const disabled = item.roles && !item.roles.includes(currentUser?.role);
-                return `
-                    <div class="menu-card" style="${disabled ? 'opacity:0.5;cursor:not-allowed' : ''}" 
-                         onclick="${disabled ? '' : `window.location='${item.url || '#'}'`}">
-                        <div class="menu-icon">${item.icon}</div>
-                        <div class="menu-title">${item.title}</div>
-                        <div class="menu-desc">${item.desc}</div>
-                    </div>
-                `;
-            }).join('');
-        }
+        window.onload = function() {
+            let loggedUser = localStorage.getItem('loggedUser');
+            let fullName = localStorage.getItem('loggedFullName');
+            let role = localStorage.getItem('loggedRole');
 
-        // Header buttons
-        function updateHeader() {
-            const right = document.getElementById('headerRight');
-            if (currentUser) {
-                right.innerHTML = `
-                    <span class="user-info">👤 ${currentUser.name} (${currentUser.role})</span>
-                    <button class="btn btn-danger" onclick="logout()">Sair</button>
-                `;
-            } else {
-                right.innerHTML = `<button class="btn btn-primary" onclick="showLoginModal()">Entrar</button>`;
-            }
-        }
-
-        // Login functions
-        function showLoginModal() {
-            document.getElementById('loginModal').classList.add('active');
-            document.getElementById('loginError').style.display = 'none';
-        }
-
-        function closeLoginModal() {
-            document.getElementById('loginModal').classList.remove('active');
-        }
-
-        async function doLogin() {
-            const user = document.getElementById('loginUser').value.trim();
-            const pass = document.getElementById('loginPass').value;
-            
-            if (!user || !pass) {
-                document.getElementById('loginError').style.display = 'block';
+            if (!loggedUser) {
+                window.location.href = 'index.html';
                 return;
             }
 
+            document.getElementById('user-fullname').innerText = fullName || loggedUser;
+            document.getElementById('user-role').innerText = role || 'Staff';
+
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('current-date').innerText = new Date().toLocaleDateString('en-US', options);
+        };
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'index.html';
+        }
+
+        /* --- ADMIN PROFILES LOGIC --- */
+        function openProfilesModal() {
+            document.getElementById('admin-key').value = '';
+            document.getElementById('admin-auth').classList.remove('hidden');
+            document.getElementById('admin-list').classList.add('hidden');
+            switchTab('users');
+            document.getElementById('modal-profiles').classList.remove('hidden');
+        }
+
+        function closeProfilesModal() {
+            document.getElementById('modal-profiles').classList.add('hidden');
+        }
+
+        function unlockProfiles() {
+            const key = document.getElementById('admin-key').value;
+            if(key === MASTER_KEY) {
+                document.getElementById('admin-auth').classList.add('hidden');
+                document.getElementById('admin-list').classList.remove('hidden');
+                fetchProfiles();
+                renderRoles();
+            } else {
+                alert("Incorrect Master Key!");
+            }
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('[id^="tab-"]').forEach(el => {
+                el.classList.remove('border-[#547C44]', 'text-[#547C44]');
+                el.classList.add('border-transparent', 'text-slate-500');
+            });
+            document.getElementById('content-' + tab).classList.remove('hidden');
+            document.getElementById('tab-' + tab).classList.add('border-[#547C44]', 'text-[#547C44]');
+            document.getElementById('tab-' + tab).classList.remove('border-transparent', 'text-slate-500');
+        }
+
+        async function fetchProfiles() {
+            const container = document.getElementById('profiles-container');
+            container.innerHTML = '<p class="text-center text-slate-500 py-4">Loading profiles...</p>';
+
+            const allRoles = [...defaultRoles, ...customRoles];
+
             try {
-                const res = await fetch(`${SB_URL}/rest/v1/users?fullname=eq.${encodeURIComponent(user)}&pass=eq.${pass}`, {
-                    headers: {
-                        'apikey': SB_KEY,
-                        'Authorization': `Bearer ${SB_KEY}`
-                    }
+                const snapshot = await db.collection("users").get();
+                let html = '';
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const username = doc.id;
+                    const fn = data.fullName || username;
+                    const role = data.role || 'Cleaner';
+
+                    let roleOptions = allRoles.map(r => `<option value="${r}" ${role===r?'selected':''}>${r}</option>`).join('');
+
+                    html += `
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex items-center justify-between">
+                    <div>
+                    <h4 class="font-bold text-slate-800 text-lg">${fn} <span class="text-xs font-normal text-slate-500 ml-1">(@${username})</span></h4>
+                    <select id="role-${username}" onchange="updateRole('${username}')" class="mt-1 bg-white border border-slate-300 text-slate-700 text-xs rounded px-2 py-1 font-bold outline-none cursor-pointer">
+                    ${roleOptions}
+                    </select>
+                    </div>
+                    <button onclick="deleteProfile('${username}')" class="bg-red-100 text-red-600 hover:bg-red-200 font-bold px-4 py-2 rounded-lg text-sm transition-colors">Delete</button>
+                    </div>
+                    `;
                 });
-                const data = await res.json();
-                
-                if (data && data.length > 0) {
-                    currentUser = { id: data[0].id, name: data[0].fullname, role: data[0].role };
-                    localStorage.setItem('session', JSON.stringify(currentUser));
-                    closeLoginModal();
-                    updateHeader();
-                    renderMenu();
-                } else {
-                    document.getElementById('loginError').style.display = 'block';
+                if (!html) html = '<p class="text-center text-slate-400 py-4">No users found.</p>';
+                container.innerHTML = html;
+            } catch(e) {
+                container.innerHTML = '<p class="text-center text-red-500">Error loading profiles: ' + e.message + '</p>';
+            }
+        }
+
+        async function updateRole(username) {
+            const newRole = document.getElementById(`role-${username}`).value;
+            try {
+                await db.collection("users").doc(username).update({ role: newRole });
+
+                if(username === localStorage.getItem('loggedUser')) {
+                    localStorage.setItem('loggedRole', newRole);
+                    document.getElementById('user-role').innerText = newRole;
                 }
-            } catch (e) {
-                console.error('Login error:', e);
-                // Fallback para localStorage
-                const stored = localStorage.getItem('users');
-                if (stored) {
-                    const users = JSON.parse(stored);
-                    const found = users.find(u => u.fullname === user && u.pass === pass);
-                    if (found) {
-                        currentUser = { id: found.id, name: found.fullname, role: found.role };
-                        localStorage.setItem('session', JSON.stringify(currentUser));
-                        closeLoginModal();
-                        updateHeader();
-                        renderMenu();
-                    } else {
-                        document.getElementById('loginError').style.display = 'block';
-                    }
-                } else {
-                    document.getElementById('loginError').style.display = 'block';
+            } catch(e) {
+                alert("Error updating role: " + e.message);
+            }
+        }
+
+        async function deleteProfile(username) {
+            if(confirm(`Are you sure you want to permanently delete the profile for @${username}?`)) {
+                try {
+                    await db.collection("users").doc(username).delete();
+                    fetchProfiles();
+                } catch(e) {
+                    alert("Error deleting: " + e.message);
                 }
             }
         }
 
-        function logout() {
-            currentUser = null;
-            localStorage.removeItem('session');
-            updateHeader();
-            renderMenu();
+        /* --- ROLES MANAGEMENT --- */
+        function getAllRoles() {
+            return [...defaultRoles, ...customRoles];
         }
 
-        // Iniciar
-        updateHeader();
-        renderMenu();
+        function renderRoles() {
+            const container = document.getElementById('roles-container');
+            const allRoles = getAllRoles();
+
+            let html = `
+                <div class="bg-slate-100 rounded-xl p-3 mb-4">
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">📌 Default Roles (can't be deleted)</p>
+                    <div class="flex flex-wrap gap-2">
+                        ${defaultRoles.map(r => `<span class="bg-white px-3 py-1 rounded-lg text-sm font-bold text-slate-600 border border-slate-200">${r}</span>`).join('')}
+                    </div>
+                </div>
+            `;
+
+            if (customRoles.length > 0) {
+                html += `
+                    <div class="bg-red-50 rounded-xl p-3 mb-2">
+                        <p class="text-xs font-bold text-red-500 uppercase tracking-widest mb-2">🗑️ Custom Roles</p>
+                        <div class="flex flex-wrap gap-2">
+                            ${customRoles.map((r, i) => `
+                                <span class="bg-white px-3 py-1 rounded-lg text-sm font-bold text-slate-600 border border-slate-200 flex items-center gap-2">
+                                    ${r}
+                                    <button onclick="removeRole(${i})" class="text-red-500 hover:text-red-700 font-bold ml-1">×</button>
+                                </span>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html || '<p class="text-center text-slate-400 py-4">No custom roles yet.</p>';
+        }
+
+        function addNewRole() {
+            const input = document.getElementById('new-role-name');
+            const name = input.value.trim();
+
+            if (!name) {
+                alert('Enter a role name!');
+                return;
+            }
+
+            const allRoles = getAllRoles();
+            if (allRoles.map(r => r.toLowerCase()).includes(name.toLowerCase())) {
+                alert('This role already exists!');
+                return;
+            }
+
+            customRoles.push(name);
+            localStorage.setItem('customRoles', JSON.stringify(customRoles));
+            input.value = '';
+            renderRoles();
+            fetchProfiles(); // Refresh to show new role in dropdowns
+        }
+
+        function removeRole(index) {
+            if (confirm('Delete this custom role?')) {
+                customRoles.splice(index, 1);
+                localStorage.setItem('customRoles', JSON.stringify(customRoles));
+                renderRoles();
+                fetchProfiles();
+            }
+        }
     </script>
 </body>
 </html>
