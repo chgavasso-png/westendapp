@@ -5,95 +5,123 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - West End Cleaning</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Bibliotecas Oficiais do Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
 </head>
 <body class="bg-slate-50 font-sans min-h-screen flex items-center justify-center p-4">
 
     <div class="bg-white p-10 rounded-3xl shadow-xl w-full max-w-md border border-slate-100 flex flex-col items-center relative">
-        <!-- Logo -->
         <img src="logo.png" alt="West End Cleaning Logo" class="h-24 mb-6 object-contain" onerror="this.style.display='none'">
         
-        <h2 class="text-2xl font-black text-slate-800 mb-2">Acesso ao Sistema</h2>
-        <p class="text-sm text-slate-500 font-medium mb-8 text-center">Quem é você?</p>
+        <h2 class="text-2xl font-black text-slate-800 mb-2">System Access</h2>
+        <p class="text-sm text-slate-500 font-medium mb-8 text-center">Who is logging in?</p>
 
         <div class="w-full space-y-6 flex flex-col items-center">
             
-            <!-- Botões de Seleção de Usuário -->
-            <div class="grid grid-cols-3 gap-3 w-full">
-                <button type="button" id="btn-Carlos" onclick="selecionarUsuario('Carlos')" class="user-btn py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-600 font-bold hover:bg-slate-100 transition-all font-medium text-sm">Carlos</button>
-                <button type="button" id="btn-Marcia" onclick="selecionarUsuario('Marcia')" class="user-btn py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-600 font-bold hover:bg-slate-100 transition-all font-medium text-sm">Marcia</button>
-                <button type="button" id="btn-Taynara" onclick="selecionarUsuario('Taynara')" class="user-btn py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-600 font-bold hover:bg-slate-100 transition-all font-medium text-sm">Taynara</button>
+            <!-- Lista Dinâmica de Usuários do Firebase -->
+            <div id="users-grid" class="grid grid-cols-2 gap-3 w-full max-h-48 overflow-y-auto p-1">
+                <p class="text-slate-400 text-sm col-span-2 text-center py-2">Loading users...</p>
             </div>
 
             <!-- Senha -->
             <div class="w-full">
-                <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 pl-1 text-center">Digite sua Senha</label>
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 pl-1 text-center">Enter your password</label>
                 <input type="password" id="password" class="w-full p-4 text-center bg-slate-50 border border-slate-200 rounded-xl font-bold focus:outline-none focus:border-[#547C44] focus:ring-2 focus:ring-[#547C44]/20 transition-all" placeholder="••••••••">
             </div>
 
-            <!-- Botão Entrar -->
             <button onclick="fazerLogin()" class="w-full mt-2 py-4 bg-[#547C44] hover:bg-[#436435] text-white font-bold rounded-xl shadow-md transition-colors text-lg flex items-center justify-center gap-2">
-                Entrar
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                Login
             </button>
             
             <p id="error-msg" class="text-red-500 font-bold text-sm hidden mt-2 text-center"></p>
 
-            <button onclick="abrirModalRecuperacao()" class="text-xs text-slate-400 hover:text-[#547C44] font-bold mt-2 transition-colors underline">Esqueceu ou deseja alterar sua senha?</button>
+            <button onclick="abrirModalCriar()" class="text-xs text-slate-400 hover:text-[#547C44] font-bold mt-2 transition-colors underline">Create new user profile</button>
         </div>
     </div>
 
-    <!-- MODAL DE RECUPERAÇÃO DE SENHA -->
-    <div id="modal-senha" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <!-- MODAL DE CRIAR USUÁRIO -->
+    <div id="modal-criar" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div class="bg-white p-8 rounded-3xl w-full max-w-sm shadow-2xl border border-slate-100">
-            <h3 class="text-xl font-black text-slate-800 mb-1">Trocar Senha</h3>
-            <p class="text-sm text-slate-500 mb-6">Usuário: <span id="modal-user-name" class="font-bold text-[#547C44]"></span></p>
+            <h3 class="text-xl font-black text-slate-800 mb-1">Create Profile</h3>
+            <p class="text-sm text-slate-500 mb-6">Restricted area. Requires Master Key.</p>
 
-            <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 pl-1">Sua palavra-chave secreta</label>
-            <input type="password" id="modal-keyword" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#547C44] mb-4 transition-all">
+            <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 pl-1">Name</label>
+            <input type="text" id="new-user-name" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#547C44] mb-4">
 
-            <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 pl-1">Criar Nova Senha</label>
-            <input type="password" id="modal-newpassword" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#547C44] mb-6 transition-all">
+            <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 pl-1">Create Password</label>
+            <input type="password" id="new-user-pass" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#547C44] mb-4">
 
-            <p id="modal-error" class="text-red-500 font-bold text-xs hidden mb-4 text-center"></p>
+            <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 pl-1 text-red-500">Master Secret Key</label>
+            <input type="password" id="master-key" class="w-full p-3 bg-slate-50 border border-red-200 rounded-xl focus:outline-none focus:border-red-500 mb-6" placeholder="Admin Key Required">
 
             <div class="flex gap-3">
-                <button onclick="fecharModal()" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl transition-colors">Cancelar</button>
-                <button onclick="salvarNovaSenha()" class="flex-1 py-3 bg-[#547C44] hover:bg-[#436435] text-white font-bold rounded-xl shadow-md transition-colors">Salvar Nova</button>
+                <button onclick="fecharModalCriar()" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl transition-colors">Cancel</button>
+                <button onclick="criarUsuario()" class="flex-1 py-3 bg-[#547C44] hover:bg-[#436435] text-white font-bold rounded-xl shadow-md transition-colors">Create</button>
             </div>
         </div>
     </div>
 
     <script>
-        // Configurações e Variável
-        let userSelecionado = null;
-        
-        const configPadrao = {
-            "Carlos": { pass: "866457", key: "rafael" },
-            "Marcia": { pass: "866457", key: "gavasso" },
-            "Taynara": { pass: "866457", key: "gabriel" }
+        // CONFIGURAÇÃO DO FIREBASE
+        const firebaseConfig = {
+            apiKey: "AIzaSyBSPim1j9yxA56AeWhWhdG_8TKzh_F-gZc",
+            authDomain: "westend-c6992.firebaseapp.com",
+            projectId: "westend-c6992",
+            storageBucket: "westend-c6992.firebasestorage.app",
+            messagingSenderId: "781546407326",
+            appId: "1:781546407326:web:ed4126214f41498153428f",
+            measurementId: "G-DEGC00501H"
         };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // CHAVE DE SEGURANÇA PARA CRIAR USUÁRIOS
+        const MASTER_KEY = "admin123";
+
+        let userSelecionado = null;
+        let dbUsers = {}; 
 
         window.onload = function() {
             if (localStorage.getItem('loggedUser')) window.location.href = 'menu.html';
-            if (!localStorage.getItem('users_credentials')) {
-                localStorage.setItem('users_credentials', JSON.stringify(configPadrao));
-            }
+            carregarUsuarios();
         };
 
-        function getDB() { return JSON.parse(localStorage.getItem('users_credentials')) || configPadrao; }
+        async function carregarUsuarios() {
+            const grid = document.getElementById('users-grid');
+            try {
+                const snapshot = await db.collection("users").get();
+                dbUsers = {};
+                
+                if(snapshot.empty) {
+                    grid.innerHTML = '<p class="text-slate-400 text-sm col-span-2 text-center">No users found. Create one.</p>';
+                    return;
+                }
+
+                let html = '';
+                snapshot.forEach(doc => {
+                    const nome = doc.id;
+                    const dados = doc.data();
+                    dbUsers[nome] = dados.pass;
+                    
+                    html += `<button type="button" id="btn-${nome}" onclick="selecionarUsuario('${nome}')" class="user-btn py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-600 font-bold hover:bg-slate-100 transition-all font-medium text-sm truncate px-2">${nome}</button>`;
+                });
+                grid.innerHTML = html;
+            } catch(e) {
+                grid.innerHTML = '<p class="text-red-500 text-sm col-span-2 text-center">Error loading DB</p>';
+            }
+        }
 
         function selecionarUsuario(nome) {
             userSelecionado = nome;
-            const err = document.getElementById('error-msg');
-            err.classList.add('hidden'); // limpa erros antigos
+            document.getElementById('error-msg').classList.add('hidden');
             
-            // Reseta a cor de todos
             document.querySelectorAll('.user-btn').forEach(btn => {
                 btn.classList.remove('bg-[#547C44]', 'text-white', 'border-[#547C44]', 'shadow-md');
                 btn.classList.add('bg-slate-50', 'text-slate-600', 'border-slate-200');
             });
             
-            // Colore o que foi clicado com a cor verde da logo
             const btnFocus = document.getElementById(`btn-${nome}`);
             btnFocus.classList.remove('bg-slate-50', 'text-slate-600', 'border-slate-200');
             btnFocus.classList.add('bg-[#547C44]', 'text-white', 'border-[#547C44]', 'shadow-md');
@@ -104,75 +132,49 @@
             const err = document.getElementById('error-msg');
             
             if (!userSelecionado) {
-                err.innerText = "Por favor, clique no seu nome primeiro.";
+                err.innerText = "Please select your name first.";
                 err.classList.remove('hidden');
                 return;
             }
 
-            const db = getDB();
-            
-            if (db[userSelecionado] && db[userSelecionado].pass === p) {
+            if (dbUsers[userSelecionado] === p) {
                 localStorage.setItem('loggedUser', userSelecionado);
                 window.location.href = 'menu.html';
             } else {
-                err.innerText = "Senha incorreta!";
+                err.innerText = "Incorrect Password!";
                 err.classList.remove('hidden');
             }
         }
 
-        /* ----- FUNÇÕES DA SENHA SECRETA ----- */
-        function abrirModalRecuperacao() {
-            const err = document.getElementById('error-msg');
-
-            if (!userSelecionado) {
-                err.innerText = "Para trocar a senha, clique no seu nome primeiro.";
-                err.classList.remove('hidden');
-                return;
-            }
-
-            err.classList.add('hidden');
-            document.getElementById('modal-error').classList.add('hidden');
-            document.getElementById('modal-keyword').value = '';
-            document.getElementById('modal-newpassword').value = '';
-            document.getElementById('modal-user-name').innerText = userSelecionado;
-            document.getElementById('modal-senha').classList.remove('hidden');
+        /* ----- SISTEMA DE CRIAR CONTA ----- */
+        function abrirModalCriar() {
+            document.getElementById('new-user-name').value = '';
+            document.getElementById('new-user-pass').value = '';
+            document.getElementById('master-key').value = '';
+            document.getElementById('modal-criar').classList.remove('hidden');
         }
 
-        function fecharModal() {
-            document.getElementById('modal-senha').classList.add('hidden');
+        function fecharModalCriar() {
+            document.getElementById('modal-criar').classList.add('hidden');
         }
 
-        function salvarNovaSenha() {
-            const keyDigitada = document.getElementById('modal-keyword').value.trim().toLowerCase();
-            const novaSenha = document.getElementById('modal-newpassword').value.trim();
-            const errModal = document.getElementById('modal-error');
+        async function criarUsuario() {
+            const nome = document.getElementById('new-user-name').value.trim();
+            const pass = document.getElementById('new-user-pass').value.trim();
+            const key = document.getElementById('master-key').value.trim();
 
-            const db = getDB();
-            const keyReal = db[userSelecionado].key;
+            if(!nome || !pass) return alert("Fill all fields.");
+            if(key !== MASTER_KEY) return alert("Invalid Master Key! You are not allowed to create profiles.");
 
-            if (keyDigitada !== keyReal) {
-                errModal.innerText = "Palavra-chave incorreta!";
-                errModal.classList.remove('hidden');
-                return;
+            try {
+                await db.collection("users").doc(nome).set({ pass: pass });
+                alert("Profile created successfully!");
+                fecharModalCriar();
+                carregarUsuarios();
+            } catch(e) {
+                alert("Error: " + e.message);
             }
-
-            if (novaSenha === "") {
-                errModal.innerText = "A nova senha não pode ser vazia.";
-                errModal.classList.remove('hidden');
-                return;
-            }
-
-            db[userSelecionado].pass = novaSenha;
-            localStorage.setItem('users_credentials', JSON.stringify(db));
-
-            fecharModal();
-            document.getElementById('password').value = '';
-            alert("Senha alterada com sucesso! Você já pode entrar usando sua nova senha.");
         }
-
-        document.getElementById('password').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') fazerLogin();
-        });
     </script>
 </body>
 </html>
