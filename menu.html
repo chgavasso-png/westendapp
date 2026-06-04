@@ -37,10 +37,11 @@
             </div>
         </div>
 
-        <!-- Botões do Menu -->
+        <!-- Botões do Menu (Agora com 3 colunas no desktop) -->
         <h3 class="text-lg font-bold text-slate-800 mb-4 px-2">Acesso Rápido</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             
+            <!-- Botão 1: Novo Relatório -->
             <button onclick="window.location.href='reports.html'" class="group bg-white p-8 rounded-3xl shadow-sm border border-slate-200 hover:shadow-md hover:border-[#547C44] transition-all text-left flex flex-col h-full relative overflow-hidden">
                 <div class="absolute top-0 right-0 w-24 h-24 bg-slate-50 rounded-bl-[100px] transition-colors group-hover:bg-[#547C44]/10 -z-10"></div>
                 <div class="w-14 h-14 bg-slate-100 text-[#547C44] rounded-2xl flex items-center justify-center font-bold text-3xl mb-6 shadow-inner group-hover:bg-[#547C44] group-hover:text-white transition-colors">
@@ -50,6 +51,7 @@
                 <p class="text-slate-500 font-medium">Crie e preencha um novo relatório de limpeza com fotos e detalhes.</p>
             </button>
 
+            <!-- Botão 2: Relatórios Salvos -->
             <button onclick="window.location.href='lista.html'" class="group bg-white p-8 rounded-3xl shadow-sm border border-slate-200 hover:shadow-md hover:border-[#547C44] transition-all text-left flex flex-col h-full relative overflow-hidden">
                 <div class="absolute top-0 right-0 w-24 h-24 bg-slate-50 rounded-bl-[100px] transition-colors group-hover:bg-[#547C44]/10 -z-10"></div>
                 <div class="w-14 h-14 bg-slate-100 text-[#547C44] rounded-2xl flex items-center justify-center mb-6 shadow-inner group-hover:bg-[#547C44] group-hover:text-white transition-colors">
@@ -57,6 +59,17 @@
                 </div>
                 <h3 class="text-2xl font-black text-slate-800 mb-2">Relatórios Salvos</h3>
                 <p class="text-slate-500 font-medium">Visualize os relatórios anteriores, edite ou exporte para PDF.</p>
+            </button>
+
+            <!-- Botão 3: Cleaning Schedule (NOVO) -->
+            <button onclick="window.location.href='schedule.html'" class="group bg-white p-8 rounded-3xl shadow-sm border border-slate-200 hover:shadow-md hover:border-[#547C44] transition-all text-left flex flex-col h-full relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-slate-50 rounded-bl-[100px] transition-colors group-hover:bg-[#547C44]/10 -z-10"></div>
+                <div class="w-14 h-14 bg-slate-100 text-[#547C44] rounded-2xl flex items-center justify-center mb-6 shadow-inner group-hover:bg-[#547C44] group-hover:text-white transition-colors">
+                    <!-- Ícone de Calendário -->
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                </div>
+                <h3 class="text-2xl font-black text-slate-800 mb-2">Cleaning Schedule</h3>
+                <p class="text-slate-500 font-medium">Acesse, edite e exporte o cronograma de limpeza da equipe.</p>
             </button>
 
         </div>
@@ -69,7 +82,7 @@
             if (n.includes('taynara')) return 'Taynara - Support Manager';
             if (n.includes('marcia')) return 'Marcia - Area Manager';
             if (n.includes('carlos')) return 'Carlos - IT';
-            return nome; // caso tenha outro nome no futuro
+            return nome; 
         }
 
         window.onload = function() {
@@ -79,10 +92,8 @@
                 return;
             }
             
-            // Aplica a formatação do cargo no menu
             document.getElementById('nome-usuario').innerText = formatarNomeStaff(loggedUser);
             
-            // Coloca a data bonitinha
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             document.getElementById('data-atual').innerText = new Date().toLocaleDateString('pt-BR', options);
         };
