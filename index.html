@@ -5,32 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - West End Cleaning</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
 </head>
 <body class="bg-slate-50 font-sans min-h-screen flex items-center justify-center p-4">
 
     <div class="bg-white p-10 rounded-3xl shadow-xl w-full max-w-md border border-slate-100 flex flex-col items-center relative">
         <img src="logo.png" alt="West End Cleaning" class="h-24 mb-6 object-contain" onerror="this.style.display='none'">
-        
+
         <h2 class="text-2xl font-black text-slate-800 mb-2">System Access</h2>
         <p class="text-sm text-slate-500 font-medium mb-8 text-center">Who is logging in?</p>
 
         <div class="w-full space-y-6 flex flex-col items-center">
-            
+
             <div id="users-grid" class="grid grid-cols-2 gap-3 w-full max-h-48 overflow-y-auto p-1">
                 <p class="text-slate-400 text-sm col-span-2 text-center py-2">Loading users...</p>
             </div>
 
             <div class="w-full">
                 <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 pl-1 text-center">Enter your password</label>
-                <input type="password" id="password" class="w-full p-4 text-center bg-slate-50 border border-slate-200 rounded-xl font-bold focus:outline-none focus:border-[#547C44] focus:ring-2 focus:ring-[#547C44]/20 transition-all" placeholder="••••••••">
+                <input type="password" id="password" class="w-full p-4 text-center bg-slate-50 border border-slate-200 rounded-xl font-bold focus:outline-none focus:border-[#547C44] focus:ring-2 focus:ring-[#547C44]/20 transition-all" placeholder="••••">
             </div>
 
             <button onclick="login()" class="w-full mt-2 py-4 bg-[#547C44] hover:bg-[#436435] text-white font-bold rounded-xl shadow-md transition-colors text-lg flex items-center justify-center gap-2">
                 Login
             </button>
-            
+
             <p id="error-msg" class="text-red-500 font-bold text-sm hidden mt-2 text-center"></p>
 
             <button onclick="openCreateModal()" class="text-xs text-slate-400 hover:text-[#547C44] font-bold mt-2 transition-colors underline">Create new user profile</button>
@@ -71,21 +69,12 @@
     </div>
 
     <script>
-        // FIREBASE CONFIG
-        const firebaseConfig = {
-            apiKey: "AIzaSyBSPim1j9yxA56AeWhWhdG_8TKzh_F-gZc",
-            authDomain: "westend-c6992.firebaseapp.com",
-            projectId: "westend-c6992",
-            storageBucket: "westend-c6992.firebasestorage.app",
-            messagingSenderId: "781546407326",
-            appId: "1:781546407326:web:ed4126214f41498153428f",
-            measurementId: "G-DEGC00501H"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-
+        // ===== SUPABASE CONFIG =====
+        const SUPABASE_URL = 'https://wkndzjnqypsyluhgrdil.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndrbmR6am5xeXBzeWx1aGdyZGlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NzU5MTQsImV4cCI6MjA5NTA1MTkxNH0.6W9dsBVCeLzT3EIHyQ5ZFmQhEOyj586K9po4cj9wJeA';
         const MASTER_KEY = "admin123";
 
+        const $ = id => document.getElementById(id);
         let selectedUser = null;
         let dbUsers = {}; 
 
@@ -95,48 +84,65 @@
         };
 
         async function loadUsers() {
-            const grid = document.getElementById('users-grid');
+            const grid = $('users-grid');
             try {
-                const snapshot = await db.collection("users").get();
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/users?order=fullname.asc`, {
+                    headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+                });
+                const users = await res.json();
                 dbUsers = {};
-                
-                if(snapshot.empty) {
+
+                if(!users || !users.length) {
                     grid.innerHTML = '<p class="text-slate-400 text-sm col-span-2 text-center">No users found.</p>';
                     return;
                 }
 
                 let html = '';
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    // Salvamos todos os dados localmente para o login rápido
-                    dbUsers[doc.id] = data; 
-                    
-                    html += `<button type="button" id="btn-${doc.id}" onclick="selectUser('${doc.id}')" class="user-btn py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-600 font-bold hover:bg-slate-100 transition-all font-medium text-sm truncate px-2">${doc.id}</button>`;
+                users.forEach(u => {
+                    dbUsers[u.id] = u;
+                    html += `<button type="button" id="btn-${u.id}" onclick="selectUser('${u.id}')" class="user-btn py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-600 font-bold hover:bg-slate-100 transition-all font-medium text-sm truncate px-2">${u.fullname || u.id}</button>`;
                 });
                 grid.innerHTML = html;
             } catch(e) {
-                grid.innerHTML = '<p class="text-red-500 text-sm col-span-2 text-center">Error loading users</p>';
+                // Cria usuário padrão se não existirem
+                await createDefaultUsers();
+                loadUsers();
+            }
+        }
+
+        async function createDefaultUsers() {
+            const defaults = [
+                { id: 'taynara', fullname: 'Taynara', role: 'Support Manager', pass: 'taynara' },
+                { id: 'marcia', fullname: 'Marcia', role: 'Area Manager', pass: 'marcia' },
+                { id: 'carlos', fullname: 'Carlos', role: 'IT System Admin', pass: 'carlos' },
+            ];
+            for (const u of defaults) {
+                await fetch(`${SUPABASE_URL}/rest/v1/users`, {
+                    method: 'POST',
+                    headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+                    body: JSON.stringify(u)
+                });
             }
         }
 
         function selectUser(username) {
             selectedUser = username;
-            document.getElementById('error-msg').classList.add('hidden');
-            
+            $('error-msg').classList.add('hidden');
+
             document.querySelectorAll('.user-btn').forEach(btn => {
                 btn.classList.remove('bg-[#547C44]', 'text-white', 'border-[#547C44]', 'shadow-md');
                 btn.classList.add('bg-slate-50', 'text-slate-600', 'border-slate-200');
             });
-            
-            const btnFocus = document.getElementById(`btn-${username}`);
+
+            const btnFocus = $(`btn-${username}`);
             btnFocus.classList.remove('bg-slate-50', 'text-slate-600', 'border-slate-200');
             btnFocus.classList.add('bg-[#547C44]', 'text-white', 'border-[#547C44]', 'shadow-md');
         }
 
         function login() {
-            const p = document.getElementById('password').value;
-            const err = document.getElementById('error-msg');
-            
+            const p = $('password').value;
+            const err = $('error-msg');
+
             if (!selectedUser) {
                 err.innerText = "Please select your name first.";
                 err.classList.remove('hidden');
@@ -144,13 +150,15 @@
             }
 
             const userData = dbUsers[selectedUser];
-            
-            // Suporte para usuários antigos (que só tinham senha) e novos (com FullName e Role)
-            const passwordToCheck = userData.pass || userData;
+            if (!userData) {
+                err.innerText = "User not found. Please refresh.";
+                err.classList.remove('hidden');
+                return;
+            }
 
-            if (passwordToCheck === p) {
+            if (userData.pass === p) {
                 localStorage.setItem('loggedUser', selectedUser);
-                localStorage.setItem('loggedFullName', userData.fullName || selectedUser);
+                localStorage.setItem('loggedFullName', userData.fullname || selectedUser);
                 localStorage.setItem('loggedRole', userData.role || 'Staff');
                 window.location.href = 'menu.html';
             } else {
@@ -160,32 +168,32 @@
         }
 
         function openCreateModal() {
-            document.getElementById('new-username').value = '';
-            document.getElementById('new-fullname').value = '';
-            document.getElementById('new-pass').value = '';
-            document.getElementById('master-key').value = '';
-            document.getElementById('modal-create').classList.remove('hidden');
+            $('new-username').value = '';
+            $('new-fullname').value = '';
+            $('new-pass').value = '';
+            $('master-key').value = '';
+            $('modal-create').classList.remove('hidden');
         }
 
         function closeCreateModal() {
-            document.getElementById('modal-create').classList.add('hidden');
+            $('modal-create').classList.add('hidden');
         }
 
         async function createUser() {
-            const username = document.getElementById('new-username').value.trim();
-            const fullname = document.getElementById('new-fullname').value.trim();
-            const role = document.getElementById('new-role').value;
-            const pass = document.getElementById('new-pass').value.trim();
-            const key = document.getElementById('master-key').value.trim();
+            const username = $('new-username').value.trim().toLowerCase();
+            const fullname = $('new-fullname').value.trim();
+            const role = $('new-role').value;
+            const pass = $('new-pass').value.trim();
+            const key = $('master-key').value.trim();
 
             if(!username || !fullname || !pass) return alert("Fill all fields.");
             if(key !== MASTER_KEY) return alert("Invalid Master Key!");
 
             try {
-                await db.collection("users").doc(username).set({ 
-                    fullName: fullname,
-                    role: role,
-                    pass: pass 
+                await fetch(`${SUPABASE_URL}/rest/v1/users`, {
+                    method: 'POST',
+                    headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+                    body: JSON.stringify({ id: username, fullname, role, pass })
                 });
                 alert("Profile created successfully!");
                 closeCreateModal();
