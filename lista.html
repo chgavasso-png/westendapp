@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Relatórios Salvos</title>
+    <title>Saved Reports</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
@@ -18,11 +18,11 @@
                     </svg>
                 </a>
                 <div>
-                    <h2 class="text-xl font-extrabold text-slate-800">Relatórios Salvos</h2>
+                    <h2 class="text-xl font-extrabold text-slate-800">Saved Reports</h2>
                     <p class="text-xs text-slate-500 font-medium uppercase tracking-widest mt-1">Staff: <span id="logged-user-name" class="font-bold text-slate-700"></span></p>
                 </div>
             </div>
-            <a href="reports.html" class="px-6 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl shadow-md transition-colors">+ Novo</a>
+            <a href="reports.html" class="px-6 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl shadow-md transition-colors">+ New</a>
         </div>
     </div>
 
@@ -55,7 +55,7 @@
 
         async function carregarLista() {
             const container = document.getElementById('relatorios-container');
-            container.innerHTML = '<div class="text-center p-8 text-slate-500 font-bold">Carregando relatórios...</div>';
+            container.innerHTML = '<div class="text-center p-8 text-slate-500 font-bold">Loading reports...</div>';
 
             try {
                 const res = await fetch(`${SUPABASE_URL}/rest/v1/reports?order=created_at.desc`, {
@@ -71,40 +71,40 @@
                 container.innerHTML = '';
 
                 if (!db || db.length === 0) {
-                    container.innerHTML = `<div class="bg-white p-8 rounded-2xl text-center shadow-sm border border-slate-200 text-slate-500 font-bold">Nenhum relatório salvo no sistema.</div>`;
+                    container.innerHTML = `<div class="bg-white p-8 rounded-2xl text-center shadow-sm border border-slate-200 text-slate-500 font-bold">No reports saved in the system.</div>`;
                     return;
                 }
 
                 db.forEach(rep => {
-                    let dataFormatada = rep.date ? rep.date.split('-').reverse().join('/') : 'Sem data';
+                    let dataFormatada = rep.date ? rep.date.split('-').reverse().join('/') : 'No date';
 
                     container.innerHTML += `
                         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4 hover:shadow-md transition-all">
                         <div class="flex-1">
                         <div class="flex items-center gap-3">
-                        <h3 class="text-lg font-extrabold text-slate-800">${rep.building || 'Prédio sem nome'}</h3>
+                        <h3 class="text-lg font-extrabold text-slate-800">${rep.building || 'Unnamed building'}</h3>
                         <span class="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">${rep.period || 'Daily'}</span>
                         </div>
-                        <p class="text-sm text-slate-500 mt-1"><strong>Empregado(a):</strong> ${rep.employeename || 'Não preenchido'} • <strong>Data:</strong> ${dataFormatada}</p>
+                        <p class="text-sm text-slate-500 mt-1"><strong>Employee:</strong> ${rep.employeename || 'Not provided'} • <strong>Date:</strong> ${dataFormatada}</p>
                         </div>
                         <div class="flex flex-wrap gap-2">
-                        <button onclick="editarRelatorio('${rep.id}')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm transition-colors">Editar</button>
+                        <button onclick="editarRelatorio('${rep.id}')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm transition-colors">Edit</button>
                         <button onclick="baixarPDF('${rep.id}')" id="btn-pdf-${rep.id}" class="px-4 py-2 bg-[#547C44] hover:bg-[#436435] text-white font-bold rounded-xl text-sm shadow-sm transition-colors">📄 PDF</button>
-                        <button onclick="excluirRelatorio('${rep.id}')" class="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-600 font-bold rounded-xl text-sm transition-colors">Excluir</button>
+                        <button onclick="excluirRelatorio('${rep.id}')" class="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-600 font-bold rounded-xl text-sm transition-colors">Delete</button>
                         </div>
                         </div>
                     `;
                 });
             } catch(err) {
-                console.error('Erro ao carregar lista:', err);
-                container.innerHTML = `<div class="bg-red-50 p-6 rounded-2xl text-center border border-red-200 text-red-600 font-bold">Erro ao carregar: ${err.message}</div>`;
+                console.error('Error loading list:', err);
+                container.innerHTML = `<div class="bg-red-50 p-6 rounded-2xl text-center border border-red-200 text-red-600 font-bold">Error loading: ${err.message}</div>`;
             }
         }
 
         function editarRelatorio(id) { window.location.href = `reports.html?id=${id}`; }
 
         async function excluirRelatorio(id) {
-            if (!confirm('Tem certeza que deseja apagar este relatório?')) return;
+            if (!confirm('Are you sure you want to delete this report?')) return;
 
             try {
                 const res = await fetch(`${SUPABASE_URL}/rest/v1/reports?id=eq.${id}`, {
@@ -118,7 +118,7 @@
                 if (!res.ok) throw new Error(await res.text());
                 carregarLista();
             } catch(err) {
-                alert('Erro ao excluir: ' + err.message);
+                alert('Error deleting: ' + err.message);
             }
         }
 
@@ -126,7 +126,7 @@
         async function baixarPDF(id) {
             const btn = document.getElementById(`btn-pdf-${id}`);
             const txtOriginal = btn.innerText;
-            btn.innerText = "Gerando..."; btn.disabled = true;
+            btn.innerText = "Generating..."; btn.disabled = true;
 
             try {
                 const res = await fetch(`${SUPABASE_URL}/rest/v1/reports?id=eq.${id}&limit=1`, {
@@ -140,12 +140,12 @@
                 const rep = db[0];
 
                 if (!rep) {
-                    alert('Relatório não encontrado.');
+                    alert('Report not found.');
                     btn.innerHTML = txtOriginal; btn.disabled = false;
                     return;
                 }
 
-                const b = rep.building || 'Não informado';
+                const b = rep.building || 'Not provided';
                 const e = rep.employeename || '';
                 const d = rep.date || '';
                 const s = rep.summary || '';
@@ -154,7 +154,7 @@
                 const locations = rep.locations || [];
 
                 const loggedUserAtual = localStorage.getItem('loggedUser');
-                const staffGeradorPDF = formatarNomeStaff(loggedUserAtual || 'Desconhecido');
+                const staffGeradorPDF = formatarNomeStaff(loggedUserAtual || 'Unknown');
 
                 const doc = new window.jspdf.jsPDF(); 
                 let y = 20;
@@ -210,7 +210,7 @@
                 doc.setFontSize(16); doc.setFont('helvetica', 'bold'); doc.setTextColor(...corVerde);
                 doc.text('Summary of Work', 15, y); y += 6; 
 
-                const textoPadraoResumo = `Cleaning staff member ${e || '[nome]'} carried out cleaning tasks in the following areas using appropriate machinery and equipment. The work included floor cleaning and dust removal with the machine`;
+                const textoPadraoResumo = `Cleaning staff member ${e || '[employee name]'} carried out cleaning tasks in the following areas using appropriate machinery and equipment. The work included floor cleaning and dust removal with the machine.`;
                 const txtResumo = s || textoPadraoResumo;
 
                 doc.setFontSize(12); doc.setFont('helvetica', 'normal'); 
@@ -242,7 +242,7 @@
 
                 if (!locations.length) { 
                     doc.setFontSize(12); doc.setFont('helvetica', 'normal'); doc.setTextColor(...corDado);
-                    doc.text('Nenhuma área anexada.', 15, y); y += 8; 
+                    doc.text('No areas attached.', 15, y); y += 8; 
                 } else { 
                     locations.forEach(loc => { 
                         if(y>275) { doc.addPage(); y = 20; } 
@@ -251,7 +251,7 @@
                         doc.circle(16, y - 1.5, 1.2, 'F'); 
 
                         doc.setTextColor(...corDado); doc.setFont('helvetica', 'normal'); doc.setFontSize(12); 
-                        doc.text(loc.name || 'Local sem nome', 22, y); 
+                        doc.text(loc.name || 'Unnamed location', 22, y); 
                         y += 8; 
 
                         if (loc.sublocations && loc.sublocations.length > 0) {
@@ -281,7 +281,7 @@
 
                         doc.setFontSize(14); doc.setFont('helvetica', 'normal');
                         doc.setFillColor(...corVerde); doc.rect(15, y - 4, 2, 5, 'F'); 
-                        doc.setTextColor(...corDado); doc.text(loc.name || 'Local sem nome', 20, y); 
+                        doc.setTextColor(...corDado); doc.text(loc.name || 'Unnamed location', 20, y); 
                         y += 10;
 
                         let x = 15; const imgSize = 55; const espaco = 6;
@@ -305,8 +305,8 @@
                 const dataSanitizada = d ? d.replace(/-/g, '') : 'no_date';
                 doc.save(`Cleaning_Report_${nomeSanitizado}_${selectedPeriod}_${dataSanitizada}.pdf`);
             } catch(err) {
-                console.error('Erro ao gerar PDF:', err);
-                alert('Erro ao gerar PDF: ' + err.message);
+                console.error('Error generating PDF:', err);
+                alert('Error generating PDF: ' + err.message);
             }
 
             btn.innerHTML = "📄 PDF"; btn.disabled = false;
