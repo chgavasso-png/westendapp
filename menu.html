@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Main Menu - West End Cleaning</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
 </head>
 <body class="bg-slate-100 font-sans text-slate-900 min-h-screen">
 
@@ -24,7 +22,8 @@
     </div>
 
     <div class="max-w-6xl mx-auto p-6 mt-10">
-        
+
+        <!-- Welcome Card -->
         <div class="bg-[#547C44] text-white p-8 rounded-3xl shadow-lg mb-10 flex flex-col md:flex-row justify-between items-center gap-6">
             <div>
                 <h1 class="text-3xl font-black mb-1">Welcome,</h1>
@@ -39,7 +38,7 @@
 
         <h3 class="text-lg font-bold text-slate-800 mb-4 px-2">Quick Access</h3>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            
+
             <button onclick="window.location.href='reports.html'" class="group bg-white p-6 rounded-3xl shadow-sm border border-slate-200 hover:shadow-md hover:border-[#547C44] transition-all text-left flex flex-col h-full relative overflow-hidden">
                 <div class="w-12 h-12 bg-slate-100 text-[#547C44] rounded-2xl flex items-center justify-center font-bold text-2xl mb-4 shadow-inner group-hover:bg-[#547C44] group-hover:text-white transition-colors">+</div>
                 <h3 class="text-xl font-black text-slate-800 mb-2">New Report</h3>
@@ -67,16 +66,18 @@
         </div>
     </div>
 
+    <!-- ADMIN MODAL -->
     <div id="modal-profiles" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div class="bg-white p-8 rounded-3xl w-full max-w-2xl shadow-2xl border border-slate-100">
+        <div class="bg-white p-8 rounded-3xl w-full max-w-2xl shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-6">
                 <div>
-                    <h3 class="text-2xl font-black text-slate-800">Profile Management</h3>
-                    <p class="text-sm text-slate-500">Edit roles or remove users from the system.</p>
+                    <h3 class="text-2xl font-black text-slate-800">System Configuration</h3>
+                    <p class="text-sm text-slate-500">Edit users and manage global roles.</p>
                 </div>
                 <button onclick="closeProfilesModal()" class="text-slate-400 hover:text-slate-800 font-bold text-xl px-2">X</button>
             </div>
 
+            <!-- Admin Auth -->
             <div id="admin-auth" class="bg-slate-50 p-6 rounded-xl border border-slate-200 mb-4 flex flex-col gap-3">
                 <label class="text-xs font-bold text-red-500 uppercase tracking-widest">Master Key Required</label>
                 <div class="flex gap-2">
@@ -85,15 +86,38 @@
                 </div>
             </div>
 
+            <!-- Unlocked Content -->
             <div id="admin-list" class="hidden">
-                <div class="max-h-[50vh] overflow-y-auto pr-2 space-y-3" id="profiles-container">
+
+                <!-- Tabs -->
+                <div class="flex gap-2 mb-6 border-b border-slate-200">
+                    <button onclick="switchTab('users')" id="tab-users" class="px-4 py-2 font-bold text-sm border-b-2 border-[#547C44] text-[#547C44]">👥 Users</button>
+                    <button onclick="switchTab('roles')" id="tab-roles" class="px-4 py-2 font-bold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-700">🏷️ Roles</button>
+                </div>
+
+                <!-- Tab Users -->
+                <div id="content-users" class="tab-content">
+                    <div class="max-h-[40vh] overflow-y-auto pr-2 space-y-3" id="profiles-container"></div>
+                </div>
+
+                <!-- Tab Roles -->
+                <div id="content-roles" class="tab-content hidden">
+                    <div class="mb-4 flex gap-2">
+                        <input type="text" id="new-role-name" class="flex-1 p-3 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:border-[#547C44]" placeholder="New role name (e.g. Regional Manager)">
+                        <button onclick="addNewRole()" class="px-6 bg-[#547C44] hover:bg-[#456638] text-white font-bold rounded-xl transition-colors">Add Role</button>
                     </div>
+                    <div id="roles-container" class="space-y-2 max-h-[35vh] overflow-y-auto pr-2"></div>
+                </div>
+
             </div>
         </div>
     </div>
 
-    <script>
-        // FIREBASE CONFIG
+    <!-- MODULE SCRIPT FOR FIREBASE V9+ -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getFirestore, collection, getDocs, doc, setDoc, getDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
         const firebaseConfig = {
             apiKey: "AIzaSyBSPim1j9yxA56AeWhWhdG_8TKzh_F-gZc",
             authDomain: "westend-c6992.firebaseapp.com",
@@ -103,12 +127,15 @@
             appId: "1:781546407326:web:ed4126214f41498153428f",
             measurementId: "G-DEGC00501H"
         };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
         const MASTER_KEY = "admin123";
+        const defaultRoles = ['Cleaner', 'Supervisor', 'Area Manager', 'Support Manager', 'IT System Admin'];
+        let customRoles = [];
 
-        window.onload = function() {
+        window.onload = async function() {
             let loggedUser = localStorage.getItem('loggedUser');
             let fullName = localStorage.getItem('loggedFullName');
             let role = localStorage.getItem('loggedRole');
@@ -117,83 +144,117 @@
                 window.location.href = 'index.html';
                 return;
             }
-            
+
             document.getElementById('user-fullname').innerText = fullName || loggedUser;
             document.getElementById('user-role').innerText = role || 'Staff';
-            
+
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             document.getElementById('current-date').innerText = new Date().toLocaleDateString('en-US', options);
+
+            // Tenta carregar as roles customizadas do BD global silenciosamente
+            try {
+                const rolesDoc = await getDoc(doc(db, "settings", "roles"));
+                if (rolesDoc.exists() && rolesDoc.data().list) {
+                    customRoles = rolesDoc.data().list;
+                }
+            } catch(e) {
+                console.warn("Could not load custom roles initially", e);
+            }
         };
 
-        function logout() {
+        window.logout = function() {
             localStorage.clear();
             window.location.href = 'index.html';
-        }
+        };
 
         /* --- ADMIN PROFILES LOGIC --- */
-        function openProfilesModal() {
+        window.openProfilesModal = function() {
             document.getElementById('admin-key').value = '';
             document.getElementById('admin-auth').classList.remove('hidden');
             document.getElementById('admin-list').classList.add('hidden');
+            window.switchTab('users');
             document.getElementById('modal-profiles').classList.remove('hidden');
-        }
+        };
 
-        function closeProfilesModal() {
+        window.closeProfilesModal = function() {
             document.getElementById('modal-profiles').classList.add('hidden');
-        }
+        };
 
-        function unlockProfiles() {
+        window.unlockProfiles = async function() {
             const key = document.getElementById('admin-key').value;
             if(key === MASTER_KEY) {
                 document.getElementById('admin-auth').classList.add('hidden');
                 document.getElementById('admin-list').classList.remove('hidden');
-                fetchProfiles();
+
+                // Força recarregar roles do banco de dados para garantir sync com outros admins
+                try {
+                    const rolesDoc = await getDoc(doc(db, "settings", "roles"));
+                    if (rolesDoc.exists() && rolesDoc.data().list) {
+                        customRoles = rolesDoc.data().list;
+                    }
+                } catch(e) {
+                    console.error("Error reading roles", e);
+                }
+
+                window.renderRoles();
+                await fetchProfiles();
             } else {
                 alert("Incorrect Master Key!");
             }
-        }
+        };
+
+        window.switchTab = function(tab) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('[id^="tab-"]').forEach(el => {
+                el.classList.remove('border-[#547C44]', 'text-[#547C44]');
+                el.classList.add('border-transparent', 'text-slate-500');
+            });
+            document.getElementById('content-' + tab).classList.remove('hidden');
+            document.getElementById('tab-' + tab).classList.add('border-[#547C44]', 'text-[#547C44]');
+            document.getElementById('tab-' + tab).classList.remove('border-transparent', 'text-slate-500');
+        };
 
         async function fetchProfiles() {
             const container = document.getElementById('profiles-container');
             container.innerHTML = '<p class="text-center text-slate-500 py-4">Loading profiles...</p>';
-            
+
+            const allRoles = [...defaultRoles, ...customRoles];
+
             try {
-                const snapshot = await db.collection("users").get();
+                const snapshot = await getDocs(collection(db, "users"));
                 let html = '';
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    const username = doc.id;
+                snapshot.forEach(docSnap => {
+                    const data = docSnap.data();
+                    const username = docSnap.id;
                     const fn = data.fullName || username;
                     const role = data.role || 'Cleaner';
-                    
+
+                    let roleOptions = allRoles.map(r => `<option value="${r}" ${role===r?'selected':''}>${r}</option>`).join('');
+
                     html += `
-                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex items-center justify-between">
-                            <div>
-                                <h4 class="font-bold text-slate-800 text-lg">${fn} <span class="text-xs font-normal text-slate-500 ml-1">(@${username})</span></h4>
-                                <select id="role-${username}" onchange="updateRole('${username}')" class="mt-1 bg-white border border-slate-300 text-slate-700 text-xs rounded px-2 py-1 font-bold outline-none">
-                                    <option value="Cleaner" ${role==='Cleaner'?'selected':''}>Cleaner</option>
-                                    <option value="Supervisor" ${role==='Supervisor'?'selected':''}>Supervisor</option>
-                                    <option value="Area Manager" ${role==='Area Manager'?'selected':''}>Area Manager</option>
-                                    <option value="Support Manager" ${role==='Support Manager'?'selected':''}>Support Manager</option>
-                                    <option value="IT System Admin" ${role==='IT System Admin'?'selected':''}>IT System Admin</option>
-                                </select>
-                            </div>
-                            <button onclick="deleteProfile('${username}')" class="bg-red-100 text-red-600 hover:bg-red-200 font-bold px-4 py-2 rounded-lg text-sm transition-colors">Delete</button>
-                        </div>
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex items-center justify-between">
+                    <div>
+                    <h4 class="font-bold text-slate-800 text-lg">${fn} <span class="text-xs font-normal text-slate-500 ml-1">(@${username})</span></h4>
+                    <select id="role-${username}" onchange="updateRole('${username}')" class="mt-1 bg-white border border-slate-300 text-slate-700 text-xs rounded px-2 py-1 font-bold outline-none cursor-pointer">
+                    ${roleOptions}
+                    </select>
+                    </div>
+                    <button onclick="deleteProfile('${username}')" class="bg-red-100 text-red-600 hover:bg-red-200 font-bold px-4 py-2 rounded-lg text-sm transition-colors">Delete</button>
+                    </div>
                     `;
                 });
+                if (!html) html = '<p class="text-center text-slate-400 py-4">No users found.</p>';
                 container.innerHTML = html;
             } catch(e) {
-                container.innerHTML = '<p class="text-center text-red-500">Error loading profiles.</p>';
+                container.innerHTML = '<p class="text-center text-red-500">Error loading profiles: ' + e.message + '</p>';
             }
         }
 
-        async function updateRole(username) {
+        window.updateRole = async function(username) {
             const newRole = document.getElementById(`role-${username}`).value;
             try {
-                await db.collection("users").doc(username).update({ role: newRole });
-                
-                // Se ele alterou o próprio cargo, atualiza a tela
+                await updateDoc(doc(db, "users", username), { role: newRole });
+
                 if(username === localStorage.getItem('loggedUser')) {
                     localStorage.setItem('loggedRole', newRole);
                     document.getElementById('user-role').innerText = newRole;
@@ -201,18 +262,94 @@
             } catch(e) {
                 alert("Error updating role: " + e.message);
             }
-        }
+        };
 
-        async function deleteProfile(username) {
+        window.deleteProfile = async function(username) {
             if(confirm(`Are you sure you want to permanently delete the profile for @${username}?`)) {
                 try {
-                    await db.collection("users").doc(username).delete();
+                    await deleteDoc(doc(db, "users", username));
                     fetchProfiles();
                 } catch(e) {
                     alert("Error deleting: " + e.message);
                 }
             }
+        };
+
+        /* --- ROLES MANAGEMENT --- */
+        window.renderRoles = function() {
+            const container = document.getElementById('roles-container');
+            const allRoles = [...defaultRoles, ...customRoles];
+
+            let html = `
+                <div class="bg-slate-100 rounded-xl p-3 mb-4">
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">📌 Default Roles (can't be deleted)</p>
+                    <div class="flex flex-wrap gap-2">
+                        ${defaultRoles.map(r => `<span class="bg-white px-3 py-1 rounded-lg text-sm font-bold text-slate-600 border border-slate-200">${r}</span>`).join('')}
+                    </div>
+                </div>
+            `;
+
+            if (customRoles.length > 0) {
+                html += `
+                    <div class="bg-red-50 rounded-xl p-3 mb-2">
+                        <p class="text-xs font-bold text-red-500 uppercase tracking-widest mb-2">🗑️ Custom Roles</p>
+                        <div class="flex flex-wrap gap-2">
+                            ${customRoles.map((r) => `
+                                <span class="bg-white px-3 py-1 rounded-lg text-sm font-bold text-slate-600 border border-slate-200 flex items-center gap-2">
+                                    ${r}
+                                    <button onclick="removeRole('${r}')" class="text-red-500 hover:text-red-700 font-bold ml-1">×</button>
+                                </span>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html || '<p class="text-center text-slate-400 py-4">No custom roles yet.</p>';
+        };
+
+        // Salvar papéis globalmente
+        async function saveRolesToDB() {
+            try {
+                await setDoc(doc(db, "settings", "roles"), { list: customRoles });
+            } catch (e) {
+                console.error("Error saving roles to DB", e);
+                alert("Roles foram salvos localmente, mas houve um erro no banco de dados.");
+            }
         }
+
+        window.addNewRole = async function() {
+            const input = document.getElementById('new-role-name');
+            const name = input.value.trim();
+
+            if (!name) {
+                alert('Enter a role name!');
+                return;
+            }
+
+            const allRoles = [...defaultRoles, ...customRoles];
+            if (allRoles.map(r => r.toLowerCase()).includes(name.toLowerCase())) {
+                alert('This role already exists!');
+                return;
+            }
+
+            customRoles.push(name);
+            input.value = '';
+
+            window.renderRoles();
+            await saveRolesToDB();
+            await fetchProfiles(); 
+        };
+
+        window.removeRole = async function(roleName) {
+            if (confirm(`Delete the custom role '${roleName}'?`)) {
+                customRoles = customRoles.filter(r => r !== roleName);
+                window.renderRoles();
+                await saveRolesToDB();
+                await fetchProfiles();
+            }
+        };
+
     </script>
 </body>
 </html>
