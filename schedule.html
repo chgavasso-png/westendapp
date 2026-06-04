@@ -87,7 +87,7 @@
                     <h2 class="text-xl font-bold text-slate-600 tracking-widest uppercase mt-1 text-center" contenteditable="true">Cleaning Schedule</h2>
                 </div>
 
-                <!-- SUMMARY CONTAINER (Hides entirely on PDF if empty) -->
+                <!-- SUMMARY CONTAINER -->
                 <div id="summary-container" class="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-8 relative">
                     <table class="w-full text-sm font-bold text-slate-700">
                         <tbody id="tbody-summary">
@@ -95,7 +95,6 @@
                         </tbody>
                     </table>
                 </div>
-                <!-- Button to add shift time (outside the hidden box) -->
                 <button onclick="addSummaryRow()" class="no-print -mt-6 mb-8 ml-2 text-xs font-bold text-[#547C44] hover:underline flex items-center gap-1">
                     + Add Shift Time
                 </button>
@@ -135,7 +134,7 @@
         </div>
     </div>
 
-    <!-- MODAL: TASK LIBRARY (NEW) -->
+    <!-- MODAL: TASK LIBRARY -->
     <div id="modal-tasks" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div class="bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border border-slate-100">
             <h3 class="text-xl font-black text-slate-800 mb-2">Task Library</h3>
@@ -193,9 +192,9 @@
         const db = firebase.firestore();
 
         let dbStaff = []; 
-        let dbTasks = []; // Para a Library de Tasks
+        let dbTasks = []; 
         let targetTable = null; 
-        let targetTaskCell = null; // Onde a task selecionada vai ser inserida
+        let targetTaskCell = null; 
         let currentScheduleId = null;
         
         window.onload = function() {
@@ -362,16 +361,15 @@
             }
 
             const div = document.createElement('div');
-            div.className = "task-group mb-4";
+            div.className = "task-group mb-4 relative group/cat";
             div.innerHTML = `
                 <div class="flex items-center gap-2 mb-1">
+                    <button class="no-print absolute -left-6 top-0 text-red-500 font-bold hidden group-hover/cat:block" onclick="this.closest('.task-group').remove()" title="Remove Category">X</button>
                     <div class="font-bold text-[#547C44] outline-none uppercase" contenteditable="true">${catName}</div>
-                    <button class="no-print text-red-400 hover:text-red-600 font-bold text-xs bg-red-50 px-2 rounded" onclick="this.closest('.task-group').remove()" title="Remove Category">X</button>
                 </div>
                 <ul class="task-list outline-none" contenteditable="true">${tasksHtml}</ul>
             `;
             
-            // Insert before the "+ Add Category" button
             const btn = targetTaskCell.querySelector('.add-cat-btn');
             targetTaskCell.insertBefore(div, btn);
             closePickTaskModal();
@@ -387,11 +385,9 @@
             Array.from(theadTr.children).forEach((th, i) => { if(th.getAttribute('data-col') === 'time') timeIndex = i; });
 
             if(timeIndex !== -1) {
-                // Remove it
                 theadTr.children[timeIndex].remove();
                 Array.from(tbody.children).forEach(tr => { if(tr.children[timeIndex]) tr.children[timeIndex].remove(); });
             } else {
-                // Add it back at index 1
                 const th = document.createElement('th');
                 th.className = "border border-slate-300 py-2 px-3 text-left w-1/5";
                 th.setAttribute('data-col', 'time');
@@ -408,7 +404,7 @@
             }
         }
 
-        /* ====== SUMMARY ROWS & BUG FIX ====== */
+        /* ====== SUMMARY ROWS ====== */
         function checkSummaryVisibility() {
             const tbody = document.getElementById('tbody-summary');
             const container = document.getElementById('summary-container');
@@ -515,7 +511,9 @@
 
         /* ====== ROW INSERTION ====== */
         function openRowModal(btn) {
-            targetTable = btn.parentElement.previousElementSibling.querySelector('tbody');
+            // FIX: Use closest() to securely find the correct tbody regardless of DOM wrappers
+            targetTable = btn.closest('.shift-block').querySelector('tbody');
+            
             const select = document.getElementById('select-staff');
             select.innerHTML = '<option value="">-- Select Employee --</option>' + dbStaff.map(s => `<option value="${s.id}" data-time="${s.time}">${s.name}</option>`).join('');
             document.getElementById('input-time').value = '';
@@ -526,6 +524,7 @@
             else document.getElementById('input-time').value = '';
         }
         function closeRowModal() { document.getElementById('modal-row').classList.add('hidden'); }
+        
         function confirmNewRow() {
             const select = document.getElementById('select-staff');
             if(!select.value) return alert("Select an employee.");
