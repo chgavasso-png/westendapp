@@ -195,7 +195,7 @@
         let targetTaskCell = null; 
         let currentScheduleId = null;
         
-        window.onload = function() {
+        window.onload = async function() {
             let loggedUser = localStorage.getItem('loggedUser');
             if (!loggedUser) window.location.href = 'index.html';
             
@@ -208,12 +208,19 @@
             if(document.getElementById('doc-author-name')) document.getElementById('doc-author-name').innerText = fullName;
             if(document.getElementById('doc-author-role')) document.getElementById('doc-author-role').innerText = role;
 
-            fetchStaffFromFirebase(); 
-            fetchTasksFromFirebase();
-            loadSidebarSchedules(); 
             addSummaryRow();
             addBlock();
             checkSummaryVisibility();
+
+            // Chamadas assíncronas protegidas com Catch
+            try {
+                await fetchStaffFromFirebase(); 
+                await fetchTasksFromFirebase();
+                await loadSidebarSchedules(); 
+            } catch (e) {
+                console.error("Erro na inicialização:", e);
+                document.getElementById('sidebar-list').innerHTML = `<div class="text-center text-red-500 font-bold py-4 text-sm">Error: ${e.message}</div>`;
+            }
         };
 
         /* ====== FIREBASE SCHEDULES ====== */
@@ -259,7 +266,8 @@
                         html_data: documentHtml, timestamp: firebase.firestore.FieldValue.serverTimestamp()
                     });
                 }
-                loadSidebarSchedules(); 
+                await loadSidebarSchedules(); 
+                alert("Success! Schedule saved to database.");
             } catch(e) {
                 if(e.message !== "Canceled") alert("Error saving: " + e.message);
             } finally {
@@ -269,6 +277,8 @@
 
         async function loadSidebarSchedules() {
             const list = document.getElementById('sidebar-list');
+            list.innerHTML = '<div class="text-center text-slate-400 font-bold py-4 text-sm">Loading from Firebase...</div>';
+            
             try {
                 const snapshot = await db.collection("schedules").orderBy("timestamp", "desc").get();
                 if(snapshot.empty) {
@@ -286,7 +296,10 @@
                     });
                     list.innerHTML = html;
                 }
-            } catch(e) {}
+            } catch(e) {
+                list.innerHTML = `<div class="text-center text-red-500 font-bold py-4 text-sm">Error Loading Schedules: <br><span class="text-xs font-normal">${e.message}</span></div>`;
+                console.error("Firebase Error: ", e);
+            }
         }
 
         async function loadSchedule(id, name) {
@@ -310,17 +323,25 @@
 
         async function deleteSchedule(id) {
             if(confirm("Delete this schedule permanently?")) {
-                await db.collection("schedules").doc(id).delete();
-                if(currentScheduleId === id) createNewSchedule();
-                loadSidebarSchedules();
+                try {
+                    await db.collection("schedules").doc(id).delete();
+                    if(currentScheduleId === id) createNewSchedule();
+                    loadSidebarSchedules();
+                } catch(e) {
+                    alert("Error deleting: " + e.message);
+                }
             }
         }
 
         /* ====== FIREBASE TASKS LIBRARY ====== */
         async function fetchTasksFromFirebase() {
-            const snap = await db.collection("task_templates").get();
-            dbTasks = [];
-            snap.forEach(doc => dbTasks.push({ id: doc.id, ...doc.data() }));
+            try {
+                const snap = await db.collection("task_templates").get();
+                dbTasks = [];
+                snap.forEach(doc => dbTasks.push({ id: doc.id, ...doc.data() }));
+            } catch (e) {
+                console.error("Tasks Error:", e);
+            }
         }
 
         function openTasksModal() {
@@ -336,20 +357,28 @@
             const subs = subsText.split('\n').map(s=>s.trim()).filter(s=>s!=='');
             
             if(cat) {
-                const docRef = await db.collection("task_templates").add({ category: cat, tasks: subs, time: time });
-                dbTasks.push({ id: docRef.id, category: cat, tasks: subs, time: time });
-                
-                document.getElementById('new-task-cat').value = ''; 
-                document.getElementById('new-task-time').value = '';
-                document.getElementById('new-task-subs').value = '';
-                renderTasksList();
+                try {
+                    const docRef = await db.collection("task_templates").add({ category: cat, tasks: subs, time: time });
+                    dbTasks.push({ id: docRef.id, category: cat, tasks: subs, time: time });
+                    
+                    document.getElementById('new-task-cat').value = ''; 
+                    document.getElementById('new-task-time').value = '';
+                    document.getElementById('new-task-subs').value = '';
+                    renderTasksList();
+                } catch(e) {
+                    alert("Error saving task: " + e.message);
+                }
             }
         }
         
         async function deleteTaskTemplate(id) {
-            await db.collection("task_templates").doc(id).delete();
-            dbTasks = dbTasks.filter(t => t.id !== id);
-            renderTasksList();
+            try {
+                await db.collection("task_templates").doc(id).delete();
+                dbTasks = dbTasks.filter(t => t.id !== id);
+                renderTasksList();
+            } catch(e) {
+                alert("Error deleting task: " + e.message);
+            }
         }
 
         function renderTasksList() {
@@ -370,7 +399,7 @@
         /* ====== TIME BLOCKS ====== */
         function addTimeBlock(btn, defaultTime) {
             let t = defaultTime;
-            if (typeof defaultTime !== 'string') t = "New Time"; // Se clicou diretamente no botão
+            if (typeof defaultTime !== 'string') t = "New Time";
 
             const div = document.createElement('div');
             div.className = "time-group mb-4 relative p-2 border border-transparent hover:border-slate-200 rounded-lg group/time";
@@ -405,7 +434,6 @@
                 taskTime = tmpl.time || "";
             }
 
-            // Injeta Categoria
             const div = document.createElement('div');
             div.className = "task-group mb-4 group/cat relative border border-transparent hover:border-slate-200 rounded-lg p-1 -mx-1";
             div.innerHTML = `
@@ -415,10 +443,10 @@
                 </div>
                 <ul class="task-list outline-none" contenteditable="true">${tasksHtml}</ul>
             `;
+            
             const btnCat = targetTaskCell.querySelector('.add-cat-btn');
             targetTaskCell.insertBefore(div, btnCat);
 
-            // Injeta Tempo correspondente na coluna TIME
             if (taskTime) {
                 const timeCell = targetTaskCell.closest('tr').querySelector('td[data-col="time"]');
                 if (timeCell) {
@@ -544,6 +572,49 @@
                 </div>
             `;
             container.appendChild(block);
+        }
+
+        /* ====== STAFF LOGIC ====== */
+        async function fetchStaffFromFirebase() {
+            try {
+                const snap = await db.collection("staff").get();
+                dbStaff = [];
+                snap.forEach(doc => dbStaff.push({ id: doc.id, ...doc.data() }));
+            } catch (e) {
+                console.error("Staff Error:", e);
+            }
+        }
+        function openStaffModal() { renderStaffList(); document.getElementById('modal-staff').classList.remove('hidden'); }
+        function closeStaffModal() { document.getElementById('modal-staff').classList.add('hidden'); }
+        async function saveNewStaff() {
+            const n = document.getElementById('new-staff-name').value;
+            const s = document.getElementById('new-staff-start').value;
+            const f = document.getElementById('new-staff-finish').value;
+            const time = (s&&f) ? `${s} - ${f}` : '';
+            if(n) {
+                try {
+                    const doc = await db.collection("staff").add({ name: n, time });
+                    dbStaff.push({ id: doc.id, name: n, time });
+                    document.getElementById('new-staff-name').value = ''; renderStaffList();
+                } catch(e) {
+                    alert("Error saving staff: " + e.message);
+                }
+            }
+        }
+        async function deleteStaff(id) {
+            try {
+                await db.collection("staff").doc(id).delete();
+                dbStaff = dbStaff.filter(s => s.id !== id); renderStaffList();
+            } catch(e) {
+                alert("Error deleting staff: " + e.message);
+            }
+        }
+        function renderStaffList() {
+            document.getElementById('staff-list').innerHTML = dbStaff.map(s => `
+                <li class="flex justify-between items-center bg-white p-2 px-3 border border-slate-200 rounded-lg">
+                    <div><span class="font-bold text-slate-700 block">${s.name}</span><span class="text-xs text-slate-500">${s.time}</span></div>
+                    <button onclick="deleteStaff('${s.id}')" class="text-red-500 font-bold px-2 py-1">X</button>
+                </li>`).join('');
         }
 
         /* ====== ROW INSERTION ====== */
