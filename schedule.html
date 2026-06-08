@@ -132,16 +132,26 @@
     </div>
 
     <div id="modal-tasks" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div class="bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border border-slate-100">
+        <div class="bg-white p-6 rounded-3xl w-full max-w-lg shadow-2xl border border-slate-100">
             <h3 class="text-xl font-black text-slate-800 mb-2">Task Library</h3>
-            <p class="text-sm text-slate-500 mb-4">Save categories and sub-tasks to reuse later.</p>
+            <p class="text-sm text-slate-500 mb-4">Save Building → Local → Tasks templates to reuse later.</p>
             
             <div class="flex flex-col gap-3 mb-4 border-b pb-4">
-                <input type="text" id="new-task-cat" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none font-bold text-[#547C44]" placeholder="Category Name (e.g. KITCHEN)">
-                <textarea id="new-task-subs" rows="3" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none text-sm" placeholder="Sub-tasks (One per line)&#10;Clean floor&#10;Wash dishes"></textarea>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1 pl-1">Building</label>
+                    <input type="text" id="new-task-building" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none font-bold text-slate-800" placeholder="Building Name (e.g. West End Tower)">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1 pl-1">Local / Area</label>
+                    <input type="text" id="new-task-cat" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none font-bold text-[#547C44]" placeholder="Local Name (e.g. KITCHEN)">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1 pl-1">Tasks</label>
+                    <textarea id="new-task-subs" rows="3" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none text-sm" placeholder="Sub-tasks (One per line)&#10;Clean floor&#10;Wash dishes"></textarea>
+                </div>
                 <button onclick="saveNewTaskTemplate()" class="w-full py-3 mt-1 bg-[#547C44] hover:bg-[#436435] text-white font-bold rounded-xl">Save to Library</button>
             </div>
-            <ul id="tasks-lib-list" class="space-y-2 max-h-48 overflow-y-auto mb-6"></ul>
+            <div id="tasks-lib-container" class="max-h-64 overflow-y-auto mb-6"></div>
             <button onclick="closeTasksModal()" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl">Close</button>
         </div>
     </div>
@@ -163,7 +173,10 @@
     <div id="modal-pick-task" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div class="bg-white p-6 rounded-3xl w-full max-w-sm shadow-2xl border border-slate-100">
             <h3 class="text-xl font-black text-slate-800 mb-4">Insert Category</h3>
-            <select id="select-task-template" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl mb-6 font-bold"></select>
+            <label class="block text-xs font-bold text-slate-500 uppercase mb-1 pl-1">Building</label>
+            <select id="select-pick-building" onchange="onPickBuildingChange()" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl mb-3 font-bold"></select>
+            <label class="block text-xs font-bold text-slate-500 uppercase mb-1 pl-1">Local / Area</label>
+            <select id="select-pick-local" onchange="onPickLocalChange()" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl mb-6 font-bold"></select>
             <div class="flex gap-3">
                 <button onclick="closePickTaskModal()" class="flex-1 py-3 bg-slate-100 font-bold rounded-xl">Cancel</button>
                 <button onclick="confirmPickTask()" class="flex-1 py-3 bg-[#547C44] text-white font-bold rounded-xl">Add Task</button>
@@ -305,7 +318,7 @@
             }
         }
 
-        /* ====== FIREBASE TASKS LIBRARY ====== */
+        /* ====== FIREBASE TASKS LIBRARY (3 LEVELS: Building → Local → Tasks) ====== */
         async function fetchTasksFromFirebase() {
             const snap = await db.collection("task_templates").get();
             dbTasks = [];
@@ -319,15 +332,20 @@
         function closeTasksModal() { document.getElementById('modal-tasks').classList.add('hidden'); }
 
         async function saveNewTaskTemplate() {
+            const building = document.getElementById('new-task-building').value.trim();
             const cat = document.getElementById('new-task-cat').value.trim();
             const subsText = document.getElementById('new-task-subs').value;
             const subs = subsText.split('\n').map(s=>s.trim()).filter(s=>s!=='');
             
-            if(cat) {
-                const docRef = await db.collection("task_templates").add({ category: cat, tasks: subs });
-                dbTasks.push({ id: docRef.id, category: cat, tasks: subs });
-                document.getElementById('new-task-cat').value = ''; document.getElementById('new-task-subs').value = '';
+            if(building && cat) {
+                const docRef = await db.collection("task_templates").add({ building: building, category: cat, tasks: subs });
+                dbTasks.push({ id: docRef.id, building: building, category: cat, tasks: subs });
+                document.getElementById('new-task-building').value = '';
+                document.getElementById('new-task-cat').value = '';
+                document.getElementById('new-task-subs').value = '';
                 renderTasksList();
+            } else {
+                alert("Please fill in both Building and Local fields.");
             }
         }
         
@@ -338,26 +356,90 @@
         }
 
         function renderTasksList() {
-            const ul = document.getElementById('tasks-lib-list');
-            ul.innerHTML = dbTasks.map(t => `
-                <li class="flex justify-between items-center bg-white p-3 border border-slate-200 rounded-lg">
-                    <div>
-                        <span class="font-bold text-[#547C44] block">${t.category}</span>
-                        <span class="text-xs text-slate-500">${t.tasks.length} sub-tasks</span>
-                    </div>
-                    <button onclick="deleteTaskTemplate('${t.id}')" class="text-red-500 font-bold px-2 py-1">X</button>
-                </li>`).join('');
+            const container = document.getElementById('tasks-lib-container');
+            
+            // Agrupa por building
+            const grouped = {};
+            dbTasks.forEach(t => {
+                const b = t.building || 'No Building';
+                if (!grouped[b]) grouped[b] = [];
+                grouped[b].push(t);
+            });
+
+            let html = '';
+            for (const [building, tasks] of Object.entries(grouped)) {
+                html += `
+                <div class="mb-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-xs font-black text-slate-500 uppercase tracking-wider">🏢 ${building}</span>
+                        <span class="text-xs text-slate-400">(${tasks.length} locals)</span>
+                    </div>`;
+                tasks.forEach(t => {
+                    html += `
+                    <div class="flex justify-between items-center bg-white p-2 px-3 border border-slate-200 rounded-lg ml-3 mb-1">
+                        <div>
+                            <span class="font-bold text-[#547C44] text-sm block">📍 ${t.category}</span>
+                            <span class="text-xs text-slate-500">${t.tasks.length} tasks</span>
+                        </div>
+                        <button onclick="deleteTaskTemplate('${t.id}')" class="text-red-400 hover:text-red-600 font-bold px-2 py-1 text-xs">X</button>
+                    </div>`;
+                });
+                html += `</div>`;
+            }
+
+            if (Object.keys(grouped).length === 0) {
+                html = '<div class="text-center text-slate-400 font-medium py-4 text-sm">No templates saved yet.</div>';
+            }
+
+            container.innerHTML = html;
         }
 
-        /* ====== PICK TASK MODAL (BUGFIX) ====== */
+        /* ====== PICK TASK MODAL (3 LEVELS: Building → Local → Tasks) ====== */
         function openPickTaskModal(btn) {
             targetTaskCell = btn.closest('td');
-            const sel = document.getElementById('select-task-template');
-            sel.innerHTML = `<option value="blank">-- Create Blank Category --</option>` +
-                            dbTasks.map((t, i) => `<option value="${i}">${t.category}</option>`).join('');
+            
+            // Preenche o select de Buildings (únicos)
+            const buildings = [...new Set(dbTasks.map(t => t.building || 'No Building'))];
+            const selBuilding = document.getElementById('select-pick-building');
+            selBuilding.innerHTML = `<option value="">-- Select Building --</option>` +
+                `<option value="blank">-- Create Blank Category --</option>` +
+                buildings.map(b => `<option value="${b}">${b}</option>`).join('');
+            
+            // Limpa o select de Locals
+            document.getElementById('select-pick-local').innerHTML = `<option value="">-- First select a Building --</option>`;
+            
             document.getElementById('modal-pick-task').classList.remove('hidden');
         }
         function closePickTaskModal() { document.getElementById('modal-pick-task').classList.add('hidden'); }
+
+        function onPickBuildingChange() {
+            const building = document.getElementById('select-pick-building').value;
+            const selLocal = document.getElementById('select-pick-local');
+            
+            if (building === 'blank') {
+                selLocal.innerHTML = `<option value="blank">-- Create Blank Category --</option>`;
+                return;
+            }
+            
+            if (!building) {
+                selLocal.innerHTML = `<option value="">-- First select a Building --</option>`;
+                return;
+            }
+            
+            // Filtra os locals daquele building
+            const locals = dbTasks.filter(t => (t.building || 'No Building') === building);
+            selLocal.innerHTML = `<option value="">-- Select Local --</option>` +
+                `<option value="blank">-- Create Blank Category --</option>` +
+                locals.map((t, i) => {
+                    // Guarda o índice original no dbTasks
+                    const origIdx = dbTasks.indexOf(t);
+                    return `<option value="${origIdx}">${t.category}</option>`;
+                }).join('');
+        }
+
+        function onPickLocalChange() {
+            // Placeholder para futuras ações
+        }
 
         function buildTaskGroupMarkup(catName, tasksHtml) {
             return `
@@ -460,14 +542,22 @@
         }
         
         function confirmPickTask() {
-            const val = document.getElementById('select-task-template').value;
+            const buildingVal = document.getElementById('select-pick-building').value;
+            const localVal = document.getElementById('select-pick-local').value;
+            
             let catName = "New Category";
             let tasksHtml = "<li>New task...</li>";
 
-            if (val !== "blank") {
-                const tmpl = dbTasks[val];
-                catName = tmpl.category;
-                tasksHtml = tmpl.tasks.map(t => `<li>${t}</li>`).join('');
+            if (buildingVal === 'blank' || localVal === 'blank') {
+                // Cria categoria em branco
+                catName = "New Category";
+                tasksHtml = "<li>New task...</li>";
+            } else if (localVal && localVal !== '') {
+                const tmpl = dbTasks[parseInt(localVal)];
+                if (tmpl) {
+                    catName = tmpl.category;
+                    tasksHtml = tmpl.tasks.map(t => `<li>${t}</li>`).join('');
+                }
             }
 
             const div = document.createElement('div');
@@ -679,4 +769,3 @@
     </script>
 </body>
 </html>
-
