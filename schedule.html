@@ -458,7 +458,7 @@
                     <div class="subtitle-block border-l-2 border-[#547C44]/30 pl-3 group/sub">
                         <div class="flex items-center gap-2 mb-1">
                             <div class="font-bold text-slate-700 outline-none text-sm flex-1" contenteditable="true">General</div>
-                            <button class="sub-add-time-btn no-print text-[10px] font-bold bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full whitespace-nowrap hidden hover:bg-[#547C44]/20 hover:text-[#547C44] transition-colors" onclick="addSubBlockTime(this)">+ Time</button>
+                            <button class="sub-add-time-btn no-print text-[10px] font-bold bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full whitespace-nowrap opacity-0 group-hover/sub:opacity-100 hover:bg-[#547C44]/20 hover:text-[#547C44] transition-all" onclick="addSubBlockTime(this)">+ Time</button>
                             <span class="sub-time-badge hidden items-center gap-1 bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-full">
                                 <span class="sub-time-text outline-none" contenteditable="true">19:00 - 20:30</span>
                                 <button class="no-print text-slate-400 hover:text-red-600 leading-none font-black" onclick="removeSubBlockTime(this)" title="Remove time">×</button>
@@ -590,7 +590,7 @@
             block.innerHTML = `
                 <div class="flex items-center gap-2 mb-1">
                     <div class="font-bold text-slate-700 outline-none text-sm flex-1" contenteditable="true">New Sub-title</div>
-                    <button class="sub-add-time-btn no-print text-[10px] font-bold bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full whitespace-nowrap hover:bg-[#547C44]/20 hover:text-[#547C44] transition-colors" onclick="addSubBlockTime(this)">+ Time</button>
+                    <button class="sub-add-time-btn no-print text-[10px] font-bold bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full whitespace-nowrap opacity-0 group-hover/sub:opacity-100 hover:bg-[#547C44]/20 hover:text-[#547C44] transition-all" onclick="addSubBlockTime(this)">+ Time</button>
                     <span class="sub-time-badge hidden items-center gap-1 bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-full">
                         <span class="sub-time-text outline-none" contenteditable="true">19:00 - 20:30</span>
                         <button class="no-print text-slate-400 hover:text-red-600 leading-none font-black" onclick="removeSubBlockTime(this)" title="Remove time">×</button>
