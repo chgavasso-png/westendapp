@@ -367,6 +367,20 @@
                 </li>`).join('');
         }
 
+        /* ====== TIME BLOCKS ====== */
+        function addTimeBlock(btn, defaultTime) {
+            let t = defaultTime;
+            if (typeof defaultTime !== 'string') t = "New Time"; // Se clicou diretamente no botão
+
+            const div = document.createElement('div');
+            div.className = "time-group mb-4 relative p-2 border border-transparent hover:border-slate-200 rounded-lg group/time";
+            div.innerHTML = `
+                <div class="font-bold text-slate-600 outline-none" contenteditable="true">${t}</div>
+                <button class="no-print opacity-0 group-hover/time:opacity-100 bg-red-100 text-red-600 text-xs px-2 py-1 rounded transition-opacity absolute right-0 top-0" onclick="this.closest('.time-group').remove()">X</button>
+            `;
+            btn.parentElement.insertBefore(div, btn);
+        }
+
         /* ====== PICK TASK MODAL ====== */
         function openPickTaskModal(btn) {
             targetTaskCell = btn.closest('td');
@@ -378,7 +392,6 @@
         }
         function closePickTaskModal() { document.getElementById('modal-pick-task').classList.add('hidden'); }
         
-        // MODIFICADO PARA INSERIR O TEMPO NA COLUNA "TIME" (À ESQUERDA) E NÃO NA TAREFA
         function confirmPickTask() {
             const val = document.getElementById('select-task-template').value;
             let catName = "New Category";
@@ -392,7 +405,7 @@
                 taskTime = tmpl.time || "";
             }
 
-            // Cria o bloco da Tarefa (apenas a categoria e a lista, sem o tempo)
+            // Injeta Categoria
             const div = document.createElement('div');
             div.className = "task-group mb-4 group/cat relative border border-transparent hover:border-slate-200 rounded-lg p-1 -mx-1";
             div.innerHTML = `
@@ -402,16 +415,17 @@
                 </div>
                 <ul class="task-list outline-none" contenteditable="true">${tasksHtml}</ul>
             `;
-            
-            const btn = targetTaskCell.querySelector('.add-cat-btn');
-            targetTaskCell.insertBefore(div, btn);
+            const btnCat = targetTaskCell.querySelector('.add-cat-btn');
+            targetTaskCell.insertBefore(div, btnCat);
 
-            // Se houver tempo definido na tarefa, insere na coluna "Time" da mesma linha
+            // Injeta Tempo correspondente na coluna TIME
             if (taskTime) {
                 const timeCell = targetTaskCell.closest('tr').querySelector('td[data-col="time"]');
                 if (timeCell) {
-                    // Adiciona o tempo numa nova linha editável dentro da coluna "Time"
-                    timeCell.innerHTML += `<div contenteditable="true" class="outline-none mt-2 font-bold text-[#547C44] text-sm">${taskTime}</div>`;
+                    const btnTime = timeCell.querySelector('.add-time-btn');
+                    if (btnTime) {
+                        addTimeBlock(btnTime, taskTime);
+                    }
                 }
             }
 
@@ -444,9 +458,15 @@
 
                 Array.from(tbody.children).forEach(tr => {
                     const td = document.createElement('td');
-                    td.className = "border border-slate-300 py-3 px-3 font-bold text-slate-600 align-top";
+                    td.className = "border border-slate-300 py-3 px-3 align-top";
                     td.setAttribute('data-col', 'time');
-                    td.innerHTML = `<div contenteditable="true" class="outline-none">19:00 - 01:00</div>`;
+                    td.innerHTML = `
+                        <div class="time-group mb-4 relative p-2 border border-transparent hover:border-slate-200 rounded-lg group/time">
+                            <div class="font-bold text-slate-600 outline-none" contenteditable="true">19:00 - 01:00</div>
+                            <button class="no-print opacity-0 group-hover/time:opacity-100 bg-red-100 text-red-600 text-xs px-2 py-1 rounded transition-opacity absolute right-0 top-0" onclick="this.closest('.time-group').remove()">X</button>
+                        </div>
+                        <button class="add-time-btn no-print text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-1 rounded transition-colors mb-2" onclick="addTimeBlock(this)">+ Add Time</button>
+                    `;
                     tr.insertBefore(td, tr.children[1]);
                 });
             }
@@ -526,37 +546,6 @@
             container.appendChild(block);
         }
 
-        /* ====== STAFF LOGIC ====== */
-        async function fetchStaffFromFirebase() {
-            const snap = await db.collection("staff").get();
-            dbStaff = [];
-            snap.forEach(doc => dbStaff.push({ id: doc.id, ...doc.data() }));
-        }
-        function openStaffModal() { renderStaffList(); document.getElementById('modal-staff').classList.remove('hidden'); }
-        function closeStaffModal() { document.getElementById('modal-staff').classList.add('hidden'); }
-        async function saveNewStaff() {
-            const n = document.getElementById('new-staff-name').value;
-            const s = document.getElementById('new-staff-start').value;
-            const f = document.getElementById('new-staff-finish').value;
-            const time = (s&&f) ? `${s} - ${f}` : '';
-            if(n) {
-                const doc = await db.collection("staff").add({ name: n, time });
-                dbStaff.push({ id: doc.id, name: n, time });
-                document.getElementById('new-staff-name').value = ''; renderStaffList();
-            }
-        }
-        async function deleteStaff(id) {
-            await db.collection("staff").doc(id).delete();
-            dbStaff = dbStaff.filter(s => s.id !== id); renderStaffList();
-        }
-        function renderStaffList() {
-            document.getElementById('staff-list').innerHTML = dbStaff.map(s => `
-                <li class="flex justify-between items-center bg-white p-2 px-3 border border-slate-200 rounded-lg">
-                    <div><span class="font-bold text-slate-700 block">${s.name}</span><span class="text-xs text-slate-500">${s.time}</span></div>
-                    <button onclick="deleteStaff('${s.id}')" class="text-red-500 font-bold px-2 py-1">X</button>
-                </li>`).join('');
-        }
-
         /* ====== ROW INSERTION ====== */
         function openRowModal(btn) {
             let container = btn.closest('.shift-block') || btn.closest('.mb-10');
@@ -584,7 +573,13 @@
             const theadTr = targetTable.closest('table').querySelector('thead tr');
             const hasTimeCol = theadTr.children.length >= 3;
 
-            const tdTimeHtml = hasTimeCol ? `<td class="border border-slate-300 py-3 px-3 font-bold text-slate-600 align-top" data-col="time"><div contenteditable="true" class="outline-none">${time}</div></td>` : '';
+            const tdTimeHtml = hasTimeCol ? `<td class="border border-slate-300 py-3 px-3 align-top" data-col="time">
+                <div class="time-group mb-4 relative p-2 border border-transparent hover:border-slate-200 rounded-lg group/time">
+                    <div class="font-bold text-slate-600 outline-none" contenteditable="true">${time}</div>
+                    <button class="no-print opacity-0 group-hover/time:opacity-100 bg-red-100 text-red-600 text-xs px-2 py-1 rounded transition-opacity absolute right-0 top-0" onclick="this.closest('.time-group').remove()">X</button>
+                </div>
+                <button class="add-time-btn no-print text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-1 rounded transition-colors mb-2" onclick="addTimeBlock(this)">+ Add Time</button>
+            </td>` : '';
 
             const tr = document.createElement('tr');
             tr.className = "group/row";
