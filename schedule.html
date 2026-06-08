@@ -1,3 +1,5 @@
+thats my code 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -453,6 +455,10 @@
                         </span>
                     </div>
                     <button class="no-print opacity-0 group-hover/cat:opacity-100 bg-red-100 text-red-600 text-xs px-2 py-1 rounded transition-opacity" onclick="this.closest('.task-group').remove()">Remove</button>
+                    <div class="no-print opacity-0 group-hover/cat:opacity-100 flex flex-col gap-0.5 transition-opacity">
+                        <button class="bg-slate-100 hover:bg-[#547C44]/20 text-slate-500 hover:text-[#547C44] text-[10px] px-1.5 py-0.5 rounded leading-none font-bold" onclick="moveTaskUp(this)" title="Move up">▲</button>
+                        <button class="bg-slate-100 hover:bg-[#547C44]/20 text-slate-500 hover:text-[#547C44] text-[10px] px-1.5 py-0.5 rounded leading-none font-bold" onclick="moveTaskDown(this)" title="Move down">▼</button>
+                    </div>
                 </div>
                 <div class="subtitle-blocks space-y-3 mt-2">
                     <div class="subtitle-block border-l-2 border-[#547C44]/30 pl-3 group/sub">
@@ -579,6 +585,24 @@
 
             if (isTimeColumnEnabledForGroup(group)) {
                 addBtn.classList.remove('hidden');
+            }
+        }
+
+        function moveTaskUp(btn) {
+            const group = btn.closest('.task-group');
+            const cell = group.closest('.task-cell');
+            const prev = group.previousElementSibling;
+            if (prev && prev.classList.contains('task-group')) {
+                cell.insertBefore(group, prev);
+            }
+        }
+
+        function moveTaskDown(btn) {
+            const group = btn.closest('.task-group');
+            const cell = group.closest('.task-cell');
+            const next = group.nextElementSibling;
+            if (next && next.classList.contains('task-group')) {
+                cell.insertBefore(next, group);
             }
         }
 
@@ -879,3 +903,6 @@
     </script>
 </body>
 </html>
+
+
+lets work on it
