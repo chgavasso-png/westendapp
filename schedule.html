@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -454,8 +455,17 @@
                     </div>
                     <button class="no-print opacity-0 group-hover/cat:opacity-100 bg-red-100 text-red-600 text-xs px-2 py-1 rounded transition-opacity" onclick="this.closest('.task-group').remove()">Remove</button>
                 </div>
-                <ul class="task-list outline-none" contenteditable="true">${tasksHtml}</ul>
-                <button class="add-subtask-btn no-print text-[11px] font-bold text-slate-500 hover:text-[#547C44] mt-1 flex items-center gap-1 transition-colors" onclick="addSubTask(this)">+ Add Sub-task</button>
+                <div class="subtitle-blocks space-y-3 mt-2">
+                    <div class="subtitle-block border-l-2 border-[#547C44]/30 pl-3">
+                        <div class="flex items-center gap-2 mb-1">
+                            <div class="font-semibold text-slate-700 outline-none text-sm flex-1" contenteditable="true">General</div>
+                            <button class="no-print text-[10px] text-red-400 hover:text-red-600 font-bold opacity-0 group-hover/sub:opacity-100 transition-opacity" onclick="this.closest('.subtitle-block').remove()" title="Remove sub-title">×</button>
+                        </div>
+                        <ul class="task-list outline-none" contenteditable="true">${tasksHtml}</ul>
+                        <button class="no-print text-[10px] font-bold text-slate-400 hover:text-[#547C44] mt-1 flex items-center gap-1 transition-colors" onclick="addSubTaskToBlock(this)">+ Add Sub-task</button>
+                    </div>
+                </div>
+                <button class="add-subtitle-btn no-print text-[11px] font-bold text-slate-500 hover:text-[#547C44] mt-2 flex items-center gap-1 transition-colors" onclick="addSubTitleBlock(this)">+ Add Sub-title</button>
             `;
         }
 
@@ -542,9 +552,36 @@
             }
         }
 
-        function addSubTask(btn) {
+        function addSubTitleBlock(btn) {
             const group = btn.closest('.task-group');
-            const taskList = group.querySelector('.task-list');
+            const container = group.querySelector('.subtitle-blocks');
+            const block = document.createElement('div');
+            block.className = 'subtitle-block border-l-2 border-[#547C44]/30 pl-3 group/sub';
+            block.innerHTML = `
+                <div class="flex items-center gap-2 mb-1">
+                    <div class="font-semibold text-slate-700 outline-none text-sm flex-1" contenteditable="true">New Sub-title</div>
+                    <button class="no-print text-[10px] text-red-400 hover:text-red-600 font-bold opacity-0 group-hover/sub:opacity-100 transition-opacity" onclick="this.closest('.subtitle-block').remove()" title="Remove sub-title">×</button>
+                </div>
+                <ul class="task-list outline-none" contenteditable="true"><li>New sub-task...</li></ul>
+                <button class="no-print text-[10px] font-bold text-slate-400 hover:text-[#547C44] mt-1 flex items-center gap-1 transition-colors" onclick="addSubTaskToBlock(this)">+ Add Sub-task</button>
+            `;
+            container.appendChild(block);
+            // Foca no subtítulo
+            const subTitleEl = block.querySelector('[contenteditable="true"]');
+            if (subTitleEl) {
+                subTitleEl.focus();
+                // Seleciona o texto para facilitar sobrescrever
+                const range = document.createRange();
+                range.selectNodeContents(subTitleEl);
+                const sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(range);
+            }
+        }
+
+        function addSubTaskToBlock(btn) {
+            const block = btn.closest('.subtitle-block');
+            const taskList = block.querySelector('.task-list');
             const li = document.createElement('li');
             li.textContent = 'New sub-task...';
             li.contentEditable = 'true';
@@ -557,12 +594,12 @@
             const localVal = document.getElementById('select-pick-local').value;
             
             let catName = "New Category";
-            let tasksHtml = "<li>New task...</li>";
+            let tasksHtml = "<li>New sub-task...</li>";
 
             if (buildingVal === 'blank' || localVal === 'blank') {
                 // Cria categoria em branco
                 catName = "New Category";
-                tasksHtml = "<li>New task...</li>";
+                tasksHtml = "<li>New sub-task...</li>";
             } else if (localVal && localVal !== '') {
                 const tmpl = dbTasks[parseInt(localVal)];
                 if (tmpl) {
