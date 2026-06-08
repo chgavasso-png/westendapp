@@ -134,14 +134,10 @@
     <div id="modal-tasks" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div class="bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border border-slate-100">
             <h3 class="text-xl font-black text-slate-800 mb-2">Task Library</h3>
-            <p class="text-sm text-slate-500 mb-4">Save categories, schedules, and sub-tasks to reuse later.</p>
+            <p class="text-sm text-slate-500 mb-4">Save categories and sub-tasks to reuse later.</p>
             
             <div class="flex flex-col gap-3 mb-4 border-b pb-4">
-                <div class="flex gap-2">
-                    <input type="text" id="new-task-cat" class="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none font-bold text-[#547C44]" placeholder="Category (e.g. KITCHEN)">
-                    <input type="text" id="new-task-time" class="w-1/3 p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none text-sm font-bold text-slate-700" placeholder="Time (Optional)">
-                </div>
-                
+                <input type="text" id="new-task-cat" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none font-bold text-[#547C44]" placeholder="Category Name (e.g. KITCHEN)">
                 <textarea id="new-task-subs" rows="3" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none text-sm" placeholder="Sub-tasks (One per line)&#10;Clean floor&#10;Wash dishes"></textarea>
                 <button onclick="saveNewTaskTemplate()" class="w-full py-3 mt-1 bg-[#547C44] hover:bg-[#436435] text-white font-bold rounded-xl">Save to Library</button>
             </div>
@@ -167,7 +163,7 @@
     <div id="modal-pick-task" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div class="bg-white p-6 rounded-3xl w-full max-w-sm shadow-2xl border border-slate-100">
             <h3 class="text-xl font-black text-slate-800 mb-4">Insert Category</h3>
-            <select id="select-task-template" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl mb-6 font-bold text-sm"></select>
+            <select id="select-task-template" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl mb-6 font-bold"></select>
             <div class="flex gap-3">
                 <button onclick="closePickTaskModal()" class="flex-1 py-3 bg-slate-100 font-bold rounded-xl">Cancel</button>
                 <button onclick="confirmPickTask()" class="flex-1 py-3 bg-[#547C44] text-white font-bold rounded-xl">Add Task</button>
@@ -195,32 +191,28 @@
         let targetTaskCell = null; 
         let currentScheduleId = null;
         
-        window.onload = async function() {
+        window.onload = function() {
             let loggedUser = localStorage.getItem('loggedUser');
             if (!loggedUser) window.location.href = 'index.html';
             
+            // Lógica aperfeiçoada para garantir que o nome e cargo apareçam
             let fullName = localStorage.getItem('loggedFullName');
-            if (!fullName || fullName === 'undefined') fullName = loggedUser; 
+            if (!fullName || fullName === 'undefined') fullName = loggedUser; // Fallback
             
             let role = localStorage.getItem('loggedRole');
-            if (!role || role === 'undefined') role = 'Supervisor'; 
+            if (!role || role === 'undefined') role = 'Supervisor'; // Fallback
 
-            if(document.getElementById('doc-author-name')) document.getElementById('doc-author-name').innerText = fullName;
-            if(document.getElementById('doc-author-role')) document.getElementById('doc-author-role').innerText = role;
+            document.getElementById('doc-author-name').innerText = fullName;
+            document.getElementById('doc-author-role').innerText = role;
 
+            fetchStaffFromFirebase(); 
+            fetchTasksFromFirebase();
+            loadSidebarSchedules(); 
             addSummaryRow();
             addBlock();
             checkSummaryVisibility();
-
-            // Chamadas assíncronas protegidas com Catch
-            try {
-                await fetchStaffFromFirebase(); 
-                await fetchTasksFromFirebase();
-                await loadSidebarSchedules(); 
-            } catch (e) {
-                console.error("Erro na inicialização:", e);
-                document.getElementById('sidebar-list').innerHTML = `<div class="text-center text-red-500 font-bold py-4 text-sm">Error: ${e.message}</div>`;
-            }
+            ensureTaskTimeControls(document.getElementById('document-a4'));
+            refreshTaskTimeButtons(document.getElementById('document-a4'));
         };
 
         /* ====== FIREBASE SCHEDULES ====== */
@@ -233,12 +225,6 @@
                 currentScheduleId = null;
                 document.getElementById('tbody-summary').innerHTML = '';
                 document.getElementById('blocks-container').innerHTML = '';
-                
-                let fullName = localStorage.getItem('loggedFullName') || localStorage.getItem('loggedUser');
-                let role = localStorage.getItem('loggedRole') || 'Staff';
-                if(document.getElementById('doc-author-name')) document.getElementById('doc-author-name').innerText = fullName;
-                if(document.getElementById('doc-author-role')) document.getElementById('doc-author-role').innerText = role;
-
                 addSummaryRow();
                 addBlock();
                 updateStatusName(null);
@@ -266,8 +252,7 @@
                         html_data: documentHtml, timestamp: firebase.firestore.FieldValue.serverTimestamp()
                     });
                 }
-                await loadSidebarSchedules(); 
-                alert("Success! Schedule saved to database.");
+                loadSidebarSchedules(); 
             } catch(e) {
                 if(e.message !== "Canceled") alert("Error saving: " + e.message);
             } finally {
@@ -277,8 +262,6 @@
 
         async function loadSidebarSchedules() {
             const list = document.getElementById('sidebar-list');
-            list.innerHTML = '<div class="text-center text-slate-400 font-bold py-4 text-sm">Loading from Firebase...</div>';
-            
             try {
                 const snapshot = await db.collection("schedules").orderBy("timestamp", "desc").get();
                 if(snapshot.empty) {
@@ -296,10 +279,7 @@
                     });
                     list.innerHTML = html;
                 }
-            } catch(e) {
-                list.innerHTML = `<div class="text-center text-red-500 font-bold py-4 text-sm">Error Loading Schedules: <br><span class="text-xs font-normal">${e.message}</span></div>`;
-                console.error("Firebase Error: ", e);
-            }
+            } catch(e) {}
         }
 
         async function loadSchedule(id, name) {
@@ -309,39 +289,27 @@
                     document.getElementById('document-a4').innerHTML = docSnap.data().html_data;
                     currentScheduleId = id;
                     updateStatusName(name);
-                    
-                    let fullName = localStorage.getItem('loggedFullName') || localStorage.getItem('loggedUser');
-                    let role = localStorage.getItem('loggedRole') || 'Staff';
-                    if(document.getElementById('doc-author-name')) document.getElementById('doc-author-name').innerText = fullName;
-                    if(document.getElementById('doc-author-role')) document.getElementById('doc-author-role').innerText = role;
-
                     loadSidebarSchedules(); 
                     checkSummaryVisibility();
+                    ensureTaskTimeControls(document.getElementById('document-a4'));
+                    refreshTaskTimeButtons(document.getElementById('document-a4'));
                 }
             } catch(e) { alert("Error: " + e.message); }
         }
 
         async function deleteSchedule(id) {
             if(confirm("Delete this schedule permanently?")) {
-                try {
-                    await db.collection("schedules").doc(id).delete();
-                    if(currentScheduleId === id) createNewSchedule();
-                    loadSidebarSchedules();
-                } catch(e) {
-                    alert("Error deleting: " + e.message);
-                }
+                await db.collection("schedules").doc(id).delete();
+                if(currentScheduleId === id) createNewSchedule();
+                loadSidebarSchedules();
             }
         }
 
         /* ====== FIREBASE TASKS LIBRARY ====== */
         async function fetchTasksFromFirebase() {
-            try {
-                const snap = await db.collection("task_templates").get();
-                dbTasks = [];
-                snap.forEach(doc => dbTasks.push({ id: doc.id, ...doc.data() }));
-            } catch (e) {
-                console.error("Tasks Error:", e);
-            }
+            const snap = await db.collection("task_templates").get();
+            dbTasks = [];
+            snap.forEach(doc => dbTasks.push({ id: doc.id, ...doc.data() }));
         }
 
         function openTasksModal() {
@@ -352,33 +320,21 @@
 
         async function saveNewTaskTemplate() {
             const cat = document.getElementById('new-task-cat').value.trim();
-            const time = document.getElementById('new-task-time').value.trim(); 
             const subsText = document.getElementById('new-task-subs').value;
             const subs = subsText.split('\n').map(s=>s.trim()).filter(s=>s!=='');
             
             if(cat) {
-                try {
-                    const docRef = await db.collection("task_templates").add({ category: cat, tasks: subs, time: time });
-                    dbTasks.push({ id: docRef.id, category: cat, tasks: subs, time: time });
-                    
-                    document.getElementById('new-task-cat').value = ''; 
-                    document.getElementById('new-task-time').value = '';
-                    document.getElementById('new-task-subs').value = '';
-                    renderTasksList();
-                } catch(e) {
-                    alert("Error saving task: " + e.message);
-                }
+                const docRef = await db.collection("task_templates").add({ category: cat, tasks: subs });
+                dbTasks.push({ id: docRef.id, category: cat, tasks: subs });
+                document.getElementById('new-task-cat').value = ''; document.getElementById('new-task-subs').value = '';
+                renderTasksList();
             }
         }
         
         async function deleteTaskTemplate(id) {
-            try {
-                await db.collection("task_templates").doc(id).delete();
-                dbTasks = dbTasks.filter(t => t.id !== id);
-                renderTasksList();
-            } catch(e) {
-                alert("Error deleting task: " + e.message);
-            }
+            await db.collection("task_templates").doc(id).delete();
+            dbTasks = dbTasks.filter(t => t.id !== id);
+            renderTasksList();
         }
 
         function renderTasksList() {
@@ -386,77 +342,141 @@
             ul.innerHTML = dbTasks.map(t => `
                 <li class="flex justify-between items-center bg-white p-3 border border-slate-200 rounded-lg">
                     <div>
-                        <span class="font-bold text-[#547C44] block">
-                            ${t.category} 
-                            ${t.time ? `<span class="text-xs text-slate-400 font-medium ml-1 bg-slate-100 px-2 py-0.5 rounded">(${t.time})</span>` : ''}
-                        </span>
+                        <span class="font-bold text-[#547C44] block">${t.category}</span>
                         <span class="text-xs text-slate-500">${t.tasks.length} sub-tasks</span>
                     </div>
                     <button onclick="deleteTaskTemplate('${t.id}')" class="text-red-500 font-bold px-2 py-1">X</button>
                 </li>`).join('');
         }
 
-        /* ====== TIME BLOCKS ====== */
-        function addTimeBlock(btn, defaultTime) {
-            let t = defaultTime;
-            if (typeof defaultTime !== 'string') t = "New Time";
-
-            const div = document.createElement('div');
-            div.className = "time-group mb-4 relative p-2 border border-transparent hover:border-slate-200 rounded-lg group/time";
-            div.innerHTML = `
-                <div class="font-bold text-slate-600 outline-none" contenteditable="true">${t}</div>
-                <button class="no-print opacity-0 group-hover/time:opacity-100 bg-red-100 text-red-600 text-xs px-2 py-1 rounded transition-opacity absolute right-0 top-0" onclick="this.closest('.time-group').remove()">X</button>
-            `;
-            btn.parentElement.insertBefore(div, btn);
-        }
-
-        /* ====== PICK TASK MODAL ====== */
+        /* ====== PICK TASK MODAL (BUGFIX) ====== */
         function openPickTaskModal(btn) {
             targetTaskCell = btn.closest('td');
             const sel = document.getElementById('select-task-template');
-            
             sel.innerHTML = `<option value="blank">-- Create Blank Category --</option>` +
-                            dbTasks.map((t, i) => `<option value="${i}">${t.category} ${t.time ? `(${t.time})` : ''}</option>`).join('');
+                            dbTasks.map((t, i) => `<option value="${i}">${t.category}</option>`).join('');
             document.getElementById('modal-pick-task').classList.remove('hidden');
         }
         function closePickTaskModal() { document.getElementById('modal-pick-task').classList.add('hidden'); }
+
+        function buildTaskGroupMarkup(catName, tasksHtml) {
+            return `
+                <div class="flex items-center justify-between mb-1 gap-2">
+                    <div class="flex items-center gap-2 flex-1 min-w-0">
+                        <div class="font-bold text-[#547C44] outline-none uppercase flex-1 min-w-0" contenteditable="true">${catName}</div>
+                        <button class="add-time-btn no-print text-[11px] font-bold bg-[#547C44]/10 text-[#547C44] px-2 py-1 rounded-full whitespace-nowrap hidden hover:bg-[#547C44]/20 transition-colors" onclick="addTaskGroupTime(this)">+ Add Time</button>
+                        <span class="task-time-badge hidden items-center gap-1 bg-[#547C44]/10 text-[#547C44] text-[11px] font-bold px-2 py-1 rounded-full">
+                            <span class="task-time-text outline-none" contenteditable="true">19:00 - 20:30</span>
+                            <button class="no-print text-[#547C44] hover:text-red-600 leading-none font-black" onclick="removeTaskGroupTime(this)" title="Remove time">×</button>
+                        </span>
+                    </div>
+                    <button class="no-print opacity-0 group-hover/cat:opacity-100 bg-red-100 text-red-600 text-xs px-2 py-1 rounded transition-opacity" onclick="this.closest('.task-group').remove()">Remove</button>
+                </div>
+                <ul class="task-list outline-none" contenteditable="true">${tasksHtml}</ul>
+            `;
+        }
+
+        function isTimeColumnEnabledForGroup(taskGroup) {
+            const row = taskGroup.closest('tr');
+            if (row && row.querySelector('td[data-col="time"]')) return true;
+            const table = taskGroup.closest('table');
+            return !!(table && table.querySelector('thead th[data-col="time"]'));
+        }
+
+        function ensureTaskTimeControls(scope = document) {
+            scope.querySelectorAll('.task-group').forEach(group => {
+                if (group.querySelector('.add-time-btn')) return;
+
+                const taskList = group.querySelector('.task-list');
+                const tasksHtml = taskList ? taskList.innerHTML : '<li>Type your first task here...</li>';
+                const categoryEl = group.querySelector('[contenteditable="true"]');
+                const catName = categoryEl ? categoryEl.innerText.trim() : 'Category';
+
+                group.classList.add('group/cat', 'relative', 'border', 'border-transparent', 'hover:border-slate-200', 'rounded-lg');
+                if (!group.classList.contains('p-2') && !group.classList.contains('p-1')) group.classList.add('p-2');
+                group.innerHTML = buildTaskGroupMarkup(catName || 'Category', tasksHtml);
+            });
+        }
+
+        function refreshTaskTimeButtons(scope = document) {
+            ensureTaskTimeControls(scope);
+
+            scope.querySelectorAll('.task-group').forEach(group => {
+                const addBtn = group.querySelector('.add-time-btn');
+                const badge = group.querySelector('.task-time-badge');
+                const timeText = group.querySelector('.task-time-text');
+                if (!addBtn || !badge || !timeText) return;
+
+                const timeColumnActive = isTimeColumnEnabledForGroup(group);
+                const hasTimeValue = timeText.innerText.trim().length > 0;
+
+                if (!timeColumnActive) {
+                    addBtn.classList.add('hidden');
+                    badge.classList.add('hidden');
+                    badge.classList.remove('inline-flex');
+                    return;
+                }
+
+                if (hasTimeValue) {
+                    addBtn.classList.add('hidden');
+                    badge.classList.add('inline-flex');
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                    badge.classList.remove('inline-flex');
+                    addBtn.classList.remove('hidden');
+                }
+            });
+        }
+
+        function addTaskGroupTime(btn) {
+            const group = btn.closest('.task-group');
+            const badge = group.querySelector('.task-time-badge');
+            const timeText = group.querySelector('.task-time-text');
+
+            if (!timeText.innerText.trim()) {
+                timeText.innerText = '19:00 - 20:30';
+            }
+
+            badge.classList.remove('hidden');
+            badge.classList.add('inline-flex');
+            btn.classList.add('hidden');
+            timeText.focus();
+        }
+
+        function removeTaskGroupTime(btn) {
+            const badge = btn.closest('.task-time-badge');
+            const group = btn.closest('.task-group');
+            const timeText = badge.querySelector('.task-time-text');
+            const addBtn = group.querySelector('.add-time-btn');
+
+            timeText.innerText = '';
+            badge.classList.add('hidden');
+            badge.classList.remove('inline-flex');
+
+            if (isTimeColumnEnabledForGroup(group)) {
+                addBtn.classList.remove('hidden');
+            }
+        }
         
         function confirmPickTask() {
             const val = document.getElementById('select-task-template').value;
             let catName = "New Category";
             let tasksHtml = "<li>New task...</li>";
-            let taskTime = "";
 
             if (val !== "blank") {
                 const tmpl = dbTasks[val];
                 catName = tmpl.category;
                 tasksHtml = tmpl.tasks.map(t => `<li>${t}</li>`).join('');
-                taskTime = tmpl.time || "";
             }
 
             const div = document.createElement('div');
             div.className = "task-group mb-4 group/cat relative border border-transparent hover:border-slate-200 rounded-lg p-1 -mx-1";
-            div.innerHTML = `
-                <div class="flex items-center justify-between mb-1">
-                    <div class="font-bold text-[#547C44] outline-none uppercase flex-1" contenteditable="true">${catName}</div>
-                    <button class="no-print opacity-0 group-hover/cat:opacity-100 bg-red-100 text-red-600 text-xs px-2 py-1 rounded transition-opacity" onclick="this.closest('.task-group').remove()">Remove</button>
-                </div>
-                <ul class="task-list outline-none" contenteditable="true">${tasksHtml}</ul>
-            `;
+            div.innerHTML = buildTaskGroupMarkup(catName, tasksHtml);
             
-            const btnCat = targetTaskCell.querySelector('.add-cat-btn');
-            targetTaskCell.insertBefore(div, btnCat);
-
-            if (taskTime) {
-                const timeCell = targetTaskCell.closest('tr').querySelector('td[data-col="time"]');
-                if (timeCell) {
-                    const btnTime = timeCell.querySelector('.add-time-btn');
-                    if (btnTime) {
-                        addTimeBlock(btnTime, taskTime);
-                    }
-                }
-            }
-
+            const btn = targetTaskCell.querySelector('.add-cat-btn');
+            targetTaskCell.insertBefore(div, btn);
+            refreshTaskTimeButtons(targetTaskCell.closest('tr') || targetTaskCell);
             closePickTaskModal();
         }
 
@@ -486,18 +506,14 @@
 
                 Array.from(tbody.children).forEach(tr => {
                     const td = document.createElement('td');
-                    td.className = "border border-slate-300 py-3 px-3 align-top";
+                    td.className = "border border-slate-300 py-3 px-3 font-bold text-slate-600 align-top";
                     td.setAttribute('data-col', 'time');
-                    td.innerHTML = `
-                        <div class="time-group mb-4 relative p-2 border border-transparent hover:border-slate-200 rounded-lg group/time">
-                            <div class="font-bold text-slate-600 outline-none" contenteditable="true">19:00 - 01:00</div>
-                            <button class="no-print opacity-0 group-hover/time:opacity-100 bg-red-100 text-red-600 text-xs px-2 py-1 rounded transition-opacity absolute right-0 top-0" onclick="this.closest('.time-group').remove()">X</button>
-                        </div>
-                        <button class="add-time-btn no-print text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-1 rounded transition-colors mb-2" onclick="addTimeBlock(this)">+ Add Time</button>
-                    `;
+                    td.innerHTML = `<div contenteditable="true" class="outline-none">19:00 - 01:00</div>`;
                     tr.insertBefore(td, tr.children[1]);
                 });
             }
+
+            refreshTaskTimeButtons(container);
         }
 
         /* ====== SUMMARY ROWS ====== */
@@ -576,13 +592,9 @@
 
         /* ====== STAFF LOGIC ====== */
         async function fetchStaffFromFirebase() {
-            try {
-                const snap = await db.collection("staff").get();
-                dbStaff = [];
-                snap.forEach(doc => dbStaff.push({ id: doc.id, ...doc.data() }));
-            } catch (e) {
-                console.error("Staff Error:", e);
-            }
+            const snap = await db.collection("staff").get();
+            dbStaff = [];
+            snap.forEach(doc => dbStaff.push({ id: doc.id, ...doc.data() }));
         }
         function openStaffModal() { renderStaffList(); document.getElementById('modal-staff').classList.remove('hidden'); }
         function closeStaffModal() { document.getElementById('modal-staff').classList.add('hidden'); }
@@ -592,22 +604,14 @@
             const f = document.getElementById('new-staff-finish').value;
             const time = (s&&f) ? `${s} - ${f}` : '';
             if(n) {
-                try {
-                    const doc = await db.collection("staff").add({ name: n, time });
-                    dbStaff.push({ id: doc.id, name: n, time });
-                    document.getElementById('new-staff-name').value = ''; renderStaffList();
-                } catch(e) {
-                    alert("Error saving staff: " + e.message);
-                }
+                const doc = await db.collection("staff").add({ name: n, time });
+                dbStaff.push({ id: doc.id, name: n, time });
+                document.getElementById('new-staff-name').value = ''; renderStaffList();
             }
         }
         async function deleteStaff(id) {
-            try {
-                await db.collection("staff").doc(id).delete();
-                dbStaff = dbStaff.filter(s => s.id !== id); renderStaffList();
-            } catch(e) {
-                alert("Error deleting staff: " + e.message);
-            }
+            await db.collection("staff").doc(id).delete();
+            dbStaff = dbStaff.filter(s => s.id !== id); renderStaffList();
         }
         function renderStaffList() {
             document.getElementById('staff-list').innerHTML = dbStaff.map(s => `
@@ -644,13 +648,7 @@
             const theadTr = targetTable.closest('table').querySelector('thead tr');
             const hasTimeCol = theadTr.children.length >= 3;
 
-            const tdTimeHtml = hasTimeCol ? `<td class="border border-slate-300 py-3 px-3 align-top" data-col="time">
-                <div class="time-group mb-4 relative p-2 border border-transparent hover:border-slate-200 rounded-lg group/time">
-                    <div class="font-bold text-slate-600 outline-none" contenteditable="true">${time}</div>
-                    <button class="no-print opacity-0 group-hover/time:opacity-100 bg-red-100 text-red-600 text-xs px-2 py-1 rounded transition-opacity absolute right-0 top-0" onclick="this.closest('.time-group').remove()">X</button>
-                </div>
-                <button class="add-time-btn no-print text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-1 rounded transition-colors mb-2" onclick="addTimeBlock(this)">+ Add Time</button>
-            </td>` : '';
+            const tdTimeHtml = hasTimeCol ? `<td class="border border-slate-300 py-3 px-3 font-bold text-slate-600 align-top" data-col="time"><div contenteditable="true" class="outline-none">${time}</div></td>` : '';
 
             const tr = document.createElement('tr');
             tr.className = "group/row";
@@ -662,18 +660,13 @@
                 ${tdTimeHtml}
                 <td class="border border-slate-300 py-3 px-3 align-top task-cell">
                     <div class="task-group mb-4 relative p-2 border border-transparent hover:border-slate-200 rounded-lg group/cat">
-                        <div class="flex items-center justify-between mb-1">
-                            <div class="font-bold text-[#547C44] outline-none uppercase flex-1" contenteditable="true">Category (e.g., Kitchen)</div>
-                            <button class="no-print opacity-0 group-hover/cat:opacity-100 bg-red-100 text-red-600 text-xs px-2 py-1 rounded transition-opacity" onclick="this.closest('.task-group').remove()">Remove</button>
-                        </div>
-                        <ul class="task-list outline-none" contenteditable="true">
-                            <li>Type your first task here...</li>
-                        </ul>
+                        ${buildTaskGroupMarkup('Category (e.g., Kitchen)', '<li>Type your first task here...</li>')}
                     </div>
                     <button class="add-cat-btn no-print text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-1 rounded transition-colors mb-2" onclick="openPickTaskModal(this)">+ Add Category</button>
                 </td>
             `;
             targetTable.appendChild(tr);
+            refreshTaskTimeButtons(tr);
             closeRowModal();
         }
 
