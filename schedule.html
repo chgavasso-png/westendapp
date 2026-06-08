@@ -1,3 +1,5 @@
+thats my code 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -410,21 +412,21 @@
                 const timeColumnActive = isTimeColumnEnabledForGroup(group);
                 const hasTimeValue = timeText.innerText.trim().length > 0;
 
-                if (!timeColumnActive) {
-                    addBtn.classList.add('hidden');
-                    badge.classList.add('hidden');
-                    badge.classList.remove('inline-flex');
-                    return;
-                }
-
                 if (hasTimeValue) {
+                    // Badge sempre visível quando tem horário, independente da coluna
                     addBtn.classList.add('hidden');
                     badge.classList.add('inline-flex');
                     badge.classList.remove('hidden');
-                } else {
+                } else if (timeColumnActive) {
+                    // Sem horário mas com coluna ativa: mostra botão "+ Add Time"
                     badge.classList.add('hidden');
                     badge.classList.remove('inline-flex');
                     addBtn.classList.remove('hidden');
+                } else {
+                    // Sem horário e sem coluna: esconde ambos
+                    addBtn.classList.add('hidden');
+                    badge.classList.add('hidden');
+                    badge.classList.remove('inline-flex');
                 }
             });
         }
@@ -679,3 +681,6 @@
     </script>
 </body>
 </html>
+
+
+lets work on it
