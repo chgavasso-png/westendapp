@@ -205,8 +205,8 @@
             let role = localStorage.getItem('loggedRole');
             if (!role || role === 'undefined') role = 'Supervisor'; 
 
-            document.getElementById('doc-author-name').innerText = fullName;
-            document.getElementById('doc-author-role').innerText = role;
+            if(document.getElementById('doc-author-name')) document.getElementById('doc-author-name').innerText = fullName;
+            if(document.getElementById('doc-author-role')) document.getElementById('doc-author-role').innerText = role;
 
             fetchStaffFromFirebase(); 
             fetchTasksFromFirebase();
@@ -331,12 +331,11 @@
 
         async function saveNewTaskTemplate() {
             const cat = document.getElementById('new-task-cat').value.trim();
-            const time = document.getElementById('new-task-time').value.trim(); // Nova variável de tempo
+            const time = document.getElementById('new-task-time').value.trim(); 
             const subsText = document.getElementById('new-task-subs').value;
             const subs = subsText.split('\n').map(s=>s.trim()).filter(s=>s!=='');
             
             if(cat) {
-                // Adicionando o "time" ao banco do Firebase
                 const docRef = await db.collection("task_templates").add({ category: cat, tasks: subs, time: time });
                 dbTasks.push({ id: docRef.id, category: cat, tasks: subs, time: time });
                 
@@ -373,37 +372,32 @@
             targetTaskCell = btn.closest('td');
             const sel = document.getElementById('select-task-template');
             
-            // Exibir o tempo dentro do dropdown para facilitar a escolha
             sel.innerHTML = `<option value="blank">-- Create Blank Category --</option>` +
                             dbTasks.map((t, i) => `<option value="${i}">${t.category} ${t.time ? `(${t.time})` : ''}</option>`).join('');
             document.getElementById('modal-pick-task').classList.remove('hidden');
         }
         function closePickTaskModal() { document.getElementById('modal-pick-task').classList.add('hidden'); }
         
+        // MODIFICADO PARA INSERIR O TEMPO NA COLUNA "TIME" (À ESQUERDA) E NÃO NA TAREFA
         function confirmPickTask() {
             const val = document.getElementById('select-task-template').value;
             let catName = "New Category";
             let tasksHtml = "<li>New task...</li>";
-            let timeHtml = ""; // HTML para o tempo
+            let taskTime = "";
 
             if (val !== "blank") {
                 const tmpl = dbTasks[val];
                 catName = tmpl.category;
                 tasksHtml = tmpl.tasks.map(t => `<li>${t}</li>`).join('');
-                
-                // Se o template tiver um tempo guardado, criamos a tag visual
-                if (tmpl.time) {
-                    timeHtml = `<span class="text-xs font-bold text-slate-500 bg-slate-200 px-2 py-1 rounded ml-2" contenteditable="true">${tmpl.time}</span>`;
-                }
+                taskTime = tmpl.time || "";
             }
 
+            // Cria o bloco da Tarefa (apenas a categoria e a lista, sem o tempo)
             const div = document.createElement('div');
             div.className = "task-group mb-4 group/cat relative border border-transparent hover:border-slate-200 rounded-lg p-1 -mx-1";
             div.innerHTML = `
                 <div class="flex items-center justify-between mb-1">
-                    <div class="font-bold text-[#547C44] outline-none uppercase flex-1 flex items-center" contenteditable="true">
-                        ${catName} ${timeHtml}
-                    </div>
+                    <div class="font-bold text-[#547C44] outline-none uppercase flex-1" contenteditable="true">${catName}</div>
                     <button class="no-print opacity-0 group-hover/cat:opacity-100 bg-red-100 text-red-600 text-xs px-2 py-1 rounded transition-opacity" onclick="this.closest('.task-group').remove()">Remove</button>
                 </div>
                 <ul class="task-list outline-none" contenteditable="true">${tasksHtml}</ul>
@@ -411,6 +405,16 @@
             
             const btn = targetTaskCell.querySelector('.add-cat-btn');
             targetTaskCell.insertBefore(div, btn);
+
+            // Se houver tempo definido na tarefa, insere na coluna "Time" da mesma linha
+            if (taskTime) {
+                const timeCell = targetTaskCell.closest('tr').querySelector('td[data-col="time"]');
+                if (timeCell) {
+                    // Adiciona o tempo numa nova linha editável dentro da coluna "Time"
+                    timeCell.innerHTML += `<div contenteditable="true" class="outline-none mt-2 font-bold text-[#547C44] text-sm">${taskTime}</div>`;
+                }
+            }
+
             closePickTaskModal();
         }
 
@@ -593,7 +597,7 @@
                 <td class="border border-slate-300 py-3 px-3 align-top task-cell">
                     <div class="task-group mb-4 relative p-2 border border-transparent hover:border-slate-200 rounded-lg group/cat">
                         <div class="flex items-center justify-between mb-1">
-                            <div class="font-bold text-[#547C44] outline-none uppercase flex-1 flex items-center" contenteditable="true">Category (e.g., Kitchen)</div>
+                            <div class="font-bold text-[#547C44] outline-none uppercase flex-1" contenteditable="true">Category (e.g., Kitchen)</div>
                             <button class="no-print opacity-0 group-hover/cat:opacity-100 bg-red-100 text-red-600 text-xs px-2 py-1 rounded transition-opacity" onclick="this.closest('.task-group').remove()">Remove</button>
                         </div>
                         <ul class="task-list outline-none" contenteditable="true">
