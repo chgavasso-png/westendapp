@@ -455,6 +455,7 @@
                     <button class="no-print opacity-0 group-hover/cat:opacity-100 bg-red-100 text-red-600 text-xs px-2 py-1 rounded transition-opacity" onclick="this.closest('.task-group').remove()">Remove</button>
                 </div>
                 <ul class="task-list outline-none" contenteditable="true">${tasksHtml}</ul>
+                <button class="add-subtask-btn no-print text-[11px] font-bold text-slate-500 hover:text-[#547C44] mt-1 flex items-center gap-1 transition-colors" onclick="addSubTask(this)">+ Add Sub-task</button>
             `;
         }
 
@@ -539,6 +540,16 @@
             if (isTimeColumnEnabledForGroup(group)) {
                 addBtn.classList.remove('hidden');
             }
+        }
+
+        function addSubTask(btn) {
+            const group = btn.closest('.task-group');
+            const taskList = group.querySelector('.task-list');
+            const li = document.createElement('li');
+            li.textContent = 'New sub-task...';
+            li.contentEditable = 'true';
+            taskList.appendChild(li);
+            li.focus();
         }
         
         function confirmPickTask() {
