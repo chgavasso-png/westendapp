@@ -515,7 +515,7 @@
 
         function isTimeColumnEnabledForGroup(taskGroup) {
             const row = taskGroup.closest('tr');
-            if (row && row.querySelector('td[data-col="time"]')) return true;
+            if (row && row.querySelector('td[data-col="time"]') || row.querySelector('th[data-col="time"]')) return true;
             const table = taskGroup.closest('table');
             return !!(table && table.querySelector('thead th[data-col="time"]'));
         }
@@ -744,9 +744,11 @@
             });
 
             if(timeIndex !== -1 && timeIndex > 0) {
+                // Remove a coluna Time
                 theadTr.children[timeIndex].remove();
                 Array.from(tbody.children).forEach(tr => { if(tr.children[timeIndex]) tr.children[timeIndex].remove(); });
             } else {
+                // Adiciona a coluna Time
                 const th = document.createElement('th');
                 th.className = "border border-slate-300 py-2 px-3 text-left w-1/5";
                 th.setAttribute('data-col', 'time');
@@ -754,11 +756,20 @@
                 theadTr.insertBefore(th, theadTr.children[1]);
 
                 Array.from(tbody.children).forEach(tr => {
-                    const td = document.createElement('td');
-                    td.className = "border border-slate-300 py-3 px-3 font-bold text-slate-600 align-top";
-                    td.setAttribute('data-col', 'time');
-                    td.innerHTML = `<div contenteditable="true" class="outline-none">19:00 - 01:00</div>`;
-                    tr.insertBefore(td, tr.children[1]);
+                    // Checa se a linha é o separador verde ou a linha do empregado
+                    if (tr.classList.contains('repeater-header')) {
+                        const sepTh = document.createElement('th');
+                        sepTh.className = "border border-slate-300 py-2 px-3 text-left w-1/5";
+                        sepTh.setAttribute('data-col', 'time');
+                        sepTh.innerHTML = `<div contenteditable="true" class="outline-none">Time</div>`;
+                        tr.insertBefore(sepTh, tr.children[1]);
+                    } else {
+                        const td = document.createElement('td');
+                        td.className = "border border-slate-300 py-3 px-3 font-bold text-slate-600 align-top";
+                        td.setAttribute('data-col', 'time');
+                        td.innerHTML = `<div contenteditable="true" class="outline-none">19:00 - 01:00</div>`;
+                        tr.insertBefore(td, tr.children[1]);
+                    }
                 });
             }
 
@@ -897,6 +908,25 @@
 
             const theadTr = targetTable.closest('table').querySelector('thead tr');
             const hasTimeCol = theadTr.children.length >= 3;
+
+            // LÓGICA NOVA: Se a tabela já tem alguém, adiciona a barrinha separadora antes
+            if (targetTable.children.length > 0) {
+                const separatorTr = document.createElement('tr');
+                separatorTr.className = "uppercase print-color-exact repeater-header group/sep";
+                separatorTr.style.cssText = "background-color: #edf3eb; color: #436435;";
+                
+                const thTimeHtml = hasTimeCol ? `<th class="border border-slate-300 py-2 px-3 text-left w-1/5" data-col="time"><div contenteditable="true" class="outline-none">Time</div></th>` : '';
+                
+                separatorTr.innerHTML = `
+                    <th class="border border-slate-300 py-2 px-3 text-left w-1/4 relative">
+                        <button class="no-print absolute -left-6 top-2 text-red-400 font-bold hidden group-hover/sep:block bg-red-50 px-2 rounded text-xs" onclick="this.closest('tr').remove()" title="Remover Barrinha">X</button>
+                        Employer
+                    </th>
+                    ${thTimeHtml}
+                    <th class="border border-slate-300 py-2 px-3 text-left">Task</th>
+                `;
+                targetTable.appendChild(separatorTr);
+            }
 
             const tdTimeHtml = hasTimeCol ? `<td class="border border-slate-300 py-3 px-3 font-bold text-slate-600 align-top" data-col="time"><div contenteditable="true" class="outline-none">${time}</div></td>` : '';
 
