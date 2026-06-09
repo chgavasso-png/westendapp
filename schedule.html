@@ -21,6 +21,9 @@
             .print-no-icon::-webkit-calendar-picker-indicator { display: none !important; }
             input, select { border: none !important; background: transparent !important; }
             .print-color-exact { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            
+            /* Impede que o cabeçalho da tabela se repita automaticamente quando quebra de página */
+            table thead { display: table-row-group !important; }
         }
         
         [contenteditable="true"]:hover { background-color: rgba(84, 124, 68, 0.05); cursor: text; border-radius: 4px; }
@@ -909,7 +912,7 @@
             const theadTr = targetTable.closest('table').querySelector('thead tr');
             const hasTimeCol = theadTr.children.length >= 3;
 
-            // LÓGICA NOVA: Se a tabela já tem alguém, adiciona a barrinha separadora antes
+            // Se a tabela já tem alguém, adiciona a barrinha separadora antes
             if (targetTable.children.length > 0) {
                 const separatorTr = document.createElement('tr');
                 separatorTr.className = "uppercase print-color-exact repeater-header group/sep";
