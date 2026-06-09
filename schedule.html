@@ -1,3 +1,5 @@
+thats my code 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,15 +13,64 @@
 
     <style>
         @media print {
-            body { background-color: white !important; margin: 0; padding: 0; -webkit-print-color-adjust: exact; overflow: visible !important; }
-            .no-print, #sidebar { display: none !important; }
+            html, body { 
+                background-color: white !important; 
+                margin: 0 !important; 
+                padding: 0 !important; 
+                -webkit-print-color-adjust: exact !important; 
+                print-color-adjust: exact !important;
+                overflow: visible !important; 
+                height: auto !important;
+                width: 100% !important;
+            }
+            .no-print, #sidebar, #modal-staff, #modal-tasks, #modal-row, #modal-pick-task { display: none !important; }
             .print-hidden { display: none !important; }
-            #main-content { margin: 0 !important; width: 100% !important; overflow: visible !important; display: block !important;}
-            .a4-page { box-shadow: none !important; margin: 0 !important; padding: 10mm 15mm !important; width: 100% !important; max-width: 100% !important; border: none !important; }
+            #main-content { 
+                margin: 0 !important; 
+                width: 100% !important; 
+                height: auto !important;
+                max-height: none !important;
+                overflow: visible !important; 
+                display: block !important;
+                flex: none !important;
+            }
+            .a4-page { 
+                box-shadow: none !important; 
+                margin: 0 auto !important; 
+                padding: 10mm 15mm !important; 
+                width: 100% !important; 
+                max-width: 100% !important; 
+                min-height: auto !important;
+                height: auto !important;
+                border: none !important; 
+                page-break-after: always;
+            }
+            .a4-page:last-child { page-break-after: auto; }
             @page { size: A4; margin: 0mm; }
             .print-no-arrow { appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; }
             .print-no-icon::-webkit-calendar-picker-indicator { display: none !important; }
             input, select { border: none !important; background: transparent !important; }
+            /* Garante que badges de horário fiquem visíveis na impressão */
+            .task-time-badge, .sub-time-badge { 
+                display: inline-flex !important; 
+                visibility: visible !important;
+            }
+            .task-time-badge .no-print, .sub-time-badge .no-print { display: none !important; }
+            /* Garante que conteúdo editável mostre o texto real */
+            [contenteditable="true"]:empty:before {
+                content: '' !important;
+            }
+            /* Garante que tabelas não quebrem no meio */
+            table { page-break-inside: auto; }
+            tr { page-break-inside: avoid; page-break-after: auto; }
+            thead { display: table-header-group; }
+            /* Garante que o container principal expanda */
+            #document-a4 { 
+                height: auto !important; 
+                min-height: auto !important;
+                overflow: visible !important;
+            }
+            .shift-block { page-break-inside: avoid; }
         }
         
         [contenteditable="true"]:hover { background-color: rgba(84, 124, 68, 0.05); cursor: text; border-radius: 4px; }
@@ -67,7 +118,7 @@
                     <button onclick="saveSchedule()" id="btn-save" class="px-6 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-sm rounded-xl border border-blue-200 transition-colors flex items-center gap-2">
                         💾 Save Changes
                     </button>
-                    <button onclick="window.print()" class="px-6 py-2.5 bg-[#547C44] hover:bg-[#436435] text-white font-bold text-sm rounded-xl shadow-md transition-colors flex items-center gap-2">
+                    <button onclick="prepareForPrint(); window.print();" class="px-6 py-2.5 bg-[#547C44] hover:bg-[#436435] text-white font-bold text-sm rounded-xl shadow-md transition-colors flex items-center gap-2">
                         Export to PDF
                     </button>
                 </div>
@@ -892,6 +943,56 @@
             closeRowModal();
         }
 
+        function prepareForPrint() {
+            // 1. Sincroniza inputs (value → attribute)
+            document.querySelectorAll('#document-a4 input').forEach(inp => { 
+                if(inp.type !== 'file') inp.setAttribute('value', inp.value); 
+            });
+            // 2. Sincroniza selects
+            document.querySelectorAll('#document-a4 select').forEach(sel => {
+                Array.from(sel.options).forEach(opt => { 
+                    if(opt.selected) opt.setAttribute('selected', 'selected'); 
+                    else opt.removeAttribute('selected'); 
+                });
+            });
+            // 3. Converte contenteditable divs para terem o texto como innerText visível
+            document.querySelectorAll('#document-a4 [contenteditable="true"]').forEach(el => {
+                // Garante que o texto está no innerHTML (já está, mas força)
+                if (el.innerText.trim() && !el.innerHTML.trim()) {
+                    el.innerHTML = el.innerText;
+                }
+            });
+            // 4. Garante que badges de horário estejam visíveis
+            document.querySelectorAll('#document-a4 .task-time-badge, #document-a4 .sub-time-badge').forEach(badge => {
+                if (badge.querySelector('.task-time-text')?.innerText.trim() || 
+                    badge.querySelector('.sub-time-text')?.innerText.trim()) {
+                    badge.style.display = 'inline-flex';
+                    badge.style.visibility = 'visible';
+                }
+            });
+            // 5. Garante que o summary container esteja visível se tiver conteúdo
+            const tbody = document.getElementById('tbody-summary');
+            const summaryContainer = document.getElementById('summary-container');
+            if (tbody && tbody.children.length > 0) {
+                summaryContainer.classList.remove('hidden', 'print-hidden');
+                summaryContainer.style.display = 'block';
+            }
+            // 6. Garante que o documento expanda
+            const docA4 = document.getElementById('document-a4');
+            if (docA4) {
+                docA4.style.height = 'auto';
+                docA4.style.minHeight = 'auto';
+                docA4.style.overflow = 'visible';
+            }
+            // 7. Garante que o main-content expanda
+            const mainContent = document.getElementById('main-content');
+            if (mainContent) {
+                mainContent.style.height = 'auto';
+                mainContent.style.maxHeight = 'none';
+                mainContent.style.overflow = 'visible';
+            }
+        }
+
         function syncInputsBeforeSave() {
             document.querySelectorAll('#document-a4 input').forEach(inp => { if(inp.type !== 'file') inp.setAttribute('value', inp.value); });
             document.querySelectorAll('#document-a4 select').forEach(sel => {
@@ -901,3 +1002,6 @@
     </script>
 </body>
 </html>
+
+
+lets work on it
