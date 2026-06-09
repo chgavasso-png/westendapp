@@ -27,6 +27,22 @@
         [contenteditable="true"]:focus { background-color: rgba(84, 124, 68, 0.05); outline: 1px dashed #547C44; border-radius: 4px; }
         .task-list { list-style-type: disc; padding-left: 1.5rem; outline: none; min-height: 20px;}
         .task-list li { margin-bottom: 0.25rem; }
+
+        /* Força o cabeçalho das tabelas a ficar Verde Clarinho e imprimir corretamente */
+        table thead tr {
+            background-color: #edf3eb !important; 
+            color: #436435 !important; 
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+
+        /* Força os títulos das tabelas (Shift/Day) a manterem o fundo verde escuro no PDF */
+        .shift-block > input, .shift-block > div[contenteditable="true"] {
+            background-color: #547C44 !important;
+            color: white !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
     </style>
 </head>
 <body class="bg-slate-100 font-sans text-slate-900 h-screen overflow-hidden flex w-full">
@@ -800,11 +816,12 @@
             const container = document.getElementById('blocks-container');
             const block = document.createElement('div');
             block.className = "mb-10 shift-block";
+            
             block.innerHTML = `
-                <input type="text" value="SHIFT TITLE HERE (E.G., SUNDAYS SCHEDULES)" class="w-full bg-[#547C44] text-white font-bold py-2 px-4 text-center uppercase tracking-widest outline-none placeholder-white/70">
+                <div contenteditable="true" class="w-full bg-[#547C44] text-white font-bold py-2 px-4 text-center uppercase tracking-widest outline-none print-color-exact" style="background-color: #547C44; color: white;">SHIFT TITLE HERE (E.G., SUNDAYS SCHEDULES)</div>
                 <table class="w-full border-collapse border border-slate-300 mt-2 text-sm relative">
                     <thead>
-                        <tr class="bg-slate-100 text-slate-600 uppercase">
+                        <tr class="uppercase print-color-exact" style="background-color: #edf3eb; color: #436435;">
                             <th class="border border-slate-300 py-2 px-3 text-left w-1/4">Employer</th>
                             <th class="border border-slate-300 py-2 px-3 text-left w-1/5" data-col="time"><div contenteditable="true" class="outline-none">Time</div></th>
                             <th class="border border-slate-300 py-2 px-3 text-left">Task</th>
