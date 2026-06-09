@@ -1,59 +1,914 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Schedule Builder - West End</title><script src="https://cdn.tailwindcss.com"></script><script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script><style>@media print{body{background-color:#fff!important;margin:0;padding:0;-webkit-print-color-adjust:exact;overflow:visible!important}.no-print,#sidebar,.print-hidden{display:none!important}#main-content{margin:0!important;width:100%!important;overflow:visible!important;display:block!important}.a4-page{box-shadow:none!important;margin:0!important;padding:10mm 15mm!important;width:100%!important;max-width:100%!important;border:none!important}@page{size:A4;margin:0mm}.print-no-arrow{appearance:none!important;-webkit-appearance:none!important;-moz-appearance:none!important}.print-no-icon::-webkit-calendar-picker-indicator{display:none!important}input,select{border:none!important;background:transparent!important}}[contenteditable="true"]:hover{background-color:rgba(84,124,68,.05);cursor:text;border-radius:4px}[contenteditable="true"]:focus{background-color:rgba(84,124,68,.05);outline:1px dashed #547C44;border-radius:4px}.task-list{list-style-type:disc;padding-left:1.5rem;outline:none;min-height:20px}.task-list li{margin-bottom:.25rem}</style></head>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schedule Builder - West End</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        @media print {
+            body { background-color: white !important; margin: 0; padding: 0; -webkit-print-color-adjust: exact; overflow: visible !important; }
+            .no-print, #sidebar { display: none !important; }
+            .print-hidden { display: none !important; }
+            #main-content { margin: 0 !important; width: 100% !important; overflow: visible !important; display: block !important;}
+            .a4-page { box-shadow: none !important; margin: 0 !important; padding: 10mm 15mm !important; width: 100% !important; max-width: 100% !important; border: none !important; }
+            @page { size: A4; margin: 0mm; }
+            .print-no-arrow { appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; }
+            .print-no-icon::-webkit-calendar-picker-indicator { display: none !important; }
+            input, select { border: none !important; background: transparent !important; }
+            .print-color-exact { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        }
+        
+        [contenteditable="true"]:hover { background-color: rgba(84, 124, 68, 0.05); cursor: text; border-radius: 4px; }
+        [contenteditable="true"]:focus { background-color: rgba(84, 124, 68, 0.05); outline: 1px dashed #547C44; border-radius: 4px; }
+        .task-list { list-style-type: disc; padding-left: 1.5rem; outline: none; min-height: 20px;}
+        .task-list li { margin-bottom: 0.25rem; }
+    </style>
+</head>
 <body class="bg-slate-100 font-sans text-slate-900 h-screen overflow-hidden flex w-full">
-<div id="sidebar" class="w-72 bg-white border-r border-slate-200 flex flex-col h-full shadow-lg z-40 relative"><div class="p-5 border-b border-slate-200 bg-slate-50 flex justify-between items-center"><h3 class="font-black text-slate-800 text-lg">Saved Schedules</h3><button onclick="createNewSchedule()" class="p-2 bg-[#547C44] text-white rounded-lg hover:bg-[#436435] transition-colors" title="Start New Document"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg></button></div><div id="sidebar-list" class="flex-1 overflow-y-auto p-3 space-y-2 bg-slate-50"><div class="text-center text-slate-400 font-bold py-4 text-sm">Loading from Firebase...</div></div><div class="p-4 border-t border-slate-200 bg-white"><a href="menu.html" class="flex items-center justify-center gap-2 w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl transition-colors">Back to Menu</a></div></div>
-<div id="main-content" class="flex-1 flex flex-col h-full overflow-y-auto relative bg-slate-100"><div class="no-print bg-white shadow-sm border-b border-slate-200 sticky top-0 z-50"><div class="max-w-[1200px] mx-auto px-6 py-4 flex flex-col xl:flex-row justify-between items-center gap-4"><div><h2 class="text-xl font-extrabold text-slate-800">Schedule Editor</h2><p class="text-xs text-slate-500 font-medium uppercase mt-1">Status: <span id="current-schedule-name" class="font-bold text-[#547C44]">Unsaved Document</span></p></div><div class="flex flex-wrap items-center justify-center gap-2"><button onclick="openTasksModal()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl border transition-colors flex items-center gap-2">📋 Task Library</button> <button onclick="openStaffModal()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl border transition-colors flex items-center gap-2">👥 Manage Staff</button><div class="h-6 border-l border-slate-300 mx-2 hidden md:block"></div><button onclick="saveSchedule()" id="btn-save" class="px-6 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-sm rounded-xl border border-blue-200 transition-colors flex items-center gap-2">💾 Save Changes</button> <button onclick="window.print()" class="px-6 py-2.5 bg-[#547C44] hover:bg-[#436435] text-white font-bold text-sm rounded-xl shadow-md transition-colors flex items-center gap-2">Export to PDF</button></div></div></div>
-<div class="mt-8 mb-20 flex justify-center px-4"><div id="document-a4" class="a4-page bg-white shadow-2xl w-full max-w-[21cm] min-h-[29.7cm] p-[15mm] border border-slate-200 relative"><div class="flex flex-col items-center mb-8 border-b-2 border-[#547C44] pb-6 relative group"><img src="logo.png" alt="West End Cleaning" class="h-28 object-contain mb-4"> <input type="text" value="BUILDING NAME HERE" class="w-full text-3xl font-black text-[#547C44] uppercase tracking-wider text-center outline-none bg-transparent"> <h2 class="text-xl font-bold text-slate-600 tracking-widest uppercase mt-1 text-center" contenteditable="true">Cleaning Schedule</h2></div><div id="summary-container" class="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-8 relative"><table class="w-full text-sm font-bold text-slate-700"><tbody id="tbody-summary"></tbody></table></div><button onclick="addSummaryRow()" class="no-print -mt-6 mb-8 ml-2 text-xs font-bold text-[#547C44] hover:underline flex items-center gap-1">+ Add Shift Time</button><div id="blocks-container"></div><div class="no-print mt-6 text-center"><button onclick="addBlock()" class="px-6 py-3 border-2 border-dashed border-[#547C44] text-[#547C44] font-bold rounded-2xl hover:bg-[#547C44] hover:text-white transition-all">+ Add New Table (Shift/Day)</button></div><div class="mt-12 text-center border-t border-slate-200 pt-6"><p class="text-xs text-slate-400 mb-2">Official Document - West End Cleaning Services Ltd</p><p class="text-sm font-bold text-slate-700">Prepared by: <span id="doc-author-name" class="text-[#547C44]"></span> <span class="text-slate-400 mx-1">|</span> Role: <span id="doc-author-role" class="text-slate-500 font-medium"></span></p></div></div></div></div>
-<div id="modal-staff" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"><div class="bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border border-slate-100"><h3 class="text-xl font-black text-slate-800 mb-2">Staff Database</h3><div class="flex flex-col gap-3 mb-4 border-b pb-4"><input type="text" id="new-staff-name" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none" placeholder="Employee Name"><div class="flex items-center gap-2"><input type="time" id="new-staff-start" value="19:00" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold"> <span class="font-bold text-slate-400">to</span> <input type="time" id="new-staff-finish" value="01:00" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold"></div><button onclick="saveNewStaff()" class="w-full py-3 mt-1 bg-[#547C44] hover:bg-[#436435] text-white font-bold rounded-xl">Add Employee</button></div><ul id="staff-list" class="space-y-2 max-h-48 overflow-y-auto mb-6"></ul><button onclick="closeStaffModal()" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl">Close</button></div></div>
-<div id="modal-tasks" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"><div class="bg-white p-6 rounded-3xl w-full max-w-lg shadow-2xl border border-slate-100"><h3 class="text-xl font-black text-slate-800 mb-2">Task Library</h3><p class="text-sm text-slate-500 mb-4">Save Building → Local → Tasks templates to reuse later.</p><div class="flex flex-col gap-3 mb-4 border-b pb-4"><div><label class="block text-xs font-bold text-slate-500 uppercase mb-1 pl-1">Building</label> <input type="text" id="new-task-building" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none font-bold text-slate-800" placeholder="Building Name (e.g. West End Tower)"></div><div><label class="block text-xs font-bold text-slate-500 uppercase mb-1 pl-1">Local / Area</label> <input type="text" id="new-task-cat" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none font-bold text-[#547C44]" placeholder="Local Name (e.g. KITCHEN)"></div><div><label class="block text-xs font-bold text-slate-500 uppercase mb-1 pl-1">Tasks</label> <textarea id="new-task-subs" rows="3" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none text-sm" placeholder="Sub-tasks (One per line)&#10;Clean floor&#10;Wash dishes"></textarea></div><button onclick="saveNewTaskTemplate()" class="w-full py-3 mt-1 bg-[#547C44] hover:bg-[#436435] text-white font-bold rounded-xl">Save to Library</button></div><div id="tasks-lib-container" class="max-h-64 overflow-y-auto mb-6"></div><button onclick="closeTasksModal()" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl">Close</button></div></div>
-<div id="modal-row" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"><div class="bg-white p-6 rounded-3xl w-full max-w-sm shadow-2xl border border-slate-100"><h3 class="text-xl font-black text-slate-800 mb-4">Add to Shift</h3><label class="block text-xs font-bold text-slate-500 uppercase mb-2 pl-1">Select Employee</label> <select id="select-staff" onchange="autoFillTime(this)" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl mb-4 font-bold"></select> <label class="block text-xs font-bold text-slate-500 uppercase mb-2 pl-1">Time</label> <input type="text" id="input-time" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl mb-6 font-bold"><div class="flex gap-3"><button onclick="closeRowModal()" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl">Cancel</button> <button onclick="confirmNewRow()" class="flex-1 py-3 bg-[#547C44] hover:bg-[#436435] text-white font-bold rounded-xl">Insert</button></div></div></div>
-<div id="modal-pick-task" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"><div class="bg-white p-6 rounded-3xl w-full max-w-sm shadow-2xl border border-slate-100"><h3 class="text-xl font-black text-slate-800 mb-4">Insert Category</h3><label class="block text-xs font-bold text-slate-500 uppercase mb-1 pl-1">Building</label> <select id="select-pick-building" onchange="onPickBuildingChange()" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl mb-3 font-bold"></select> <label class="block text-xs font-bold text-slate-500 uppercase mb-1 pl-1">Local / Area</label> <select id="select-pick-local" onchange="onPickLocalChange()" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl mb-6 font-bold"></select><div class="flex gap-3"><button onclick="closePickTaskModal()" class="flex-1 py-3 bg-slate-100 font-bold rounded-xl">Cancel</button> <button onclick="confirmPickTask()" class="flex-1 py-3 bg-[#547C44] text-white font-bold rounded-xl">Add Task</button></div></div></div>
-<script>
-const firebaseConfig={apiKey:"AIzaSyBSPim1j9yxA56AeWhWhdG_8TKzh_F-gZc",authDomain:"westend-c6992.firebaseapp.com",projectId:"westend-c6992",storageBucket:"westend-c6992.firebasestorage.app",messagingSenderId:"781546407326",appId:"1:781546407326:web:ed4126214f41498153428f",measurementId:"G-DEGC00501H"};firebase.initializeApp(firebaseConfig);const db=firebase.firestore();
-let dbStaff=[],dbTasks=[],targetTable=null,targetTaskCell=null,currentScheduleId=null;
-window.onload=function(){let e=localStorage.getItem("loggedUser");if(!e)window.location.href="index.html";let t=localStorage.getItem("loggedFullName");if(!t||"undefined"===t)t=e;let n=localStorage.getItem("loggedRole");if(!n||"undefined"===n)n="Supervisor";document.getElementById("doc-author-name").innerText=t,document.getElementById("doc-author-role").innerText=n,fetchStaffFromFirebase(),fetchTasksFromFirebase(),loadSidebarSchedules(),addSummaryRow(),addBlock(),checkSummaryVisibility(),ensureTaskTimeControls(document.getElementById("document-a4")),refreshTaskTimeButtons(document.getElementById("document-a4"))};
-function updateStatusName(e){document.getElementById("current-schedule-name").innerText=e||"Unsaved Document"}
-function createNewSchedule(){if(confirm("Start a new document? Unsaved changes will be lost."))currentScheduleId=null,document.getElementById("tbody-summary").innerHTML="",document.getElementById("blocks-container").innerHTML="",addSummaryRow(),addBlock(),updateStatusName(null),loadSidebarSchedules()}
-async function saveSchedule(){syncInputsBeforeSave();const e=document.getElementById("document-a4").innerHTML,t=document.getElementById("btn-save");t.innerText="⏳ Saving...",t.disabled=!0;try{if(!currentScheduleId){const n=prompt("Enter a name for this schedule (E.g., King's Road Park):");if(!n)throw new Error("Canceled");const a=await db.collection("schedules").add({name:n,html_data:e,timestamp:firebase.firestore.FieldValue.serverTimestamp()});currentScheduleId=a.id,updateStatusName(n)}else await db.collection("schedules").doc(currentScheduleId).update({html_data:e,timestamp:firebase.firestore.FieldValue.serverTimestamp()});loadSidebarSchedules()}catch(n){"Canceled"!==n.message&&alert("Error saving: "+n.message)}finally{t.innerHTML="💾 Save Changes",t.disabled=!false}}
-async function loadSidebarSchedules(){const e=document.getElementById("sidebar-list");try{const t=await db.collection("schedules").orderBy("timestamp","desc").get();if(t.empty)e.innerHTML='<div class="text-center text-slate-400 font-medium py-4 text-sm">No schedules saved.</div>';else{let n="";t.forEach(e=>{const t=e.data(),a=currentScheduleId===e.id?"bg-[#547C44]/10 border-[#547C44]":"bg-white border-slate-200 hover:border-[#547C44]";n+=`<div class="group flex justify-between items-center p-3 rounded-xl border transition-colors cursor-pointer ${a}" onclick="loadSchedule('${e.id}', '${t.name}')"><span class="font-bold text-slate-800 text-sm truncate pr-2">${t.name}</span><button onclick="event.stopPropagation(); deleteSchedule('${e.id}')" class="text-red-400 hover:text-red-600 hidden group-hover:block px-2">X</button></div>`}),e.innerHTML=n}}catch(t){}}
-async function loadSchedule(e,t){try{const n=await db.collection("schedules").doc(e).get();n.exists&&(document.getElementById("document-a4").innerHTML=n.data().html_data,currentScheduleId=e,updateStatusName(t),loadSidebarSchedules(),checkSummaryVisibility(),ensureTaskTimeControls(document.getElementById("document-a4")),refreshTaskTimeButtons(document.getElementById("document-a4")))}catch(n){alert("Error: "+n.message)}}
-async function deleteSchedule(e){confirm("Delete this schedule permanently?")&&(await db.collection("schedules").doc(e).delete(),currentScheduleId===e&&createNewSchedule(),loadSidebarSchedules())}
-async function fetchTasksFromFirebase(){const e=await db.collection("task_templates").get();dbTasks=[],e.forEach(e=>dbTasks.push({id:e.id,...e.data()}))}
-function openTasksModal(){renderTasksList(),document.getElementById("modal-tasks").classList.remove("hidden")}
-function closeTasksModal(){document.getElementById("modal-tasks").classList.add("hidden")}
-async function saveNewTaskTemplate(){const e=document.getElementById("new-task-building").value.trim(),t=document.getElementById("new-task-cat").value.trim(),n=document.getElementById("new-task-subs").value,a=n.split("\n").map(e=>e.trim()).filter(e=>""!==e);if(e&&t){const n=await db.collection("task_templates").add({building:e,category:t,tasks:a});dbTasks.push({id:n.id,building:e,category:t,tasks:a}),document.getElementById("new-task-building").value="",document.getElementById("new-task-cat").value="",document.getElementById("new-task-subs").value="",renderTasksList()}else alert("Please fill in both Building and Local fields.")}
-async function deleteTaskTemplate(e){await db.collection("task_templates").doc(e).delete(),dbTasks=dbTasks.filter(t=>t.id!==e),renderTasksList()}
-function renderTasksList(){const e=document.getElementById("tasks-lib-container"),t={};dbTasks.forEach(e=>{const n=e.building||"No Building";t[n]||(t[n]=[]),t[n].push(e)});let n="";for(const[a,l]of Object.entries(t)){n+=`<div class="mb-4"><div class="flex items-center gap-2 mb-2"><span class="text-xs font-black text-slate-500 uppercase tracking-wider">🏢 ${a}</span><span class="text-xs text-slate-400">(${l.length} locals)</span></div>`,l.forEach(e=>{n+=`<div class="flex justify-between items-center bg-white p-2 px-3 border border-slate-200 rounded-lg ml-3 mb-1"><div><span class="font-bold text-[#547C44] text-sm block">📍 ${e.category}</span><span class="text-xs text-slate-500">${e.tasks.length} tasks</span></div><button onclick="deleteTaskTemplate('${e.id}')" class="text-red-400 hover:text-red-600 font-bold px-2 py-1 text-xs">X</button></div>`}),n+="</div>"}0===Object.keys(t).length&&(n='<div class="text-center text-slate-400 font-medium py-4 text-sm">No templates saved yet.</div>'),e.innerHTML=n}
-function openPickTaskModal(e){targetTaskCell=e.closest("td");const t=[...new Set(dbTasks.map(e=>e.building||"No Building"))],n=document.getElementById("select-pick-building");n.innerHTML='<option value="">-- Select Building --</option><option value="blank">-- Create Blank Category --</option>'+t.map(e=>`<option value="${e}">${e}</option>`).join(""),document.getElementById("select-pick-local").innerHTML='<option value="">-- First select a Building --</option>',document.getElementById("modal-pick-task").classList.remove("hidden")}
-function closePickTaskModal(){document.getElementById("modal-pick-task").classList.add("hidden")}
-function onPickBuildingChange(){const e=document.getElementById("select-pick-building").value,t=document.getElementById("select-pick-local");if("blank"===e)return void(t.innerHTML='<option value="blank">-- Create Blank Category --</option>');if(!e)return void(t.innerHTML='<option value="">-- First select a Building --</option>');const n=dbTasks.filter(t=>(t.building||"No Building")===e);t.innerHTML='<option value="">-- Select Local --</option><option value="blank">-- Create Blank Category --</option>'+n.map((e,t)=>{return`<option value="${dbTasks.indexOf(e)}">${e.category}</option>`}).join("")}
-function onPickLocalChange(){}
-function buildTaskGroupMarkup(e,t){return`<div class="flex items-center justify-between mb-1 gap-2"><div class="flex items-center gap-2 flex-1 min-w-0"><div class="font-bold text-[#547C44] outline-none uppercase flex-1 min-w-0" contenteditable="true">${e}</div><button class="add-time-btn no-print text-[11px] font-bold bg-[#547C44]/10 text-[#547C44] px-2 py-1 rounded-full whitespace-nowrap hidden hover:bg-[#547C44]/20 transition-colors" onclick="addTaskGroupTime(this)">+ Add Time</button><span class="task-time-badge hidden items-center gap-1 bg-[#547C44]/10 text-[#547C44] text-[11px] font-bold px-2 py-1 rounded-full"><span class="task-time-text outline-none" contenteditable="true">19:00 - 20:30</span><button class="no-print text-[#547C44] hover:text-red-600 leading-none font-black" onclick="removeTaskGroupTime(this)" title="Remove time">×</button></span></div><button class="no-print opacity-0 group-hover/cat:opacity-100 bg-red-100 text-red-600 text-xs px-2 py-1 rounded transition-opacity" onclick="this.closest('.task-group').remove()">Remove</button><div class="no-print opacity-0 group-hover/cat:opacity-100 flex flex-col gap-0.5 transition-opacity"><button class="bg-slate-100 hover:bg-[#547C44]/20 text-slate-500 hover:text-[#547C44] text-[10px] px-1.5 py-0.5 rounded leading-none font-bold" onclick="moveTaskUp(this)" title="Move up">▲</button><button class="bg-slate-100 hover:bg-[#547C44]/20 text-slate-500 hover:text-[#547C44] text-[10px] px-1.5 py-0.5 rounded leading-none font-bold" onclick="moveTaskDown(this)" title="Move down">▼</button></div></div><div class="subtitle-blocks space-y-3 mt-2"><div class="subtitle-block border-l-2 border-[#547C44]/30 pl-3 group/sub"><div class="flex items-center gap-2 mb-1"><div class="font-bold text-slate-700 outline-none text-sm flex-1" contenteditable="true">General</div><button class="sub-add-time-btn no-print text-[11px] font-bold bg-[#547C44]/10 text-[#547C44] px-2 py-1 rounded-full whitespace-nowrap opacity-0 group-hover/sub:opacity-100 hover:bg-[#547C44]/20 transition-all" onclick="addSubBlockTime(this)">+ Time</button><span class="sub-time-badge hidden items-center gap-1 bg-[#547C44]/10 text-[#547C44] text-[11px] font-bold px-2 py-1 rounded-full"><span class="sub-time-text outline-none" contenteditable="true">19:00 - 20:30</span><button class="no-print text-[#547C44] hover:text-red-600 leading-none font-black" onclick="removeSubBlockTime(this)" title="Remove time">×</button></span><button class="no-print text-[10px] text-red-400 hover:text-red-600 font-bold opacity-0 group-hover/sub:opacity-100 transition-opacity" onclick="this.closest('.subtitle-block').remove()" title="Remove sub-title">×</button></div><ul class="task-list outline-none" contenteditable="true">${t}</ul><button class="no-print text-[10px] font-bold text-slate-400 hover:text-[#547C44] mt-1 flex items-center gap-1 transition-colors" onclick="addSubTaskToBlock(this)">+ Add Sub-task</button></div></div><button class="add-subtitle-btn no-print text-[11px] font-bold text-slate-500 hover:text-[#547C44] mt-2 flex items-center gap-1 transition-colors" onclick="addSubTitleBlock(this)">+ Add Sub-title</button>`}
-function isTimeColumnEnabledForGroup(e){const t=e.closest("tr");if(t&&t.querySelector('td[data-col="time"]'))return!0;const n=e.closest("table");return!!(n&&n.querySelector('thead th[data-col="time"]'))}
-function ensureTaskTimeControls(e=document){e.querySelectorAll(".task-group").forEach(e=>{if(e.querySelector(".add-time-btn"))return;const t=e.querySelector(".task-list"),n=t?t.innerHTML:"<li>Type your first task here...</li>",a=e.querySelector('[contenteditable="true"]'),l=a?a.innerText.trim():"Category";e.classList.add("group/cat","relative","border","border-transparent","hover:border-slate-200","rounded-lg"),e.classList.contains("p-2")||e.classList.contains("p-1")||e.classList.add("p-2"),e.innerHTML=buildTaskGroupMarkup(l||"Category",n)}),e.querySelectorAll(".subtitle-block").forEach(e=>{if(e.querySelector(".sub-add-time-btn"))return;const t=e.querySelector(".flex.items-center.gap-2");if(!t)return;const n=t.querySelector('[contenteditable="true"]'),a=n?n.innerText.trim():"General",l=t.querySelector("button"),c=l?l.outerHTML:"";t.innerHTML=`<div class="font-bold text-slate-700 outline-none text-sm flex-1" contenteditable="true">${a}</div><button class="sub-add-time-btn no-print text-[11px] font-bold bg-[#547C44]/10 text-[#547C44] px-2 py-1 rounded-full whitespace-nowrap hover:bg-[#547C44]/20 transition-colors" onclick="addSubBlockTime(this)">+ Time</button><span class="sub-time-badge hidden items-center gap-1 bg-[#547C44]/10 text-[#547C44] text-[11px] font-bold px-2 py-1 rounded-full"><span class="sub-time-text outline-none" contenteditable="true">19:00 - 20:30</span><button class="no-print text-[#547C44] hover:text-red-600 leading-none font-black" onclick="removeSubBlockTime(this)" title="Remove time">×</button></span>${c}`})}
-function refreshTaskTimeButtons(e=document){ensureTaskTimeControls(e),e.querySelectorAll(".task-group").forEach(e=>{const t=e.querySelector(".add-time-btn"),n=e.querySelector(".task-time-badge"),a=e.querySelector(".task-time-text");if(!t||!n||!a)return;const l=isTimeColumnEnabledForGroup(e);a.innerText.trim().length>0?(t.classList.add("hidden"),n.classList.add("inline-flex"),n.classList.remove("hidden")):l?(n.classList.add("hidden"),n.classList.remove("inline-flex"),t.classList.remove("hidden")):(t.classList.add("hidden"),n.classList.add("hidden"),n.classList.remove("inline-flex"))})}
-function addTaskGroupTime(e){const t=e.closest(".task-group"),n=t.querySelector(".task-time-badge"),a=t.querySelector(".task-time-text");a.innerText.trim()||(a.innerText="19:00 - 20:30"),n.classList.remove("hidden"),n.classList.add("inline-flex"),e.classList.add("hidden"),a.focus()}
-function removeTaskGroupTime(e){const t=e.closest(".task-time-badge"),n=e.closest(".task-group"),a=t.querySelector(".task-time-text"),l=n.querySelector(".add-time-btn");a.innerText="",t.classList.add("hidden"),t.classList.remove("inline-flex"),isTimeColumnEnabledForGroup(n)&&l.classList.remove("hidden")}
-function moveTaskUp(e){const t=e.closest(".task-group"),n=t.closest(".task-cell"),a=t.previousElementSibling;a&&a.classList.contains("task-group")&&n.insertBefore(t,a)}
-function moveTaskDown(e){const t=e.closest(".task-group"),n=t.closest(".task-cell"),a=t.nextElementSibling;a&&a.classList.contains("task-group")&&n.insertBefore(a,t)}
-function addSubTitleBlock(e){const t=e.closest(".task-group").querySelector(".subtitle-blocks"),n=document.createElement("div");n.className="subtitle-block border-l-2 border-[#547C44]/30 pl-3 group/sub",n.innerHTML=`<div class="flex items-center gap-2 mb-1"><div class="font-bold text-slate-700 outline-none text-sm flex-1" contenteditable="true">New Sub-title</div><button class="sub-add-time-btn no-print text-[11px] font-bold bg-[#547C44]/10 text-[#547C44] px-2 py-1 rounded-full whitespace-nowrap opacity-0 group-hover/sub:opacity-100 hover:bg-[#547C44]/20 transition-all" onclick="addSubBlockTime(this)">+ Time</button><span class="sub-time-badge hidden items-center gap-1 bg-[#547C44]/10 text-[#547C44] text-[11px] font-bold px-2 py-1 rounded-full"><span class="sub-time-text outline-none" contenteditable="true">19:00 - 20:30</span><button class="no-print text-[#547C44] hover:text-red-600 leading-none font-black" onclick="removeSubBlockTime(this)" title="Remove time">×</button></span><button class="no-print text-[10px] text-red-400 hover:text-red-600 font-bold opacity-0 group-hover/sub:opacity-100 transition-opacity" onclick="this.closest('.subtitle-block').remove()" title="Remove sub-title">×</button></div><ul class="task-list outline-none" contenteditable="true"><li>New sub-task...</li></ul><button class="no-print text-[10px] font-bold text-slate-400 hover:text-[#547C44] mt-1 flex items-center gap-1 transition-colors" onclick="addSubTaskToBlock(this)">+ Add Sub-task</button>`,t.appendChild(n);const a=n.querySelector('[contenteditable="true"]');if(a){a.focus();const e=document.createRange();e.selectNodeContents(a);const t=window.getSelection();t.removeAllRanges(),t.addRange(e)}}
-function addSubTaskToBlock(e){const t=e.closest(".subtitle-block").querySelector(".task-list"),n=document.createElement("li");n.textContent="New sub-task...",n.contentEditable="true",t.appendChild(n),n.focus()}
-function addSubBlockTime(e){const t=e.closest(".subtitle-block"),n=t.querySelector(".sub-time-badge"),a=t.querySelector(".sub-time-text");a.innerText.trim()||(a.innerText="19:00 - 20:30"),n.classList.remove("hidden"),n.classList.add("inline-flex"),e.classList.add("hidden"),a.focus()}
-function removeSubBlockTime(e){const t=e.closest(".sub-time-badge"),n=e.closest(".subtitle-block"),a=t.querySelector(".sub-time-text"),l=n.querySelector(".sub-add-time-btn");a.innerText="",t.classList.add("hidden"),t.classList.remove("inline-flex"),l.classList.remove("hidden")}
-function confirmPickTask(){const e=document.getElementById("select-pick-building").value,t=document.getElementById("select-pick-local").value;let n="New Category",a="<li>New sub-task...</li>";if("blank"===e||"blank"===t)n="New Category",a="<li>New sub-task...</li>";else if(t&&""!==t){const e=dbTasks[parseInt(t)];e&&(n=e.category,a=e.tasks.map(e=>`<li>${e}</li>`).join(""))}const l=document.createElement("div");l.className="task-group mb-4 group/cat relative border border-transparent hover:border-slate-200 rounded-lg p-1 -mx-1",l.innerHTML=buildTaskGroupMarkup(n,a);const c=targetTaskCell.querySelector(".add-cat-btn");targetTaskCell.insertBefore(l,c),refreshTaskTimeButtons(targetTaskCell.closest("tr")||targetTaskCell),closePickTaskModal()}
-function toggleTimeColumn(e){const t=e.closest(".shift-block")||e.closest(".mb-10"),n=t.querySelector("table"),a=n.querySelector("thead tr"),l=n.querySelector("tbody");let c=-1;if(Array.from(a.children).forEach((e,t)=>{"time"===e.getAttribute("data-col")||e.innerText.toLowerCase().includes("time")&&(c=t)}),-1!==c&&c>0)a.children[c].remove(),Array.from(l.children).forEach(e=>{e.children[c]&&e.children[c].remove()});else{const e=document.createElement("th");e.className="border border-slate-300 py-2 px-3 text-left w-1/5",e.setAttribute("data-col","time"),e.innerHTML='<div contenteditable="true" class="outline-none">Time</div>',a.insertBefore(e,a.children[1]),Array.from(l.children).forEach(e=>{const t=document.createElement("td");t.className="border border-slate-300 py-3 px-3 font-bold text-slate-600 align-top",t.setAttribute("data-col","time"),t.innerHTML='<div contenteditable="true" class="outline-none">19:00 - 01:00</div>',e.insertBefore(t,e.children[1])})}refreshTaskTimeButtons(t)}
-function checkSummaryVisibility(){const e=document.getElementById("tbody-summary"),t=document.getElementById("summary-container");0===e.children.length?(t.classList.add("print-hidden"),t.classList.add("hidden")):(t.classList.remove("print-hidden"),t.classList.remove("hidden"))}
-function removeSummary(e){e.closest("tr").remove(),checkSummaryVisibility()}
-function addSummaryRow(){const e=document.getElementById("tbody-summary"),t=document.createElement("tr");t.className="border-b border-slate-200 group/tr",t.innerHTML='<td class="py-2 w-1/3 relative pl-8"><button class="no-print absolute left-0 top-1.5 text-red-500 font-bold hidden group-hover/tr:block bg-red-50 px-2 rounded" onclick="removeSummary(this)">X</button><select class="font-bold text-slate-700 bg-transparent outline-none cursor-pointer print-no-arrow w-full"><option>WEEKDAYS (MON-FRI)</option><option>WEEKENDS (SAT-SUN)</option><option>EVERYDAY</option><option>MONDAY TO THURSDAY</option><option>SUNDAY</option><option>MONDAY</option><option>TUESDAY</option><option>WEDNESDAY</option><option>THURSDAY</option><option>FRIDAY</option><option>SATURDAY</option></select></td><td class="py-2 w-1/3 text-center">START TIME: <input type="time" value="19:00" class="font-bold text-slate-700 bg-transparent outline-none print-no-icon"></td><td class="py-2 w-1/3 text-right pr-4">FINISH TIME: <input type="time" value="01:00" class="font-bold text-slate-700 bg-transparent outline-none print-no-icon"></td>',e.appendChild(t),checkSummaryVisibility()}
-function addBlock(){const e=document.getElementById("blocks-container"),t=document.createElement("div");t.className="mb-10 shift-block",t.innerHTML='<input type="text" value="SHIFT TITLE HERE (E.G., SUNDAYS SCHEDULES)" class="w-full bg-[#547C44] text-white font-bold py-2 px-4 text-center uppercase tracking-widest outline-none placeholder-white/70"><table class="w-full border-collapse border border-slate-300 mt-2 text-sm relative"><thead><tr class="bg-slate-100 text-slate-600 uppercase"><th class="border border-slate-300 py-2 px-3 text-left w-1/4">Employer</th><th class="border border-slate-300 py-2 px-3 text-left w-1/5" data-col="time"><div contenteditable="true" class="outline-none">Time</div></th><th class="border border-slate-300 py-2 px-3 text-left">Task</th></tr></thead><tbody></tbody></table><div class="no-print mt-3 flex items-center justify-between"><div class="flex gap-4"><button class="text-sm font-bold text-[#547C44] hover:underline" onclick="openRowModal(this)">+ Add Staff</button> <button class="text-sm font-bold text-slate-500 hover:underline" onclick="toggleTimeColumn(this)">⏱️ Toggle Time Column</button></div><button class="text-sm font-bold text-red-500 hover:underline" onclick="if(confirm(\'Delete entire table?\')) this.closest(\'.shift-block\').remove()">Delete Table</button></div>',e.appendChild(t)}
-async function fetchStaffFromFirebase(){const e=await db.collection("staff").get();dbStaff=[],e.forEach(e=>dbStaff.push({id:e.id,...e.data()}))}
-function openStaffModal(){renderStaffList(),document.getElementById("modal-staff").classList.remove("hidden")}
-function closeStaffModal(){document.getElementById("modal-staff").classList.add("hidden")}
-async function saveNewStaff(){const e=document.getElementById("new-staff-name").value,t=document.getElementById("new-staff-start").value,n=document.getElementById("new-staff-finish").value,a=t&&n?`${t} - ${n}`:"";if(e){const t=await db.collection("staff").add({name:e,time:a});dbStaff.push({id:t.id,name:e,time:a}),document.getElementById("new-staff-name").value="",renderStaffList()}}
-async function deleteStaff(e){await db.collection("staff").doc(e).delete(),dbStaff=dbStaff.filter(t=>t.id!==e),renderStaffList()}
-function renderStaffList(){document.getElementById("staff-list").innerHTML=dbStaff.map(e=>`<li class="flex justify-between items-center bg-white p-2 px-3 border border-slate-200 rounded-lg"><div><span class="font-bold text-slate-700 block">${e.name}</span><span class="text-xs text-slate-500">${e.time}</span></div><button onclick="deleteStaff('${e.id}')" class="text-red-500 font-bold px-2 py-1">X</button></li>`).join("")}
-function openRowModal(e){let t=e.closest(".shift-block")||e.closest(".mb-10");targetTable=t.querySelector("tbody");const n=document.getElementById("select-staff");n.innerHTML='<option value="">-- Select Employee --</option>'+dbStaff.map(e=>`<option value="${e.id}" data-time="${e.time}">${e.name}</option>`).join(""),document.getElementById("input-time").value="",document.getElementById("modal-row").classList.remove("hidden")}
-function autoFillTime(e){e.selectedIndex>0?document.getElementById("input-time").value=e.options[e.selectedIndex].getAttribute("data-time")||"":document.getElementById("input-time").value=""}
-function closeRowModal(){document.getElementById("modal-row").classList.add("hidden")}
-function confirmNewRow(){const e=document.getElementById("select-staff");if(!e.value)return alert("Select an employee.");const t=e.options[e.selectedIndex].text,n=document.getElementById("input-time").value,a=targetTable.closest("table").querySelector("thead tr"),l=a.children.length>=3?`<td class="border border-slate-300 py-3 px-3 font-bold text-slate-600 align-top" data-col="time"><div contenteditable="true" class="outline-none">${n}</div></td>`:"",c=document.createElement("tr");c.className="group/row",c.innerHTML=`<td class="border border-slate-300 py-3 px-3 font-bold align-top relative"><button class="no-print absolute -left-6 top-3 text-red-500 font-bold hidden group-hover/row:block bg-red-50 px-2 rounded" onclick="this.closest('tr').remove()">X</button><div contenteditable="true" class="outline-none">${t}</div></td>${l}<td class="border border-slate-300 py-3 px-3 align-top task-cell"><div class="task-group mb-4 relative p-2 border border-transparent hover:border-slate-200 rounded-lg group/cat">${buildTaskGroupMarkup("Category (e.g., Kitchen)","<li>Type your first task here...</li>")}</div><button class="add-cat-btn no-print text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-1 rounded transition-colors mb-2" onclick="openPickTaskModal(this)">+ Add Category</button></td>`,targetTable.appendChild(c),refreshTaskTimeButtons(c),closeRowModal()}
-function syncInputsBeforeSave(){document.querySelectorAll("#document-a4 input").forEach(e=>{"file"!==e.type&&e.setAttribute("value",e.value)}),document.querySelectorAll("#document-a4 select").forEach(e=>{Array.from(e.options).forEach(e=>{e.selected?e.setAttribute("selected","selected"):e.removeAttribute("selected")})})}
-</script></body></html>
+
+    <div id="sidebar" class="w-72 bg-white border-r border-slate-200 flex flex-col h-full shadow-lg z-40 relative">
+        <div class="p-5 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+            <h3 class="font-black text-slate-800 text-lg">Saved Schedules</h3>
+            <button onclick="createNewSchedule()" class="p-2 bg-[#547C44] text-white rounded-lg hover:bg-[#436435] transition-colors" title="Start New Document">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            </button>
+        </div>
+        <div id="sidebar-list" class="flex-1 overflow-y-auto p-3 space-y-2 bg-slate-50">
+            <div class="text-center text-slate-400 font-bold py-4 text-sm">Loading from Firebase...</div>
+        </div>
+        <div class="p-4 border-t border-slate-200 bg-white">
+            <a href="menu.html" class="flex items-center justify-center gap-2 w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl transition-colors">
+                Back to Menu
+            </a>
+        </div>
+    </div>
+
+    <div id="main-content" class="flex-1 flex flex-col h-full overflow-y-auto relative bg-slate-100">
+        
+        <div class="no-print bg-white shadow-sm border-b border-slate-200 sticky top-0 z-50">
+            <div class="max-w-[1200px] mx-auto px-6 py-4 flex flex-col xl:flex-row justify-between items-center gap-4">
+                <div>
+                    <h2 class="text-xl font-extrabold text-slate-800">Schedule Editor</h2>
+                    <p class="text-xs text-slate-500 font-medium uppercase mt-1">Status: <span id="current-schedule-name" class="font-bold text-[#547C44]">Unsaved Document</span></p>
+                </div>
+                
+                <div class="flex flex-wrap items-center justify-center gap-2">
+                    <button onclick="openTasksModal()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl border transition-colors flex items-center gap-2">
+                        📋 Task Library
+                    </button>
+                    <button onclick="openStaffModal()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl border transition-colors flex items-center gap-2">
+                        👥 Manage Staff
+                    </button>
+                    <div class="h-6 border-l border-slate-300 mx-2 hidden md:block"></div>
+                    <button onclick="saveSchedule()" id="btn-save" class="px-6 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-sm rounded-xl border border-blue-200 transition-colors flex items-center gap-2">
+                        💾 Save Changes
+                    </button>
+                    <button onclick="duplicateSchedule()" class="px-4 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold text-sm rounded-xl border border-amber-200 transition-colors flex items-center gap-2" title="Criar uma cópia deste documento">
+                        📑 Duplicate (Save As)
+                    </button>
+                    <button onclick="prepareAndPrint()" class="px-6 py-2.5 bg-[#547C44] hover:bg-[#436435] text-white font-bold text-sm rounded-xl shadow-md transition-colors flex items-center gap-2">
+                        🖨️ Export to PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-8 mb-20 flex justify-center px-4">
+            <div id="document-a4" class="a4-page bg-white shadow-2xl w-full max-w-[21cm] min-h-[29.7cm] p-[15mm] border border-slate-200 relative">
+                
+                <div class="flex flex-col items-center mb-8 border-b-2 border-[#547C44] pb-6 relative group">
+                    <img src="logo.png" alt="West End Cleaning" class="h-28 object-contain mb-4">
+                    <div contenteditable="true" class="w-full text-2xl font-black text-[#547C44] uppercase tracking-wider text-center outline-none bg-transparent mb-1 print-color-exact" style="-webkit-print-color-adjust: exact; print-color-adjust: exact; color: #547C44;">BUILDING NAME HERE</div>
+                    <h2 class="text-xl font-bold text-slate-600 tracking-widest uppercase mt-1 text-center" contenteditable="true">Cleaning Schedule</h2>
+                </div>
+
+                <div id="summary-container" class="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-8 relative">
+                    <table class="w-full text-sm font-bold text-slate-700">
+                        <tbody id="tbody-summary">
+                        </tbody>
+                    </table>
+                </div>
+                <button onclick="addSummaryRow()" class="no-print -mt-6 mb-8 ml-2 text-xs font-bold text-[#547C44] hover:underline flex items-center gap-1">
+                    + Add Shift Time
+                </button>
+
+                <div id="blocks-container"></div>
+
+                <div class="no-print mt-6 text-center">
+                    <button onclick="addBlock()" class="px-6 py-3 border-2 border-dashed border-[#547C44] text-[#547C44] font-bold rounded-2xl hover:bg-[#547C44] hover:text-white transition-all">
+                        + Add New Table (Shift/Day)
+                    </button>
+                </div>
+
+                <div class="mt-12 text-center border-t border-slate-200 pt-6">
+                    <p class="text-xs text-slate-400 mb-2">Official Document - West End Cleaning Services Ltd</p>
+                    <p class="text-sm font-bold text-slate-700">
+                        Prepared by: <span id="doc-author-name" class="text-[#547C44]"></span> 
+                        <span class="text-slate-400 mx-1">|</span> 
+                        Role: <span id="doc-author-role" class="text-slate-500 font-medium"></span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-staff" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border border-slate-100">
+            <h3 class="text-xl font-black text-slate-800 mb-2">Staff Database</h3>
+            
+            <div class="flex flex-col gap-3 mb-4 border-b pb-4">
+                <input type="text" id="new-staff-name" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none" placeholder="Employee Name">
+                <div class="flex items-center gap-2">
+                    <input type="time" id="new-staff-start" value="19:00" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold">
+                    <span class="font-bold text-slate-400">to</span>
+                    <input type="time" id="new-staff-finish" value="01:00" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold">
+                </div>
+                <button onclick="saveNewStaff()" class="w-full py-3 mt-1 bg-[#547C44] hover:bg-[#436435] text-white font-bold rounded-xl">Add Employee</button>
+            </div>
+            <ul id="staff-list" class="space-y-2 max-h-48 overflow-y-auto mb-6"></ul>
+            <button onclick="closeStaffModal()" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl">Close</button>
+        </div>
+    </div>
+
+    <div id="modal-tasks" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-white p-6 rounded-3xl w-full max-w-lg shadow-2xl border border-slate-100">
+            <h3 class="text-xl font-black text-slate-800 mb-2">Task Library</h3>
+            <p class="text-sm text-slate-500 mb-4">Save Building → Local → Tasks templates to reuse later.</p>
+            
+            <div class="flex flex-col gap-3 mb-4 border-b pb-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1 pl-1">Building</label>
+                    <input type="text" id="new-task-building" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none font-bold text-slate-800" placeholder="Building Name (e.g. West End Tower)">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1 pl-1">Local / Area</label>
+                    <input type="text" id="new-task-cat" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none font-bold text-[#547C44]" placeholder="Local Name (e.g. KITCHEN)">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1 pl-1">Tasks</label>
+                    <textarea id="new-task-subs" rows="3" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none text-sm" placeholder="Sub-tasks (One per line)&#10;Clean floor&#10;Wash dishes"></textarea>
+                </div>
+                <button onclick="saveNewTaskTemplate()" class="w-full py-3 mt-1 bg-[#547C44] hover:bg-[#436435] text-white font-bold rounded-xl">Save to Library</button>
+            </div>
+            <div id="tasks-lib-container" class="max-h-64 overflow-y-auto mb-6"></div>
+            <button onclick="closeTasksModal()" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl">Close</button>
+        </div>
+    </div>
+
+    <div id="modal-row" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-white p-6 rounded-3xl w-full max-w-sm shadow-2xl border border-slate-100">
+            <h3 class="text-xl font-black text-slate-800 mb-4">Add to Shift</h3>
+            <label class="block text-xs font-bold text-slate-500 uppercase mb-2 pl-1">Select Employee</label>
+            <select id="select-staff" onchange="autoFillTime(this)" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl mb-4 font-bold"></select>
+            <label class="block text-xs font-bold text-slate-500 uppercase mb-2 pl-1">Time</label>
+            <input type="text" id="input-time" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl mb-6 font-bold">
+            <div class="flex gap-3">
+                <button onclick="closeRowModal()" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl">Cancel</button>
+                <button onclick="confirmNewRow()" class="flex-1 py-3 bg-[#547C44] hover:bg-[#436435] text-white font-bold rounded-xl">Insert</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-pick-task" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-white p-6 rounded-3xl w-full max-w-sm shadow-2xl border border-slate-100">
+            <h3 class="text-xl font-black text-slate-800 mb-4">Insert Category</h3>
+            <label class="block text-xs font-bold text-slate-500 uppercase mb-1 pl-1">Building</label>
+            <select id="select-pick-building" onchange="onPickBuildingChange()" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl mb-3 font-bold"></select>
+            <label class="block text-xs font-bold text-slate-500 uppercase mb-1 pl-1">Local / Area</label>
+            <select id="select-pick-local" onchange="onPickLocalChange()" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl mb-6 font-bold"></select>
+            <div class="flex gap-3">
+                <button onclick="closePickTaskModal()" class="flex-1 py-3 bg-slate-100 font-bold rounded-xl">Cancel</button>
+                <button onclick="confirmPickTask()" class="flex-1 py-3 bg-[#547C44] text-white font-bold rounded-xl">Add Task</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // CONFIGURAÇÃO FIREBASE
+        const firebaseConfig = {
+            apiKey: "AIzaSyBSPim1j9yxA56AeWhWhdG_8TKzh_F-gZc",
+            authDomain: "westend-c6992.firebaseapp.com",
+            projectId: "westend-c6992",
+            storageBucket: "westend-c6992.firebasestorage.app",
+            messagingSenderId: "781546407326",
+            appId: "1:781546407326:web:ed4126214f41498153428f",
+            measurementId: "G-DEGC00501H"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        let dbStaff = []; 
+        let dbTasks = []; 
+        let targetTable = null; 
+        let targetTaskCell = null; 
+        let currentScheduleId = null;
+        
+        window.onload = function() {
+            let loggedUser = localStorage.getItem('loggedUser');
+            if (!loggedUser) window.location.href = 'index.html';
+            
+            let fullName = localStorage.getItem('loggedFullName');
+            if (!fullName || fullName === 'undefined') fullName = loggedUser; 
+            
+            let role = localStorage.getItem('loggedRole');
+            if (!role || role === 'undefined') role = 'Supervisor'; 
+
+            document.getElementById('doc-author-name').innerText = fullName;
+            document.getElementById('doc-author-role').innerText = role;
+
+            fetchStaffFromFirebase(); 
+            fetchTasksFromFirebase();
+            loadSidebarSchedules(); 
+            addSummaryRow();
+            addBlock();
+            checkSummaryVisibility();
+            ensureTaskTimeControls(document.getElementById('document-a4'));
+            refreshTaskTimeButtons(document.getElementById('document-a4'));
+        };
+
+        /* ====== FIREBASE SCHEDULES ====== */
+        function updateStatusName(name) {
+            document.getElementById('current-schedule-name').innerText = name || 'Unsaved Document';
+        }
+
+        function createNewSchedule() {
+            if(confirm("Start a new document? Unsaved changes will be lost.")) {
+                currentScheduleId = null;
+                document.getElementById('tbody-summary').innerHTML = '';
+                document.getElementById('blocks-container').innerHTML = '';
+                addSummaryRow();
+                addBlock();
+                updateStatusName(null);
+                loadSidebarSchedules();
+            }
+        }
+
+        async function saveSchedule() {
+            syncInputsBeforeSave();
+            const documentHtml = document.getElementById('document-a4').innerHTML;
+            const btnSave = document.getElementById('btn-save');
+            btnSave.innerText = "⏳ Saving..."; btnSave.disabled = true;
+
+            try {
+                if (!currentScheduleId) {
+                    const name = prompt("Enter a name for this schedule (E.g., King's Road Park):");
+                    if (!name) throw new Error("Canceled");
+                    const docRef = await db.collection("schedules").add({
+                        name: name, html_data: documentHtml, timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    currentScheduleId = docRef.id;
+                    updateStatusName(name);
+                } else {
+                    await db.collection("schedules").doc(currentScheduleId).update({
+                        html_data: documentHtml, timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+                loadSidebarSchedules(); 
+            } catch(e) {
+                if(e.message !== "Canceled") alert("Error saving: " + e.message);
+            } finally {
+                btnSave.innerHTML = `💾 Save Changes`; btnSave.disabled = false;
+            }
+        }
+
+        async function duplicateSchedule() {
+            const currentName = document.getElementById('current-schedule-name').innerText;
+            const newName = prompt("Name for the NEW duplicated schedule:", currentName !== "Unsaved Document" ? currentName + " - Copy" : "New Document");
+            
+            if (!newName) return; 
+            
+            syncInputsBeforeSave();
+            const documentHtml = document.getElementById('document-a4').innerHTML;
+            
+            try {
+                const docRef = await db.collection("schedules").add({
+                    name: newName, 
+                    html_data: documentHtml, 
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                currentScheduleId = docRef.id; 
+                updateStatusName(newName);
+                loadSidebarSchedules(); 
+                alert("Schedule duplicated successfully! You are now editing the new copy.");
+            } catch(e) {
+                alert("Error duplicating schedule: " + e.message);
+            }
+        }
+
+        function prepareAndPrint() {
+            syncInputsBeforeSave(); 
+            window.print();
+        }
+
+        async function loadSidebarSchedules() {
+            const list = document.getElementById('sidebar-list');
+            try {
+                const snapshot = await db.collection("schedules").orderBy("timestamp", "desc").get();
+                if(snapshot.empty) {
+                    list.innerHTML = '<div class="text-center text-slate-400 font-medium py-4 text-sm">No schedules saved.</div>';
+                } else {
+                    let html = '';
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        const bgClass = currentScheduleId === doc.id ? 'bg-[#547C44]/10 border-[#547C44]' : 'bg-white border-slate-200 hover:border-[#547C44]';
+                        html += `
+                            <div class="group flex justify-between items-center p-3 rounded-xl border transition-colors cursor-pointer ${bgClass}" onclick="loadSchedule('${doc.id}', '${data.name}')">
+                                <span class="font-bold text-slate-800 text-sm truncate pr-2">${data.name}</span>
+                                <button onclick="event.stopPropagation(); deleteSchedule('${doc.id}')" class="text-red-400 hover:text-red-600 hidden group-hover:block px-2">X</button>
+                            </div>`;
+                    });
+                    list.innerHTML = html;
+                }
+            } catch(e) {}
+        }
+
+        async function loadSchedule(id, name) {
+            try {
+                const docSnap = await db.collection("schedules").doc(id).get();
+                if(docSnap.exists) {
+                    document.getElementById('document-a4').innerHTML = docSnap.data().html_data;
+                    currentScheduleId = id;
+                    updateStatusName(name);
+                    loadSidebarSchedules(); 
+                    checkSummaryVisibility();
+                    ensureTaskTimeControls(document.getElementById('document-a4'));
+                    refreshTaskTimeButtons(document.getElementById('document-a4'));
+                }
+            } catch(e) { alert("Error: " + e.message); }
+        }
+
+        async function deleteSchedule(id) {
+            if(confirm("Delete this schedule permanently?")) {
+                await db.collection("schedules").doc(id).delete();
+                if(currentScheduleId === id) createNewSchedule();
+                loadSidebarSchedules();
+            }
+        }
+
+        /* ====== FIREBASE TASKS LIBRARY ====== */
+        async function fetchTasksFromFirebase() {
+            const snap = await db.collection("task_templates").get();
+            dbTasks = [];
+            snap.forEach(doc => dbTasks.push({ id: doc.id, ...doc.data() }));
+        }
+
+        function openTasksModal() {
+            renderTasksList();
+            document.getElementById('modal-tasks').classList.remove('hidden');
+        }
+        function closeTasksModal() { document.getElementById('modal-tasks').classList.add('hidden'); }
+
+        async function saveNewTaskTemplate() {
+            const building = document.getElementById('new-task-building').value.trim();
+            const cat = document.getElementById('new-task-cat').value.trim();
+            const subsText = document.getElementById('new-task-subs').value;
+            const subs = subsText.split('\n').map(s=>s.trim()).filter(s=>s!=='');
+            
+            if(building && cat) {
+                const docRef = await db.collection("task_templates").add({ building: building, category: cat, tasks: subs });
+                dbTasks.push({ id: docRef.id, building: building, category: cat, tasks: subs });
+                document.getElementById('new-task-building').value = '';
+                document.getElementById('new-task-cat').value = '';
+                document.getElementById('new-task-subs').value = '';
+                renderTasksList();
+            } else {
+                alert("Please fill in both Building and Local fields.");
+            }
+        }
+        
+        async function deleteTaskTemplate(id) {
+            await db.collection("task_templates").doc(id).delete();
+            dbTasks = dbTasks.filter(t => t.id !== id);
+            renderTasksList();
+        }
+
+        function renderTasksList() {
+            const container = document.getElementById('tasks-lib-container');
+            const grouped = {};
+            dbTasks.forEach(t => {
+                const b = t.building || 'No Building';
+                if (!grouped[b]) grouped[b] = [];
+                grouped[b].push(t);
+            });
+
+            let html = '';
+            for (const [building, tasks] of Object.entries(grouped)) {
+                html += `
+                <div class="mb-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-xs font-black text-slate-500 uppercase tracking-wider">🏢 ${building}</span>
+                        <span class="text-xs text-slate-400">(${tasks.length} locals)</span>
+                    </div>`;
+                tasks.forEach(t => {
+                    html += `
+                    <div class="flex justify-between items-center bg-white p-2 px-3 border border-slate-200 rounded-lg ml-3 mb-1">
+                        <div>
+                            <span class="font-bold text-[#547C44] text-sm block">📍 ${t.category}</span>
+                            <span class="text-xs text-slate-500">${t.tasks.length} tasks</span>
+                        </div>
+                        <button onclick="deleteTaskTemplate('${t.id}')" class="text-red-400 hover:text-red-600 font-bold px-2 py-1 text-xs">X</button>
+                    </div>`;
+                });
+                html += `</div>`;
+            }
+
+            if (Object.keys(grouped).length === 0) {
+                html = '<div class="text-center text-slate-400 font-medium py-4 text-sm">No templates saved yet.</div>';
+            }
+            container.innerHTML = html;
+        }
+
+        /* ====== PICK TASK MODAL ====== */
+        function openPickTaskModal(btn) {
+            targetTaskCell = btn.closest('td');
+            const buildings = [...new Set(dbTasks.map(t => t.building || 'No Building'))];
+            const selBuilding = document.getElementById('select-pick-building');
+            selBuilding.innerHTML = `<option value="">-- Select Building --</option>` +
+                `<option value="blank">-- Create Blank Category --</option>` +
+                buildings.map(b => `<option value="${b}">${b}</option>`).join('');
+            
+            document.getElementById('select-pick-local').innerHTML = `<option value="">-- First select a Building --</option>`;
+            document.getElementById('modal-pick-task').classList.remove('hidden');
+        }
+        function closePickTaskModal() { document.getElementById('modal-pick-task').classList.add('hidden'); }
+
+        function onPickBuildingChange() {
+            const building = document.getElementById('select-pick-building').value;
+            const selLocal = document.getElementById('select-pick-local');
+            
+            if (building === 'blank') {
+                selLocal.innerHTML = `<option value="blank">-- Create Blank Category --</option>`;
+                return;
+            }
+            if (!building) {
+                selLocal.innerHTML = `<option value="">-- First select a Building --</option>`;
+                return;
+            }
+            
+            const locals = dbTasks.filter(t => (t.building || 'No Building') === building);
+            selLocal.innerHTML = `<option value="">-- Select Local --</option>` +
+                `<option value="blank">-- Create Blank Category --</option>` +
+                locals.map((t, i) => {
+                    const origIdx = dbTasks.indexOf(t);
+                    return `<option value="${origIdx}">${t.category}</option>`;
+                }).join('');
+        }
+
+        function onPickLocalChange() {}
+
+        function buildTaskGroupMarkup(catName, tasksHtml) {
+            return `
+                <div class="flex items-center justify-between mb-1 gap-2">
+                    <div class="flex items-center gap-2 flex-1 min-w-0">
+                        <div class="font-bold text-[#547C44] outline-none uppercase flex-1 min-w-0" contenteditable="true">${catName}</div>
+                        <button class="add-time-btn no-print text-[11px] font-bold bg-[#547C44]/10 text-[#547C44] px-2 py-1 rounded-full whitespace-nowrap hidden hover:bg-[#547C44]/20 transition-colors" onclick="addTaskGroupTime(this)">+ Add Time</button>
+                        <span class="task-time-badge hidden items-center gap-1 bg-[#547C44]/10 text-[#547C44] text-[11px] font-bold px-2 py-1 rounded-full">
+                            <span class="task-time-text outline-none" contenteditable="true">19:00 - 20:30</span>
+                            <button class="no-print text-[#547C44] hover:text-red-600 leading-none font-black" onclick="removeTaskGroupTime(this)" title="Remove time">×</button>
+                        </span>
+                    </div>
+                    <button class="no-print opacity-0 group-hover/cat:opacity-100 bg-red-100 text-red-600 text-xs px-2 py-1 rounded transition-opacity" onclick="this.closest('.task-group').remove()">Remove</button>
+                    <div class="no-print opacity-0 group-hover/cat:opacity-100 flex flex-col gap-0.5 transition-opacity">
+                        <button class="bg-slate-100 hover:bg-[#547C44]/20 text-slate-500 hover:text-[#547C44] text-[10px] px-1.5 py-0.5 rounded leading-none font-bold" onclick="moveTaskUp(this)" title="Move up">▲</button>
+                        <button class="bg-slate-100 hover:bg-[#547C44]/20 text-slate-500 hover:text-[#547C44] text-[10px] px-1.5 py-0.5 rounded leading-none font-bold" onclick="moveTaskDown(this)" title="Move down">▼</button>
+                    </div>
+                </div>
+                <div class="subtitle-blocks space-y-3 mt-2">
+                    <div class="subtitle-block border-l-2 border-[#547C44]/30 pl-3 group/sub">
+                        <div class="flex items-center gap-2 mb-1">
+                            <div class="font-bold text-slate-700 outline-none text-sm flex-1" contenteditable="true">General</div>
+                            <button class="sub-add-time-btn no-print text-[11px] font-bold bg-[#547C44]/10 text-[#547C44] px-2 py-1 rounded-full whitespace-nowrap opacity-0 group-hover/sub:opacity-100 hover:bg-[#547C44]/20 transition-all" onclick="addSubBlockTime(this)">+ Time</button>
+                            <span class="sub-time-badge hidden items-center gap-1 bg-[#547C44]/10 text-[#547C44] text-[11px] font-bold px-2 py-1 rounded-full">
+                                <span class="sub-time-text outline-none" contenteditable="true">19:00 - 20:30</span>
+                                <button class="no-print text-[#547C44] hover:text-red-600 leading-none font-black" onclick="removeSubBlockTime(this)" title="Remove time">×</button>
+                            </span>
+                            <button class="no-print text-[10px] text-red-400 hover:text-red-600 font-bold opacity-0 group-hover/sub:opacity-100 transition-opacity" onclick="this.closest('.subtitle-block').remove()" title="Remove sub-title">×</button>
+                        </div>
+                        <ul class="task-list outline-none" contenteditable="true">${tasksHtml}</ul>
+                        <button class="no-print text-[10px] font-bold text-slate-400 hover:text-[#547C44] mt-1 flex items-center gap-1 transition-colors" onclick="addSubTaskToBlock(this)">+ Add Sub-task</button>
+                    </div>
+                </div>
+                <button class="add-subtitle-btn no-print text-[11px] font-bold text-slate-500 hover:text-[#547C44] mt-2 flex items-center gap-1 transition-colors" onclick="addSubTitleBlock(this)">+ Add Sub-title</button>
+            `;
+        }
+
+        function isTimeColumnEnabledForGroup(taskGroup) {
+            const row = taskGroup.closest('tr');
+            if (row && row.querySelector('td[data-col="time"]')) return true;
+            const table = taskGroup.closest('table');
+            return !!(table && table.querySelector('thead th[data-col="time"]'));
+        }
+
+        function ensureTaskTimeControls(scope = document) {
+            scope.querySelectorAll('.task-group').forEach(group => {
+                if (group.querySelector('.add-time-btn')) return;
+
+                const taskList = group.querySelector('.task-list');
+                const tasksHtml = taskList ? taskList.innerHTML : '<li>Type your first task here...</li>';
+                const categoryEl = group.querySelector('[contenteditable="true"]');
+                const catName = categoryEl ? categoryEl.innerText.trim() : 'Category';
+
+                group.classList.add('group/cat', 'relative', 'border', 'border-transparent', 'hover:border-slate-200', 'rounded-lg');
+                if (!group.classList.contains('p-2') && !group.classList.contains('p-1')) group.classList.add('p-2');
+                group.innerHTML = buildTaskGroupMarkup(catName || 'Category', tasksHtml);
+            });
+
+            scope.querySelectorAll('.subtitle-block').forEach(block => {
+                if (block.querySelector('.sub-add-time-btn')) return; 
+
+                const headerDiv = block.querySelector('.flex.items-center.gap-2');
+                if (!headerDiv) return;
+
+                const subTitleEl = headerDiv.querySelector('[contenteditable="true"]');
+                const subTitleText = subTitleEl ? subTitleEl.innerText.trim() : 'General';
+
+                const removeBtn = headerDiv.querySelector('button');
+                const removeBtnHtml = removeBtn ? removeBtn.outerHTML : '';
+
+                headerDiv.innerHTML = `
+                    <div class="font-bold text-slate-700 outline-none text-sm flex-1" contenteditable="true">${subTitleText}</div>
+                    <button class="sub-add-time-btn no-print text-[11px] font-bold bg-[#547C44]/10 text-[#547C44] px-2 py-1 rounded-full whitespace-nowrap hover:bg-[#547C44]/20 transition-colors" onclick="addSubBlockTime(this)">+ Time</button>
+                    <span class="sub-time-badge hidden items-center gap-1 bg-[#547C44]/10 text-[#547C44] text-[11px] font-bold px-2 py-1 rounded-full">
+                        <span class="sub-time-text outline-none" contenteditable="true">19:00 - 20:30</span>
+                        <button class="no-print text-[#547C44] hover:text-red-600 leading-none font-black" onclick="removeSubBlockTime(this)" title="Remove time">×</button>
+                    </span>
+                    ${removeBtnHtml}
+                `;
+            });
+        }
+
+        function refreshTaskTimeButtons(scope = document) {
+            ensureTaskTimeControls(scope);
+
+            scope.querySelectorAll('.task-group').forEach(group => {
+                const addBtn = group.querySelector('.add-time-btn');
+                const badge = group.querySelector('.task-time-badge');
+                const timeText = group.querySelector('.task-time-text');
+                if (!addBtn || !badge || !timeText) return;
+
+                const timeColumnActive = isTimeColumnEnabledForGroup(group);
+                const hasTimeValue = timeText.innerText.trim().length > 0;
+
+                if (hasTimeValue) {
+                    addBtn.classList.add('hidden');
+                    badge.classList.add('inline-flex');
+                    badge.classList.remove('hidden');
+                } else if (timeColumnActive) {
+                    badge.classList.add('hidden');
+                    badge.classList.remove('inline-flex');
+                    addBtn.classList.remove('hidden');
+                } else {
+                    addBtn.classList.add('hidden');
+                    badge.classList.add('hidden');
+                    badge.classList.remove('inline-flex');
+                }
+            });
+        }
+
+        function addTaskGroupTime(btn) {
+            const group = btn.closest('.task-group');
+            const badge = group.querySelector('.task-time-badge');
+            const timeText = group.querySelector('.task-time-text');
+
+            if (!timeText.innerText.trim()) {
+                timeText.innerText = '19:00 - 20:30';
+            }
+
+            badge.classList.remove('hidden');
+            badge.classList.add('inline-flex');
+            btn.classList.add('hidden');
+            timeText.focus();
+        }
+
+        function removeTaskGroupTime(btn) {
+            const badge = btn.closest('.task-time-badge');
+            const group = btn.closest('.task-group');
+            const timeText = badge.querySelector('.task-time-text');
+            const addBtn = group.querySelector('.add-time-btn');
+
+            timeText.innerText = '';
+            badge.classList.add('hidden');
+            badge.classList.remove('inline-flex');
+
+            if (isTimeColumnEnabledForGroup(group)) {
+                addBtn.classList.remove('hidden');
+            }
+        }
+
+        function moveTaskUp(btn) {
+            const group = btn.closest('.task-group');
+            const cell = group.closest('.task-cell');
+            const prev = group.previousElementSibling;
+            if (prev && prev.classList.contains('task-group')) {
+                cell.insertBefore(group, prev);
+            }
+        }
+
+        function moveTaskDown(btn) {
+            const group = btn.closest('.task-group');
+            const cell = group.closest('.task-cell');
+            const next = group.nextElementSibling;
+            if (next && next.classList.contains('task-group')) {
+                cell.insertBefore(next, group);
+            }
+        }
+
+        function addSubTitleBlock(btn) {
+            const group = btn.closest('.task-group');
+            const container = group.querySelector('.subtitle-blocks');
+            const block = document.createElement('div');
+            block.className = 'subtitle-block border-l-2 border-[#547C44]/30 pl-3 group/sub';
+            block.innerHTML = `
+                <div class="flex items-center gap-2 mb-1">
+                    <div class="font-bold text-slate-700 outline-none text-sm flex-1" contenteditable="true">New Sub-title</div>
+                    <button class="sub-add-time-btn no-print text-[11px] font-bold bg-[#547C44]/10 text-[#547C44] px-2 py-1 rounded-full whitespace-nowrap opacity-0 group-hover/sub:opacity-100 hover:bg-[#547C44]/20 transition-all" onclick="addSubBlockTime(this)">+ Time</button>
+                    <span class="sub-time-badge hidden items-center gap-1 bg-[#547C44]/10 text-[#547C44] text-[11px] font-bold px-2 py-1 rounded-full">
+                        <span class="sub-time-text outline-none" contenteditable="true">19:00 - 20:30</span>
+                        <button class="no-print text-[#547C44] hover:text-red-600 leading-none font-black" onclick="removeSubBlockTime(this)" title="Remove time">×</button>
+                    </span>
+                    <button class="no-print text-[10px] text-red-400 hover:text-red-600 font-bold opacity-0 group-hover/sub:opacity-100 transition-opacity" onclick="this.closest('.subtitle-block').remove()" title="Remove sub-title">×</button>
+                </div>
+                <ul class="task-list outline-none" contenteditable="true"><li>New sub-task...</li></ul>
+                <button class="no-print text-[10px] font-bold text-slate-400 hover:text-[#547C44] mt-1 flex items-center gap-1 transition-colors" onclick="addSubTaskToBlock(this)">+ Add Sub-task</button>
+            `;
+            container.appendChild(block);
+            const subTitleEl = block.querySelector('[contenteditable="true"]');
+            if (subTitleEl) {
+                subTitleEl.focus();
+                const range = document.createRange();
+                range.selectNodeContents(subTitleEl);
+                const sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(range);
+            }
+        }
+
+        function addSubTaskToBlock(btn) {
+            const block = btn.closest('.subtitle-block');
+            const taskList = block.querySelector('.task-list');
+            const li = document.createElement('li');
+            li.textContent = 'New sub-task...';
+            li.contentEditable = 'true';
+            taskList.appendChild(li);
+            li.focus();
+        }
+
+        function addSubBlockTime(btn) {
+            const block = btn.closest('.subtitle-block');
+            const badge = block.querySelector('.sub-time-badge');
+            const timeText = block.querySelector('.sub-time-text');
+
+            if (!timeText.innerText.trim()) {
+                timeText.innerText = '19:00 - 20:30';
+            }
+
+            badge.classList.remove('hidden');
+            badge.classList.add('inline-flex');
+            btn.classList.add('hidden');
+            timeText.focus();
+        }
+
+        function removeSubBlockTime(btn) {
+            const badge = btn.closest('.sub-time-badge');
+            const block = btn.closest('.subtitle-block');
+            const timeText = badge.querySelector('.sub-time-text');
+            const addBtn = block.querySelector('.sub-add-time-btn');
+
+            timeText.innerText = '';
+            badge.classList.add('hidden');
+            badge.classList.remove('inline-flex');
+            addBtn.classList.remove('hidden');
+        }
+        
+        function confirmPickTask() {
+            const buildingVal = document.getElementById('select-pick-building').value;
+            const localVal = document.getElementById('select-pick-local').value;
+            
+            let catName = "New Category";
+            let tasksHtml = "<li>New sub-task...</li>";
+
+            if (buildingVal === 'blank' || localVal === 'blank') {
+                catName = "New Category";
+                tasksHtml = "<li>New sub-task...</li>";
+            } else if (localVal && localVal !== '') {
+                const tmpl = dbTasks[parseInt(localVal)];
+                if (tmpl) {
+                    catName = tmpl.category;
+                    tasksHtml = tmpl.tasks.map(t => `<li>${t}</li>`).join('');
+                }
+            }
+
+            const div = document.createElement('div');
+            div.className = "task-group mb-4 group/cat relative border border-transparent hover:border-slate-200 rounded-lg p-1 -mx-1";
+            div.innerHTML = buildTaskGroupMarkup(catName, tasksHtml);
+            
+            const btn = targetTaskCell.querySelector('.add-cat-btn');
+            targetTaskCell.insertBefore(div, btn);
+            refreshTaskTimeButtons(targetTaskCell.closest('tr') || targetTaskCell);
+            closePickTaskModal();
+        }
+
+        /* ====== TIME COLUMN TOGGLE ====== */
+        function toggleTimeColumn(btn) {
+            const container = btn.closest('.shift-block') || btn.closest('.mb-10');
+            const table = container.querySelector('table');
+            const theadTr = table.querySelector('thead tr');
+            const tbody = table.querySelector('tbody');
+
+            let timeIndex = -1;
+            Array.from(theadTr.children).forEach((th, i) => { 
+                if(th.getAttribute('data-col') === 'time' || th.innerText.toLowerCase().includes('Time')) {
+                    timeIndex = i; 
+                }
+            });
+
+            if(timeIndex !== -1 && timeIndex > 0) {
+                theadTr.children[timeIndex].remove();
+                Array.from(tbody.children).forEach(tr => { if(tr.children[timeIndex]) tr.children[timeIndex].remove(); });
+            } else {
+                const th = document.createElement('th');
+                th.className = "border border-slate-300 py-2 px-3 text-left w-1/5";
+                th.setAttribute('data-col', 'time');
+                th.innerHTML = `<div contenteditable="true" class="outline-none">Time</div>`;
+                theadTr.insertBefore(th, theadTr.children[1]);
+
+                Array.from(tbody.children).forEach(tr => {
+                    const td = document.createElement('td');
+                    td.className = "border border-slate-300 py-3 px-3 font-bold text-slate-600 align-top";
+                    td.setAttribute('data-col', 'time');
+                    td.innerHTML = `<div contenteditable="true" class="outline-none">19:00 - 01:00</div>`;
+                    tr.insertBefore(td, tr.children[1]);
+                });
+            }
+
+            refreshTaskTimeButtons(container);
+        }
+
+        /* ====== SUMMARY ROWS ====== */
+        function checkSummaryVisibility() {
+            const tbody = document.getElementById('tbody-summary');
+            const container = document.getElementById('summary-container');
+            if(tbody.children.length === 0) {
+                container.classList.add('print-hidden');
+                container.classList.add('hidden'); 
+            } else {
+                container.classList.remove('print-hidden');
+                container.classList.remove('hidden');
+            }
+        }
+
+        function removeSummary(btn) {
+            btn.closest('tr').remove();
+            checkSummaryVisibility();
+        }
+
+        function addSummaryRow() {
+            const tbody = document.getElementById('tbody-summary');
+            const tr = document.createElement('tr');
+            tr.className = "border-b border-slate-200 group/tr";
+            tr.innerHTML = `
+                <td class="py-2 w-1/3 relative pl-8">
+                    <button class="no-print absolute left-0 top-1.5 text-red-500 font-bold hidden group-hover/tr:block bg-red-50 px-2 rounded" onclick="removeSummary(this)">X</button>
+                    <select class="font-bold text-slate-700 bg-transparent outline-none cursor-pointer print-no-arrow w-full">
+                        <option>WEEKDAYS (MON-FRI)</option>
+                        <option>WEEKENDS (SAT-SUN)</option>
+                        <option>EVERYDAY</option>
+                        <option>MONDAY TO THURSDAY</option>
+                        <option>SUNDAY</option>
+                        <option>MONDAY</option>
+                        <option>TUESDAY</option>
+                        <option>WEDNESDAY</option>
+                        <option>THURSDAY</option>
+                        <option>FRIDAY</option>
+                        <option>SATURDAY</option>
+                    </select>
+                </td>
+                <td class="py-2 w-1/3 text-center">START TIME: <input type="time" value="19:00" class="font-bold text-slate-700 bg-transparent outline-none print-no-icon"></td>
+                <td class="py-2 w-1/3 text-right pr-4">FINISH TIME: <input type="time" value="01:00" class="font-bold text-slate-700 bg-transparent outline-none print-no-icon"></td>
+            `;
+            tbody.appendChild(tr);
+            checkSummaryVisibility();
+        }
+
+        /* ====== CORE BUILDER ====== */
+        function addBlock() {
+            const container = document.getElementById('blocks-container');
+            const block = document.createElement('div');
+            block.className = "mb-10 shift-block";
+            block.innerHTML = `
+                <input type="text" value="SHIFT TITLE HERE (E.G., SUNDAYS SCHEDULES)" class="w-full bg-[#547C44] text-white font-bold py-2 px-4 text-center uppercase tracking-widest outline-none placeholder-white/70">
+                <table class="w-full border-collapse border border-slate-300 mt-2 text-sm relative">
+                    <thead>
+                        <tr class="bg-slate-100 text-slate-600 uppercase">
+                            <th class="border border-slate-300 py-2 px-3 text-left w-1/4">Employer</th>
+                            <th class="border border-slate-300 py-2 px-3 text-left w-1/5" data-col="time"><div contenteditable="true" class="outline-none">Time</div></th>
+                            <th class="border border-slate-300 py-2 px-3 text-left">Task</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+                <div class="no-print mt-3 flex items-center justify-between">
+                    <div class="flex gap-4">
+                        <button class="text-sm font-bold text-[#547C44] hover:underline" onclick="openRowModal(this)">+ Add Staff</button>
+                        <button class="text-sm font-bold text-slate-500 hover:underline" onclick="toggleTimeColumn(this)">⏱️ Toggle Time Column</button>
+                    </div>
+                    <button class="text-sm font-bold text-red-500 hover:underline" onclick="if(confirm('Delete entire table?')) this.closest('.shift-block').remove()">Delete Table</button>
+                </div>
+            `;
+            container.appendChild(block);
+        }
+
+        /* ====== STAFF LOGIC ====== */
+        async function fetchStaffFromFirebase() {
+            const snap = await db.collection("staff").get();
+            dbStaff = [];
+            snap.forEach(doc => dbStaff.push({ id: doc.id, ...doc.data() }));
+        }
+        function openStaffModal() { renderStaffList(); document.getElementById('modal-staff').classList.remove('hidden'); }
+        function closeStaffModal() { document.getElementById('modal-staff').classList.add('hidden'); }
+        async function saveNewStaff() {
+            const n = document.getElementById('new-staff-name').value;
+            const s = document.getElementById('new-staff-start').value;
+            const f = document.getElementById('new-staff-finish').value;
+            const time = (s&&f) ? `${s} - ${f}` : '';
+            if(n) {
+                const doc = await db.collection("staff").add({ name: n, time });
+                dbStaff.push({ id: doc.id, name: n, time });
+                document.getElementById('new-staff-name').value = ''; renderStaffList();
+            }
+        }
+        async function deleteStaff(id) {
+            await db.collection("staff").doc(id).delete();
+            dbStaff = dbStaff.filter(s => s.id !== id); renderStaffList();
+        }
+        function renderStaffList() {
+            document.getElementById('staff-list').innerHTML = dbStaff.map(s => `
+                <li class="flex justify-between items-center bg-white p-2 px-3 border border-slate-200 rounded-lg">
+                    <div><span class="font-bold text-slate-700 block">${s.name}</span><span class="text-xs text-slate-500">${s.time}</span></div>
+                    <button onclick="deleteStaff('${s.id}')" class="text-red-500 font-bold px-2 py-1">X</button>
+                </li>`).join('');
+        }
+
+        /* ====== ROW INSERTION ====== */
+        function openRowModal(btn) {
+            let container = btn.closest('.shift-block') || btn.closest('.mb-10');
+            targetTable = container.querySelector('tbody');
+
+            const select = document.getElementById('select-staff');
+            select.innerHTML = '<option value="">-- Select Employee --</option>' + dbStaff.map(s => `<option value="${s.id}" data-time="${s.time}">${s.name}</option>`).join('');
+            document.getElementById('input-time').value = '';
+            document.getElementById('modal-row').classList.remove('hidden');
+        }
+
+        function autoFillTime(select) {
+            if(select.selectedIndex > 0) document.getElementById('input-time').value = select.options[select.selectedIndex].getAttribute('data-time') || '';
+            else document.getElementById('input-time').value = '';
+        }
+        
+        function closeRowModal() { document.getElementById('modal-row').classList.add('hidden'); }
+        
+        function confirmNewRow() {
+            const select = document.getElementById('select-staff');
+            if(!select.value) return alert("Select an employee.");
+            const emp = select.options[select.selectedIndex].text;
+            const time = document.getElementById('input-time').value;
+
+            const theadTr = targetTable.closest('table').querySelector('thead tr');
+            const hasTimeCol = theadTr.children.length >= 3;
+
+            const tdTimeHtml = hasTimeCol ? `<td class="border border-slate-300 py-3 px-3 font-bold text-slate-600 align-top" data-col="time"><div contenteditable="true" class="outline-none">${time}</div></td>` : '';
+
+            const tr = document.createElement('tr');
+            tr.className = "group/row";
+            tr.innerHTML = `
+                <td class="border border-slate-300 py-3 px-3 font-bold align-top relative">
+                    <button class="no-print absolute -left-6 top-3 text-red-500 font-bold hidden group-hover/row:block bg-red-50 px-2 rounded" onclick="this.closest('tr').remove()">X</button>
+                    <div contenteditable="true" class="outline-none">${emp}</div>
+                </td>
+                ${tdTimeHtml}
+                <td class="border border-slate-300 py-3 px-3 align-top task-cell">
+                    <div class="task-group mb-4 relative p-2 border border-transparent hover:border-slate-200 rounded-lg group/cat">
+                        ${buildTaskGroupMarkup('Category (e.g., Kitchen)', '<li>Type your first task here...</li>')}
+                    </div>
+                    <button class="add-cat-btn no-print text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-1 rounded transition-colors mb-2" onclick="openPickTaskModal(this)">+ Add Category</button>
+                </td>
+            `;
+            targetTable.appendChild(tr);
+            refreshTaskTimeButtons(tr);
+            closeRowModal();
+        }
+
+        function syncInputsBeforeSave() {
+            document.querySelectorAll('#document-a4 input').forEach(inp => { if(inp.type !== 'file') inp.setAttribute('value', inp.value); });
+            document.querySelectorAll('#document-a4 select').forEach(sel => {
+                Array.from(sel.options).forEach(opt => { if(opt.selected) opt.setAttribute('selected', 'selected'); else opt.removeAttribute('selected'); });
+            });
+        }
+    </script>
+</body>
+</html>
