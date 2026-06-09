@@ -318,6 +318,25 @@
                 alert("Error duplicating schedule: " + e.message);
             }
         }
+        
+        async function renameSchedule(id, currentName) {
+            const newName = prompt("Enter the new name for this schedule:", currentName);
+            if (!newName || newName === currentName) return;
+
+            try {
+                await db.collection("schedules").doc(id).update({
+                    name: newName
+                });
+                
+                if (currentScheduleId === id) {
+                    updateStatusName(newName);
+                }
+                
+                loadSidebarSchedules();
+            } catch(e) {
+                alert("Error renaming schedule: " + e.message);
+            }
+        }
 
         function prepareAndPrint() {
             syncInputsBeforeSave(); 
@@ -338,7 +357,10 @@
                         html += `
                             <div class="group flex justify-between items-center p-3 rounded-xl border transition-colors cursor-pointer ${bgClass}" onclick="loadSchedule('${doc.id}', '${data.name}')">
                                 <span class="font-bold text-slate-800 text-sm truncate pr-2">${data.name}</span>
-                                <button onclick="event.stopPropagation(); deleteSchedule('${doc.id}')" class="text-red-400 hover:text-red-600 hidden group-hover:block px-2">X</button>
+                                <div class="hidden group-hover:flex items-center gap-2">
+                                    <button onclick="event.stopPropagation(); renameSchedule('${doc.id}', '${data.name}')" class="text-blue-400 hover:text-blue-600 text-[10px] font-bold px-1" title="Rename">✏️</button>
+                                    <button onclick="event.stopPropagation(); deleteSchedule('${doc.id}')" class="text-red-400 hover:text-red-600 font-bold px-1" title="Delete">X</button>
+                                </div>
                             </div>`;
                     });
                     list.innerHTML = html;
