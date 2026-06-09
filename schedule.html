@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -42,17 +41,19 @@
                 min-height: auto !important;
                 height: auto !important;
                 border: none !important; 
-                page-break-after: always;
+                page-break-after: auto;
             }
-            .a4-page:last-child { page-break-after: auto; }
             @page { size: A4; margin: 0mm; }
             .print-no-arrow { appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; }
             .print-no-icon::-webkit-calendar-picker-indicator { display: none !important; }
             input, select { border: none !important; background: transparent !important; }
-            /* Garante que badges de horário fiquem visíveis na impressão */
-            .task-time-badge, .sub-time-badge { 
+            /* Garante que badges de horário fiquem visíveis na impressão (apenas os que têm inline-flex) */
+            .task-time-badge.inline-flex, .sub-time-badge.inline-flex { 
                 display: inline-flex !important; 
                 visibility: visible !important;
+            }
+            .task-time-badge.hidden, .sub-time-badge.hidden { 
+                display: none !important; 
             }
             .task-time-badge .no-print, .sub-time-badge .no-print { display: none !important; }
             /* Garante que conteúdo editável mostre o texto real */
@@ -961,12 +962,16 @@
                     el.innerHTML = el.innerText;
                 }
             });
-            // 4. Garante que badges de horário estejam visíveis
+            // 4. Garante que badges de horário com texto fiquem visíveis, e vazios fiquem escondidos
             document.querySelectorAll('#document-a4 .task-time-badge, #document-a4 .sub-time-badge').forEach(badge => {
-                if (badge.querySelector('.task-time-text')?.innerText.trim() || 
-                    badge.querySelector('.sub-time-text')?.innerText.trim()) {
-                    badge.style.display = 'inline-flex';
-                    badge.style.visibility = 'visible';
+                const timeText = badge.querySelector('.task-time-text')?.innerText.trim() || 
+                                 badge.querySelector('.sub-time-text')?.innerText.trim();
+                if (timeText) {
+                    badge.classList.remove('hidden');
+                    badge.classList.add('inline-flex');
+                } else {
+                    badge.classList.add('hidden');
+                    badge.classList.remove('inline-flex');
                 }
             });
             // 5. Garante que o summary container esteja visível se tiver conteúdo
@@ -1001,4 +1006,3 @@
     </script>
 </body>
 </html>
-
