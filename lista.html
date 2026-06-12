@@ -33,7 +33,6 @@
         const SUPABASE_URL = 'https://wkndzjnqypsyluhgrdil.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndrbmR6am5xeXBzeWx1aGdyZGlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NzU5MTQsImV4cCI6MjA5NTA1MTkxNH0.6W9dsBVCeLzT3EIHyQ5ZFmQhEOyj586K9po4cj9wJeA';
 
-        // Mantém a visualização de quem CRIO o report para exibir na lista da tela
         function formatarNomePerfil(nome) {
             if (!nome) return 'Unknown Profile';
             if (nome.includes('-')) return nome; 
@@ -62,7 +61,9 @@
             container.innerHTML = '<div class="text-center p-8 text-slate-500 font-bold">Loading reports...</div>';
 
             try {
-                const res = await fetch(`${SUPABASE_URL}/rest/v1/reports?order=created_at.desc`, {
+                // A SOLUÇÃO ESTÁ AQUI: ?select=id,building,period,employeename,date,staff
+                // Nós impedimos que o Supabase envie a coluna "locations" (onde estão as fotos pesadas)
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/reports?select=id,building,period,employeename,date,staff&order=created_at.desc`, {
                     headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
                 });
 
@@ -116,13 +117,14 @@
             } catch(err) { alert('Error deleting: ' + err.message); }
         }
 
-        /* LÓGICA DO PDF - ATUALIZADA PARA INJETAR O USUÁRIO ATUAL */
+        /* LÓGICA DO PDF */
         async function baixarPDF(id) {
             const btn = document.getElementById(`btn-pdf-${id}`);
             const txtOriginal = btn.innerText;
             btn.innerText = "Generating..."; btn.disabled = true;
 
             try {
+                // Aqui sim, puxamos as "locations" com as fotos, pois é só 1 relatório que queremos exportar
                 const res = await fetch(`${SUPABASE_URL}/rest/v1/reports?id=eq.${id}&limit=1`, {
                     headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
                 });
@@ -144,7 +146,6 @@
                 const selectedPdfDisplayOption = rep.pdfdisplayoption || 'both';
                 const locations = rep.locations || [];
 
-                // BUGFIX: PUXA FORÇADAMENTE O NOME DA PESSOA LOGADA PARA ASSINAR O PDF
                 let fullNameLogado = localStorage.getItem('loggedFullName') || localStorage.getItem('loggedUser');
                 let roleLogado = localStorage.getItem('loggedRole') || 'Staff';
                 const staffGeradorPDF = `${fullNameLogado} - ${roleLogado}`;
