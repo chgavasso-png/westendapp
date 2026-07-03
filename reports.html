@@ -1,21 +1,34 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Report - System</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report - System</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+    <!-- Adicionada a biblioteca jsPDF para gerar o PDF diretamente desta página -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body class="bg-slate-100 font-sans text-slate-900 min-h-screen pb-20">
     <div class="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-50">
-        <div class="max-w-5xl mx-auto px-6 py-4 flex justify-between items-center">
-            <div class="flex items-center gap-4">
+        <div class="max-w-5xl mx-auto px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-4 w-full md:w-auto">
                 <a href="menu.html" class="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg></a>
                 <div><h2 id="page-title" class="text-xl font-extrabold text-slate-800">New Report</h2><p class="text-xs text-slate-500 font-medium uppercase mt-1">Logged as: <span id="logged-user-name" class="font-bold text-slate-700"></span></p></div>
             </div>
-            <div class="flex gap-3">
-                <button onclick="salvarRelatorio()" class="px-6 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl shadow-md transition-colors">Save Report</button>
+            <!-- Botoes atualizados com a nova opção de PDF -->
+            <div class="flex gap-3 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
+                <button id="btn-pdf-direto" onclick="gerarPDFDireto()" class="whitespace-nowrap px-6 py-2.5 bg-[#547C44] hover:bg-[#436435] text-white font-bold rounded-xl shadow-md transition-colors flex items-center gap-2">
+                    📄 Generate PDF
+                </button>
+                <button onclick="salvarRelatorio()" class="whitespace-nowrap px-6 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl shadow-md transition-colors">
+                    💾 Save Online
+                </button>
             </div>
         </div>
     </div>
+    
     <div class="max-w-5xl mx-auto p-6 space-y-6 mt-4">
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-5">
             <h3 class="text-lg font-bold text-slate-800 border-b border-slate-100 pb-2">Information</h3>
@@ -96,13 +109,11 @@
 
         const addLocation = () => { locations.push({ id: Date.now().toString(), name: '', sublocations: [], photos: [] }); renderLocations(); };
 
-        // ===== NOVA FUNÇÃO PARA DELETAR LOCAL =====
         const removeLocation = (id) => {
             if (!confirm('Delete this location and all its photos?')) return;
             locations = locations.filter(l => l.id !== id);
             renderLocations();
         };
-        // ===========================================
 
         const removePhoto = (id, pIdx) => { locations.find(l => l.id === id)?.photos.splice(pIdx, 1); renderLocations(); };
 
@@ -111,7 +122,7 @@
 
         const renderLocations = () => {
             $('locations-list').innerHTML = locations.map((loc, i) => `
-                <div class="p-4 bg-slate-50 rounded-2xl">
+                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200">
                     <div class="flex justify-between items-center mb-2">
                         <input value="${loc.name}" oninput="locations[${i}].name=this.value" class="w-full p-2 font-bold rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-300" placeholder="Main Location Name (e.g., Reception)">
                         <button onclick="removeLocation('${loc.id}')" class="ml-3 px-3 py-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg font-bold text-sm transition-colors flex items-center gap-1">
@@ -189,6 +200,10 @@
                 locations: locations
             };
 
+            const btnSave = document.querySelector('button[onclick="salvarRelatorio()"]');
+            const txtOriginal = btnSave.innerText;
+            btnSave.innerText = "⏳ Saving..."; btnSave.disabled = true;
+
             try {
                 let url = `${SUPABASE_URL}/rest/v1/reports`;
                 let method = 'POST';
@@ -214,7 +229,185 @@
                 window.location.href = 'lista.html';
             } catch(err) { 
                 alert('Error saving: ' + err.message);
+                btnSave.innerText = txtOriginal; btnSave.disabled = false;
             }
+        }
+
+        /* ===== NOVA FUNÇÃO GENIAL PARA GERAR O PDF DIRETAMENTE ===== */
+        async function gerarPDFDireto() {
+            const b = $('report-building').value.trim() || 'Not provided';
+            const e = $('employee-name').value.trim() || '';
+            const d = $('report-date').value || '';
+            const s = $('report-summary').value.trim() || '';
+
+            if (!e || !b) {
+                alert('Please fill in Building and Employee Name to generate the PDF.');
+                return;
+            }
+
+            const btn = $('btn-pdf-direto');
+            const txtOriginal = btn.innerHTML;
+            btn.innerHTML = "⏳ Generating..."; 
+            btn.disabled = true;
+
+            try {
+                const staffGeradorPDF = `${loggedFullName} - ${loggedRole}`;
+                const doc = new window.jspdf.jsPDF(); 
+                let y = 20;
+
+                const corVerde = [84, 124, 68]; 
+                const corDado = [30, 30, 30]; 
+                const corTextoLiso = [80, 80, 80]; 
+
+                const getLogo = () => new Promise(res => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = 'logo.png'; });
+                const logoImg = await getLogo();
+
+                if (logoImg) {
+                    const maxW = 40, maxH = 25;
+                    let w = logoImg.width, h = logoImg.height;
+                    if (w > h) { h = h * (maxW / w); w = maxW; } else { w = w * (maxH / h); h = maxH; }
+                    doc.addImage(logoImg, 'PNG', 15, y - 5, w, h);
+                }
+
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(26);
+                doc.setTextColor(...corVerde);
+                doc.text('CLEANING REPORT', 195, y + 10, { align: 'right' });
+
+                y += 30; 
+
+                doc.setDrawColor(...corVerde);
+                doc.setLineWidth(0.6);
+                doc.line(15, y, 195, y);
+                y += 12;
+
+                doc.setFontSize(12);
+                const addInfo = (lbl, valor, posY) => {
+                    doc.setFont('helvetica', 'bold'); doc.setTextColor(...corVerde);
+                    doc.text(lbl, 15, posY);
+                    if (valor) {
+                        doc.setFont('helvetica', 'normal'); doc.setTextColor(...corDado);
+                        doc.text(valor, 60, posY);
+                    }
+                };
+
+                addInfo('Prepared by:', staffGeradorPDF, y); y += 8;
+                addInfo('Cleaning Staff:', e, y); y += 8;
+
+                if (selectedPdfDisplayOption === 'date' || selectedPdfDisplayOption === 'both') {
+                    addInfo('Date:', d ? d.split('-').reverse().join('/') : '', y); y += 8;
+                }
+                if (selectedPdfDisplayOption === 'period' || selectedPdfDisplayOption === 'both') {
+                    addInfo('Report Type:', selectedPeriod || 'Daily', y); y += 8;
+                }
+
+                y += 8; 
+
+                doc.setFontSize(16); doc.setFont('helvetica', 'bold'); doc.setTextColor(...corVerde);
+                doc.text('Summary of Work', 15, y); y += 6; 
+
+                const textoPadraoResumo = `Cleaning staff member ${e || '[employee name]'} carried out cleaning tasks in the following areas using appropriate machinery and equipment. The work included floor cleaning and dust removal with the machine.`;
+                const txtResumo = s || textoPadraoResumo;
+
+                doc.setFontSize(12); doc.setFont('helvetica', 'normal'); 
+                const splitS = doc.splitTextToSize(txtResumo, 160);
+                const boxH = splitS.length * 6 + 10;
+
+                doc.setFillColor(248, 249, 250); 
+                doc.setDrawColor(220, 220, 220); 
+                doc.setLineWidth(0.3);
+                doc.roundedRect(15, y, 180, boxH, 2, 2, 'FD');
+
+                doc.setTextColor(...corTextoLiso);
+                doc.text(splitS, 20, y + 8);
+                y += boxH + 15; 
+
+                if (y > 250) { doc.addPage(); y = 20; }
+
+                doc.setFontSize(16); doc.setFont('helvetica', 'bold'); doc.setTextColor(...corVerde);
+                doc.text('Building / Property:', 15, y);
+
+                y += 8;
+                doc.setFontSize(14); doc.setFont('helvetica', 'normal'); doc.setTextColor(...corDado);
+                doc.text(b, 15, y);
+
+                y += 15; 
+
+                doc.setFontSize(16); doc.setFont('helvetica', 'bold'); doc.setTextColor(...corVerde);
+                doc.text('Locations Cleaned:', 15, y); y += 10;
+
+                if (!locations.length) { 
+                    doc.setFontSize(12); doc.setFont('helvetica', 'normal'); doc.setTextColor(...corDado);
+                    doc.text('No areas attached.', 15, y); y += 8; 
+                } else { 
+                    locations.forEach(loc => { 
+                        if(y>275) { doc.addPage(); y = 20; } 
+
+                        doc.setFillColor(...corVerde); 
+                        doc.circle(16, y - 1.5, 1.2, 'F'); 
+
+                        doc.setTextColor(...corDado); doc.setFont('helvetica', 'normal'); doc.setFontSize(12); 
+                        doc.text(loc.name || 'Unnamed location', 22, y); 
+                        y += 8; 
+
+                        if (loc.sublocations && loc.sublocations.length > 0) {
+                            doc.setTextColor(110, 110, 110); 
+                            doc.setFontSize(11);
+                            loc.sublocations.forEach(sub => {
+                                if (sub.trim() !== '') {
+                                    if(y>275) { doc.addPage(); y = 20; } 
+                                    doc.text(`- ${sub}`, 26, y);
+                                    y += 6;
+                                }
+                            });
+                            y += 2; 
+                        }
+                    }); 
+                }
+
+                const totalFotos = locations.reduce((a, l) => a + l.photos.length, 0);
+                if (totalFotos > 0) {
+                    doc.addPage(); y = 20;
+                    doc.setFontSize(22); doc.setFont('helvetica', 'bold'); doc.setTextColor(...corVerde);
+                    doc.text('Photographic Evidence', 15, y); y += 15;
+
+                    locations.forEach(loc => {
+                        if (!loc.photos.length) return;
+                        if(y>250){doc.addPage();y=20;}
+
+                        doc.setFontSize(14); doc.setFont('helvetica', 'normal');
+                        doc.setFillColor(...corVerde); doc.rect(15, y - 4, 2, 5, 'F'); 
+                        doc.setTextColor(...corDado); doc.text(loc.name || 'Unnamed location', 20, y); 
+                        y += 10;
+
+                        let x = 15; const imgSize = 55; const espaco = 6;
+
+                        loc.photos.forEach(img => {
+                            if (x + imgSize > 195) { x = 15; y += imgSize + 15; }
+                            if (y + imgSize > 275) { doc.addPage(); y = 20; x = 15; }
+
+                            doc.setDrawColor(210, 210, 210);
+                            doc.setLineWidth(0.4);
+                            doc.rect(x - 0.5, y - 0.5, imgSize + 1, imgSize + 1);
+
+                            try { doc.addImage(img, 'JPEG', x, y, imgSize, imgSize); } catch(e){} 
+                            x += imgSize + espaco;
+                        });
+                        y += imgSize + 15;
+                    });
+                }
+
+                const nomeSanitizado = e.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 30) || 'Report';
+                const dataSanitizada = d ? d.replace(/-/g, '') : 'no_date';
+                const periodFinal = selectedPeriod || 'Daily';
+                
+                doc.save(`Cleaning_Report_${nomeSanitizado}_${periodFinal}_${dataSanitizada}.pdf`);
+            } catch(err) {
+                alert('Error generating PDF: ' + err.message);
+            }
+
+            btn.innerHTML = txtOriginal; 
+            btn.disabled = false;
         }
     </script>
 </body>
