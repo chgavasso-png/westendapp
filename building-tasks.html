@@ -14,7 +14,6 @@
                 padding: 0; 
             }
             
-            /* Força o navegador a imprimir cores de fundo e bordas */
             * {
                 -webkit-print-color-adjust: exact !important; 
                 print-color-adjust: exact !important;
@@ -38,24 +37,32 @@
                 border: none !important; 
             }
             
-            /* Margens oficiais da folha A4 no PDF */
             @page { 
                 size: A4; 
                 margin: 15mm 15mm 20mm 15mm; 
             }
 
-            /* Garante que o bloco do prédio tem margem e borda no PDF */
+            /* O prédio agora pode quebrar de página se for muito longo, para evitar espaços brancos */
             .block-section { 
-                page-break-inside: avoid !important; /* Impede que o prédio seja cortado ao meio na quebra de página */
-                break-inside: avoid !important; 
-                border: 1px solid #cbd5e1 !important; /* Borda cinza clara visível */
+                border: 1px solid #cbd5e1 !important; 
                 background-color: #ffffff !important;
                 padding: 20px !important;
-                margin-bottom: 25px !important; /* Espaçamento entre prédios no PDF */
+                margin-bottom: 25px !important; 
                 border-radius: 12px !important;
             }
 
-            /* Força os cabeçalhos Daily/Weekly/Monthly a terem fundo cinza no PDF */
+            /* Protege para que o título do prédio não fique sozinho no final de uma página */
+            .block-section h3 {
+                page-break-after: avoid !important;
+                break-after: avoid !important;
+            }
+
+            /* Protege APENAS os blocos de Daily/Weekly/Monthly de serem cortados ao meio */
+            .block-section > div {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+
             .period-header {
                 background-color: #f1f5f9 !important;
                 color: #1e293b !important;
@@ -126,7 +133,7 @@
                 </h2>
             </div>
 
-            <!-- BUILDINGS CONTAINER (Agora começa logo a seguir ao cabeçalho) -->
+            <!-- BUILDINGS CONTAINER -->
             <div id="buildings-container" class="space-y-8">
 
                 <!-- BUILDING: SKYLINE -->
