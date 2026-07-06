@@ -6,16 +6,80 @@
     <title>Building Tasks - West End</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        /* ===== REGRAS ESPECÍFICAS E FORÇADAS PARA O PDF ===== */
         @media print {
-            body { background-color: white !important; margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            body { 
+                background-color: white !important; 
+                margin: 0; 
+                padding: 0; 
+            }
+            
+            /* Força o navegador a imprimir cores de fundo e bordas */
+            * {
+                -webkit-print-color-adjust: exact !important; 
+                print-color-adjust: exact !important;
+            }
+
             .no-print { display: none !important; }
-            #main-content { margin: 0 !important; width: 100% !important; display: block !important; padding: 0 !important;}
-            .a4-page { box-shadow: none !important; margin: 0 !important; padding: 15mm !important; width: 100% !important; max-width: 100% !important; border: none !important; }
-            @page { size: A4; margin: 0mm; }
-            /* Impede que o bloco do prédio seja cortado ao meio na quebra de página do PDF */
-            .block-section { page-break-inside: avoid; break-inside: avoid; }
+            
+            #main-content { 
+                margin: 0 !important; 
+                width: 100% !important; 
+                display: block !important; 
+                padding: 0 !important;
+            }
+            
+            .a4-page { 
+                box-shadow: none !important; 
+                margin: 0 !important; 
+                padding: 0 !important; 
+                width: 100% !important; 
+                max-width: 100% !important; 
+                border: none !important; 
+            }
+            
+            /* Margens oficiais da folha A4 no PDF */
+            @page { 
+                size: A4; 
+                margin: 15mm 15mm 20mm 15mm; 
+            }
+
+            /* Garante que o bloco do prédio tem margem e borda no PDF */
+            .block-section { 
+                page-break-inside: avoid !important; /* Impede que o prédio seja cortado ao meio na quebra de página */
+                break-inside: avoid !important; 
+                border: 1px solid #cbd5e1 !important; /* Borda cinza clara visível */
+                background-color: #ffffff !important;
+                padding: 20px !important;
+                margin-bottom: 25px !important; /* Espaçamento entre prédios no PDF */
+                border-radius: 12px !important;
+            }
+
+            /* Força os cabeçalhos Daily/Weekly/Monthly a terem fundo cinza no PDF */
+            .period-header {
+                background-color: #f1f5f9 !important;
+                color: #1e293b !important;
+                padding: 6px 12px !important;
+                border-radius: 6px !important;
+                margin-top: 15px !important;
+                margin-bottom: 10px !important;
+                display: block !important;
+            }
+
+            .task-list li {
+                margin-bottom: 6px !important;
+                line-height: 1.4 !important;
+            }
+            
+            .footer-print {
+                margin-top: 40px !important;
+                padding-top: 15px !important;
+                border-top: 1px solid #cbd5e1 !important;
+                page-break-inside: avoid !important;
+            }
         }
         
+        /* ===== REGRAS DA TELA ===== */
         [contenteditable="true"]:hover { background-color: rgba(84, 124, 68, 0.05); cursor: text; border-radius: 4px; outline: 1px dashed #547C44; }
         [contenteditable="true"]:focus { background-color: rgba(84, 124, 68, 0.05); outline: 1px dashed #547C44; border-radius: 4px; }
         .task-list { outline: none; }
@@ -53,8 +117,7 @@
             <div class="flex flex-col items-center mb-8 border-b-4 border-[#547C44] pb-8">
                 <img src="logo.png" alt="West End Cleaning" class="h-28 object-contain mb-6">
                 
-                <!-- NOME DO PRÉDIO PRINCIPAL -->
-                <div contenteditable="true" class="w-full text-4xl font-black text-[#547C44] uppercase tracking-widest text-center outline-none bg-transparent mb-2" style="-webkit-print-color-adjust: exact; color: #547C44;">
+                <div contenteditable="true" class="w-full text-4xl font-black text-[#547C44] uppercase tracking-widest text-center outline-none bg-transparent mb-2">
                     DICKENS YARD
                 </div>
                 
@@ -77,12 +140,12 @@
                 <div class="block-section relative group bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
                     <button class="no-print absolute -right-2 -top-2 bg-red-100 text-red-600 hover:bg-red-200 font-bold rounded-full w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm" onclick="this.parentElement.remove()" title="Delete Block">X</button>
                     
-                    <h3 class="text-xl font-black text-[#547C44] uppercase tracking-wider mb-4 border-b-2 border-[#547C44] pb-2" contenteditable="true">🏢 Skyline</h3>
+                    <h3 class="text-xl font-black text-[#547C44] uppercase tracking-wider mb-2 border-b-2 border-[#547C44] pb-2" contenteditable="true">🏢 Skyline</h3>
                     
                     <!-- Daily -->
-                    <div class="mb-4">
-                        <h4 class="text-sm font-bold text-slate-800 uppercase tracking-widest mb-2 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true" style="background-color: #f1f5f9;">📅 Daily</h4>
-                        <ul class="task-list text-sm text-slate-700 leading-snug px-2" contenteditable="true">
+                    <div>
+                        <h4 class="period-header text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true">📅 Daily</h4>
+                        <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true">
                             <li>Vacuum and dusting</li>
                             <li>Glasses, mirrors and touchpoints</li>
                             <li>Lift floors and doors</li>
@@ -101,9 +164,9 @@
                     </div>
 
                     <!-- Weekly -->
-                    <div class="mb-4">
-                        <h4 class="text-sm font-bold text-slate-800 uppercase tracking-widest mb-2 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true" style="background-color: #f1f5f9;">🗓️ Weekly</h4>
-                        <ul class="task-list text-sm text-slate-700 leading-snug px-2" contenteditable="true">
+                    <div>
+                        <h4 class="period-header text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true">🗓️ Weekly</h4>
+                        <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true">
                             <li>Rubbish collection from the basement twice a week</li>
                             <li>Bin store clean and sanitised B2</li>
                             <li>Carpark floor scrubbed clean once</li>
@@ -115,8 +178,8 @@
 
                     <!-- Monthly -->
                     <div>
-                        <h4 class="text-sm font-bold text-slate-800 uppercase tracking-widest mb-2 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true" style="background-color: #f1f5f9;">📆 Monthly</h4>
-                        <ul class="task-list text-sm text-slate-700 leading-snug px-2" contenteditable="true">
+                        <h4 class="period-header text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true">📆 Monthly</h4>
+                        <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true">
                             <li>Apply algin killer on external as necessary</li>
                             <li>Clean plant pots</li>
                             <li>Clean drains as necessary</li>
@@ -128,12 +191,12 @@
                 <div class="block-section relative group bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
                     <button class="no-print absolute -right-2 -top-2 bg-red-100 text-red-600 hover:bg-red-200 font-bold rounded-full w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm" onclick="this.parentElement.remove()" title="Delete Block">X</button>
                     
-                    <h3 class="text-xl font-black text-[#547C44] uppercase tracking-wider mb-4 border-b-2 border-[#547C44] pb-2" contenteditable="true">🏢 Dashwood / Vista / Belgravia</h3>
+                    <h3 class="text-xl font-black text-[#547C44] uppercase tracking-wider mb-2 border-b-2 border-[#547C44] pb-2" contenteditable="true">🏢 Dashwood / Vista / Belgravia</h3>
                     
                     <!-- Daily -->
-                    <div class="mb-4">
-                        <h4 class="text-sm font-bold text-slate-800 uppercase tracking-widest mb-2 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true" style="background-color: #f1f5f9;">📅 Daily</h4>
-                        <ul class="task-list text-sm text-slate-700 leading-snug px-2" contenteditable="true">
+                    <div>
+                        <h4 class="period-header text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true">📅 Daily</h4>
+                        <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true">
                             <li>Vacuum and dusting</li>
                             <li>Glasses, mirrors and touchpoints</li>
                             <li>Lift floors and doors</li>
@@ -150,9 +213,9 @@
                     </div>
 
                     <!-- Weekly -->
-                    <div class="mb-4">
-                        <h4 class="text-sm font-bold text-slate-800 uppercase tracking-widest mb-2 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true" style="background-color: #f1f5f9;">🗓️ Weekly</h4>
-                        <ul class="task-list text-sm text-slate-700 leading-snug px-2" contenteditable="true">
+                    <div>
+                        <h4 class="period-header text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true">🗓️ Weekly</h4>
+                        <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true">
                             <li>Rubbish collection from the basement twice a week</li>
                             <li>Bin store clean and sanitised B2</li>
                             <li>Carpark floor scrubbed clean once</li>
@@ -164,8 +227,8 @@
 
                     <!-- Monthly -->
                     <div>
-                        <h4 class="text-sm font-bold text-slate-800 uppercase tracking-widest mb-2 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true" style="background-color: #f1f5f9;">📆 Monthly</h4>
-                        <ul class="task-list text-sm text-slate-700 leading-snug px-2" contenteditable="true">
+                        <h4 class="period-header text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true">📆 Monthly</h4>
+                        <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true">
                             <li>Apply algin killer on external as necessary</li>
                             <li>Clean plant pots</li>
                             <li>Clean drains as necessary</li>
@@ -177,12 +240,12 @@
                 <div class="block-section relative group bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
                     <button class="no-print absolute -right-2 -top-2 bg-red-100 text-red-600 hover:bg-red-200 font-bold rounded-full w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm" onclick="this.parentElement.remove()" title="Delete Block">X</button>
                     
-                    <h3 class="text-xl font-black text-[#547C44] uppercase tracking-wider mb-4 border-b-2 border-[#547C44] pb-2" contenteditable="true">🏪 Commercial Units & External</h3>
+                    <h3 class="text-xl font-black text-[#547C44] uppercase tracking-wider mb-2 border-b-2 border-[#547C44] pb-2" contenteditable="true">🏪 Commercial Units & External</h3>
                     
                     <!-- Daily -->
-                    <div class="mb-4">
-                        <h4 class="text-sm font-bold text-slate-800 uppercase tracking-widest mb-2 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true" style="background-color: #f1f5f9;">📅 Daily</h4>
-                        <ul class="task-list text-sm text-slate-700 leading-snug px-2" contenteditable="true">
+                    <div>
+                        <h4 class="period-header text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true">📅 Daily</h4>
+                        <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true">
                             <li>Rubbish collection x2</li>
                             <li>Scrubbing hard floors</li>
                             <li>Clean frames and doors</li>
@@ -196,9 +259,9 @@
                     </div>
 
                     <!-- Weekly -->
-                    <div class="mb-4">
-                        <h4 class="text-sm font-bold text-slate-800 uppercase tracking-widest mb-2 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true" style="background-color: #f1f5f9;">🗓️ Weekly</h4>
-                        <ul class="task-list text-sm text-slate-700 leading-snug px-2" contenteditable="true">
+                    <div>
+                        <h4 class="period-header text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true">🗓️ Weekly</h4>
+                        <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true">
                             <li>Frames and walls to be wiped free of dust</li>
                             <li>Window cleaning all glasses</li>
                             <li>Sweep and remove debris from top of the drains</li>
@@ -208,8 +271,8 @@
 
                     <!-- Monthly -->
                     <div>
-                        <h4 class="text-sm font-bold text-slate-800 uppercase tracking-widest mb-2 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true" style="background-color: #f1f5f9;">📆 Monthly</h4>
-                        <ul class="task-list text-sm text-slate-700 leading-snug px-2" contenteditable="true">
+                        <h4 class="period-header text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true">📆 Monthly</h4>
+                        <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true">
                             <li>Deep clean floors</li>
                             <li>Jetwash stone seats</li>
                             <li>Deep clean front of shops floors</li>
@@ -219,6 +282,7 @@
 
             </div>
 
+            <!-- BUTTON ADD -->
             <div class="no-print mt-12 text-center border-t border-dashed border-slate-300 pt-8">
                 <button onclick="addBuilding()" class="px-8 py-3 border-2 border-[#547C44] bg-white text-[#547C44] font-black uppercase tracking-wider rounded-2xl shadow-sm hover:bg-[#547C44] hover:text-white transition-all flex items-center gap-2 mx-auto">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
@@ -227,7 +291,7 @@
             </div>
 
             <!-- FOOTER -->
-            <div class="mt-16 text-center border-t border-slate-200 pt-6">
+            <div class="footer-print text-center pt-6 mt-10">
                 <p class="text-xs text-slate-400 mb-1">Official Document - West End Cleaning Services Ltd</p>
                 <p class="text-xs text-slate-400">Standard Operational Procedures</p>
             </div>
@@ -236,7 +300,6 @@
     </div>
 
     <script>
-        // Nova função melhorada para adicionar Prédios com a estrutura Daily/Weekly/Monthly
         function addBuilding() {
             const container = document.getElementById('buildings-container');
             const div = document.createElement('div');
@@ -245,32 +308,31 @@
             div.innerHTML = `
                 <button class="no-print absolute -right-2 -top-2 bg-red-100 text-red-600 hover:bg-red-200 font-bold rounded-full w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm" onclick="this.parentElement.remove()" title="Delete Block">X</button>
                 
-                <h3 class="text-xl font-black text-[#547C44] uppercase tracking-wider mb-4 border-b-2 border-[#547C44] pb-2" contenteditable="true">🏢 New Building Name</h3>
+                <h3 class="text-xl font-black text-[#547C44] uppercase tracking-wider mb-2 border-b-2 border-[#547C44] pb-2" contenteditable="true">🏢 New Building Name</h3>
                 
-                <div class="mb-4">
-                    <h4 class="text-sm font-bold text-slate-800 uppercase tracking-widest mb-2 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true" style="background-color: #f1f5f9;">📅 Daily</h4>
-                    <ul class="task-list text-sm text-slate-700 leading-snug px-2" contenteditable="true">
+                <div>
+                    <h4 class="period-header text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true">📅 Daily</h4>
+                    <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true">
                         <li>Type daily task here...</li>
                     </ul>
                 </div>
 
-                <div class="mb-4">
-                    <h4 class="text-sm font-bold text-slate-800 uppercase tracking-widest mb-2 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true" style="background-color: #f1f5f9;">🗓️ Weekly</h4>
-                    <ul class="task-list text-sm text-slate-700 leading-snug px-2" contenteditable="true">
+                <div>
+                    <h4 class="period-header text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true">🗓️ Weekly</h4>
+                    <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true">
                         <li>Type weekly task here...</li>
                     </ul>
                 </div>
 
                 <div>
-                    <h4 class="text-sm font-bold text-slate-800 uppercase tracking-widest mb-2 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true" style="background-color: #f1f5f9;">📆 Monthly</h4>
-                    <ul class="task-list text-sm text-slate-700 leading-snug px-2" contenteditable="true">
+                    <h4 class="period-header text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true">📆 Monthly</h4>
+                    <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true">
                         <li>Type monthly task here...</li>
                     </ul>
                 </div>
             `;
             container.appendChild(div);
             
-            // Fazer scroll automático para o novo prédio adicionado
             div.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     </script>
