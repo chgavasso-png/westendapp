@@ -42,45 +42,57 @@
                 margin: 15mm 15mm 20mm 15mm; 
             }
 
-            /* O prédio agora pode quebrar de página se for muito longo, para evitar espaços brancos */
+            /* 1. COMPACTAÇÃO ("BEM JUNTINHO") E QUEBRA DE PÁGINA PARA CADA PRÉDIO */
             .block-section { 
                 border: 1px solid #cbd5e1 !important; 
                 background-color: #ffffff !important;
-                padding: 20px !important;
-                margin-bottom: 25px !important; 
-                border-radius: 12px !important;
+                padding: 12px 15px !important; /* Mais apertado */
+                margin-bottom: 0 !important; 
+                border-radius: 8px !important;
+                page-break-before: always !important; /* Força CADA prédio a ir para uma nova página */
+                break-before: page !important;
+            }
+
+            /* 2. O PRIMEIRO PRÉDIO NÃO QUEBRA DE PÁGINA (Preenche o espaço em branco da 1ª folha) */
+            #buildings-container .block-section:first-child {
+                page-break-before: avoid !important;
+                break-before: auto !important;
             }
 
             /* Protege para que o título do prédio não fique sozinho no final de uma página */
             .block-section h3 {
                 page-break-after: avoid !important;
                 break-after: avoid !important;
+                margin-bottom: 8px !important;
+                padding-bottom: 4px !important;
             }
 
-            /* Protege APENAS os blocos de Daily/Weekly/Monthly de serem cortados ao meio */
+            /* Protege os blocos de Daily/Weekly/Monthly de serem cortados ao meio */
             .block-section > div {
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
             }
 
+            /* Diminui o espaçamento dos títulos (Daily/Weekly/Monthly) para ficar mais junto */
             .period-header {
                 background-color: #f1f5f9 !important;
                 color: #1e293b !important;
-                padding: 6px 12px !important;
+                padding: 4px 10px !important;
                 border-radius: 6px !important;
-                margin-top: 15px !important;
-                margin-bottom: 10px !important;
+                margin-top: 8px !important;
+                margin-bottom: 6px !important;
                 display: block !important;
             }
 
+            /* Diminui o espaçamento das listas de tarefas para ficar mais junto */
             .task-list li {
-                margin-bottom: 6px !important;
-                line-height: 1.4 !important;
+                margin-bottom: 3px !important;
+                line-height: 1.2 !important;
             }
             
             .footer-print {
-                margin-top: 40px !important;
-                padding-top: 15px !important;
+                margin-top: 30px !important;
+                padding-top: 10px !important;
                 border-top: 1px solid #cbd5e1 !important;
                 page-break-inside: avoid !important;
             }
@@ -121,8 +133,8 @@
         <div class="a4-page bg-white shadow-2xl w-full max-w-[21cm] min-h-[29.7cm] p-[15mm] border border-slate-200 relative">
             
             <!-- HEADER -->
-            <div class="flex flex-col items-center mb-8 border-b-4 border-[#547C44] pb-8">
-                <img src="logo.png" alt="West End Cleaning" class="h-28 object-contain mb-6">
+            <div class="flex flex-col items-center mb-6 border-b-4 border-[#547C44] pb-6">
+                <img src="logo.png" alt="West End Cleaning" class="h-24 object-contain mb-4">
                 
                 <div contenteditable="true" class="w-full text-4xl font-black text-[#547C44] uppercase tracking-widest text-center outline-none bg-transparent mb-2">
                     DICKENS YARD
@@ -134,7 +146,7 @@
             </div>
 
             <!-- BUILDINGS CONTAINER -->
-            <div id="buildings-container" class="space-y-8">
+            <div id="buildings-container" class="space-y-6">
 
                 <!-- BUILDING: SKYLINE -->
                 <div class="block-section relative group bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
