@@ -7,22 +7,25 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @media print {
-            body { background-color: white !important; margin: 0; padding: 0; -webkit-print-color-adjust: exact; }
+            body { background-color: white !important; margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .no-print { display: none !important; }
-            #main-content { margin: 0 !important; width: 100% !important; display: block !important; background: white !important;}
+            #main-content { margin: 0 !important; width: 100% !important; display: block !important; padding: 0 !important;}
             .a4-page { box-shadow: none !important; margin: 0 !important; padding: 15mm !important; width: 100% !important; max-width: 100% !important; border: none !important; }
             @page { size: A4; margin: 0mm; }
-            .print-color-exact { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            /* Impede que o bloco do prédio seja cortado ao meio na quebra de página do PDF */
+            .block-section { page-break-inside: avoid; break-inside: avoid; }
         }
         
-        [contenteditable="true"]:hover { background-color: rgba(84, 124, 68, 0.05); cursor: text; border-radius: 4px; }
+        [contenteditable="true"]:hover { background-color: rgba(84, 124, 68, 0.05); cursor: text; border-radius: 4px; outline: 1px dashed #547C44; }
         [contenteditable="true"]:focus { background-color: rgba(84, 124, 68, 0.05); outline: 1px dashed #547C44; border-radius: 4px; }
+        .task-list { outline: none; }
         .task-list li { margin-bottom: 0.35rem; position: relative; padding-left: 1.25rem; }
-        .task-list li::before { content: "•"; position: absolute; left: 0; color: #547C44; font-weight: bold; font-size: 1.2rem; line-height: 1rem; }
+        .task-list li::before { content: "•"; position: absolute; left: 0; color: #547C44; font-weight: bold; font-size: 1.2rem; line-height: 1rem; top: 0.1rem; }
     </style>
 </head>
 <body class="bg-slate-100 font-sans text-slate-900 min-h-screen">
 
+    <!-- TOOLBAR NO-PRINT -->
     <div class="no-print bg-white shadow-sm border-b border-slate-200 sticky top-0 z-50">
         <div class="max-w-[1200px] mx-auto px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-4">
@@ -42,139 +45,189 @@
         </div>
     </div>
 
+    <!-- MAIN A4 DOCUMENT -->
     <div id="main-content" class="py-10 flex justify-center px-4">
         <div class="a4-page bg-white shadow-2xl w-full max-w-[21cm] min-h-[29.7cm] p-[15mm] border border-slate-200 relative">
             
-            <div class="flex flex-col items-center mb-10 border-b-4 border-[#547C44] pb-8">
+            <!-- HEADER -->
+            <div class="flex flex-col items-center mb-8 border-b-4 border-[#547C44] pb-8">
                 <img src="logo.png" alt="West End Cleaning" class="h-28 object-contain mb-6">
-                <div contenteditable="true" class="w-full text-4xl font-black text-[#547C44] uppercase tracking-widest text-center outline-none bg-transparent mb-2">
+                
+                <!-- NOME DO PRÉDIO PRINCIPAL -->
+                <div contenteditable="true" class="w-full text-4xl font-black text-[#547C44] uppercase tracking-widest text-center outline-none bg-transparent mb-2" style="-webkit-print-color-adjust: exact; color: #547C44;">
                     DICKENS YARD
                 </div>
+                
                 <h2 class="text-xl font-bold text-slate-500 tracking-[0.2em] uppercase text-center" contenteditable="true">
                     Building Task Descriptions
                 </h2>
             </div>
 
+            <!-- INTRO -->
             <div class="mb-8">
-                <p class="text-sm text-slate-600 font-medium leading-relaxed" contenteditable="true">
-                    The following document outlines the standard cleaning procedures and task allocations for the respective segments and blocks within the main building property. These tasks are structured to ensure the highest standard of hygiene and maintenance.
+                <p class="text-sm text-slate-600 font-medium leading-relaxed text-justify" contenteditable="true">
+                    The following document outlines the standard cleaning procedures and task allocations for the respective segments and blocks within the main building property. These tasks are structured into Daily, Weekly, and Monthly frequencies to ensure the highest standard of hygiene and maintenance.
                 </p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-10">
+            <!-- BUILDINGS CONTAINER -->
+            <div id="buildings-container" class="space-y-8">
 
-                <div class="block-section relative group">
-                    <button class="no-print absolute -left-8 top-1 text-red-400 hover:text-red-600 font-bold opacity-0 group-hover:opacity-100 transition-opacity" onclick="this.parentElement.remove()" title="Delete Block">X</button>
-                    <h3 class="text-lg font-black text-[#547C44] uppercase tracking-wider mb-3 border-b border-slate-200 pb-1" contenteditable="true">🏢 Skyline</h3>
-                    <ul class="task-list outline-none text-sm text-slate-700 leading-snug" contenteditable="true">
-                        <li>Vacuum and dusting</li>
-                        <li>Glasses, mirrors and touchpoints</li>
-                        <li>Lift floors and doors</li>
-                        <li>Mopping hard floor</li>
-                        <li>Bin empty reception area</li>
-                        <li>B1 & B2 general cleaning</li>
-                        <li>Floors general cleaning (dusting, vacuuming, skirting, marks on walls, lift doors smear-free)</li>
-                        <li>Bin shut areas mopped and dusted</li>
-                        <li>Staircase general cleaning & vacuum floors</li>
-                        <li>Bin replacements in B2 twice a day (general and recycling)</li>
-                        <li>Sweep and clean carpark area</li>
-                        <li>Scrubbed hard floors, jet wash corners outside</li>
-                        <li>Clean management office (toilets, kitchen, reception, office, staircase)</li>
-                        <li>Welfare area (toilet, showers, changing room, lunch area, corridors)</li>
-                        <li>Rubbish collection from the basement twice a week</li>
-                        <li>Bin store clean and sanitised B2</li>
-                        <li>Carpark floor scrubbed clean once</li>
-                        <li>Wiped carpark doors and fittings B2</li>
-                        <li>Window cleaning of main entrances</li>
-                        <li>Podium garden sweep and litter picking x2</li>
-                        <li>Apply algae killer on external as necessary</li>
-                        <li>Clean plant pots & drains as necessary</li>
-                    </ul>
+                <!-- BUILDING: SKYLINE -->
+                <div class="block-section relative group bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
+                    <button class="no-print absolute -right-2 -top-2 bg-red-100 text-red-600 hover:bg-red-200 font-bold rounded-full w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm" onclick="this.parentElement.remove()" title="Delete Block">X</button>
+                    
+                    <h3 class="text-xl font-black text-[#547C44] uppercase tracking-wider mb-4 border-b-2 border-[#547C44] pb-2" contenteditable="true">🏢 Skyline</h3>
+                    
+                    <!-- Daily -->
+                    <div class="mb-4">
+                        <h4 class="text-sm font-bold text-slate-800 uppercase tracking-widest mb-2 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true" style="background-color: #f1f5f9;">📅 Daily</h4>
+                        <ul class="task-list text-sm text-slate-700 leading-snug px-2" contenteditable="true">
+                            <li>Vacuum and dusting</li>
+                            <li>Glasses, mirrors and touchpoints</li>
+                            <li>Lift floors and doors</li>
+                            <li>Mopping hard floor</li>
+                            <li>Bin empty reception area</li>
+                            <li>B1 & B2 general cleaning</li>
+                            <li>Floors general cleaning includes dusting, vacuuming, skirting, marking on the walls, and lift doors smear-free</li>
+                            <li>Bin shut areas mopped and dusted</li>
+                            <li>Staircase general cleaning (dust removal in fitting, skirting boards, handrails, and vacuum floors. Mop as necessary)</li>
+                            <li>Bin replacements in B2 twice a day (general and recycling bins)</li>
+                            <li>Sweep and clean carpark area</li>
+                            <li>Scrubbed hard floors, jet wash corners as necessary outside areas</li>
+                            <li>Clean management office (toilets, kitchen, reception, office, staircase)</li>
+                            <li>Welfare area (toilet, showers, changing room, lunch area, corridors)</li>
+                        </ul>
+                    </div>
+
+                    <!-- Weekly -->
+                    <div class="mb-4">
+                        <h4 class="text-sm font-bold text-slate-800 uppercase tracking-widest mb-2 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true" style="background-color: #f1f5f9;">🗓️ Weekly</h4>
+                        <ul class="task-list text-sm text-slate-700 leading-snug px-2" contenteditable="true">
+                            <li>Rubbish collection from the basement twice a week</li>
+                            <li>Bin store clean and sanitised B2</li>
+                            <li>Carpark floor scrubbed clean once</li>
+                            <li>Wiped carpark doors and fittings B2</li>
+                            <li>Window cleaning of main entrances</li>
+                            <li>Podium garden sweep and litter picking x2</li>
+                        </ul>
+                    </div>
+
+                    <!-- Monthly -->
+                    <div>
+                        <h4 class="text-sm font-bold text-slate-800 uppercase tracking-widest mb-2 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true" style="background-color: #f1f5f9;">📆 Monthly</h4>
+                        <ul class="task-list text-sm text-slate-700 leading-snug px-2" contenteditable="true">
+                            <li>Apply algin killer on external as necessary</li>
+                            <li>Clean plant pots</li>
+                            <li>Clean drains as necessary</li>
+                        </ul>
+                    </div>
                 </div>
 
-                <div class="block-section relative group">
-                    <button class="no-print absolute -left-8 top-1 text-red-400 hover:text-red-600 font-bold opacity-0 group-hover:opacity-100 transition-opacity" onclick="this.parentElement.remove()">X</button>
-                    <h3 class="text-lg font-black text-[#547C44] uppercase tracking-wider mb-3 border-b border-slate-200 pb-1" contenteditable="true">🏢 Dashwood, Vista, Belgravia, Fitzroy, Quartz</h3>
-                    <ul class="task-list outline-none text-sm text-slate-700 leading-snug" contenteditable="true">
-                        <li>Vacuum and dusting</li>
-                        <li>Glasses, mirrors and touchpoints</li>
-                        <li>Lift floors and doors</li>
-                        <li>Mopping hard floor</li>
-                        <li>Bin empty reception area</li>
-                        <li>B2 general cleaning</li>
-                        <li>Floors general cleaning (dusting, vacuuming, skirting, marks on walls, lift doors smear-free)</li>
-                        <li>Bin shut areas mopped and dusted</li>
-                        <li>Staircase general cleaning & vacuum floors</li>
-                        <li>Bin replacements in B2 twice a day</li>
-                        <li>Sweep and clean carpark area</li>
-                        <li>Scrubbed hard floors, jet wash corners</li>
-                        <li>Outside areas maintenance</li>
-                        <li>Rubbish collection from the basement twice a week</li>
-                        <li>Bin store clean and sanitised B2</li>
-                        <li>Carpark floor scrubbed clean once</li>
-                        <li>Wiped carpark doors and fittings B2</li>
-                        <li>Window cleaning of main entrances</li>
-                        <li>Podium garden sweep and litter picking x2</li>
-                        <li>Apply algae killer on external as necessary</li>
-                        <li>Clean plant pots & drains as necessary</li>
-                    </ul>
+                <!-- BUILDING: DASHWOOD / VISTA / BELGRAVIA -->
+                <div class="block-section relative group bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
+                    <button class="no-print absolute -right-2 -top-2 bg-red-100 text-red-600 hover:bg-red-200 font-bold rounded-full w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm" onclick="this.parentElement.remove()" title="Delete Block">X</button>
+                    
+                    <h3 class="text-xl font-black text-[#547C44] uppercase tracking-wider mb-4 border-b-2 border-[#547C44] pb-2" contenteditable="true">🏢 Dashwood / Vista / Belgravia</h3>
+                    
+                    <!-- Daily -->
+                    <div class="mb-4">
+                        <h4 class="text-sm font-bold text-slate-800 uppercase tracking-widest mb-2 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true" style="background-color: #f1f5f9;">📅 Daily</h4>
+                        <ul class="task-list text-sm text-slate-700 leading-snug px-2" contenteditable="true">
+                            <li>Vacuum and dusting</li>
+                            <li>Glasses, mirrors and touchpoints</li>
+                            <li>Lift floors and doors</li>
+                            <li>Mopping hard floor</li>
+                            <li>Bin empty reception area</li>
+                            <li>B2 general cleaning</li>
+                            <li>Floors general cleaning includes dusting, vacuuming, skirting, marking on the walls, and lift doors smear-free</li>
+                            <li>Bin shut areas mopped and dusted</li>
+                            <li>Staircase general cleaning (dust removal in fitting, skirting boards, handrails, and vacuum floors)</li>
+                            <li>Bin replacements in B2 twice a day (general and recycling bins)</li>
+                            <li>Sweep and clean carpark area</li>
+                            <li>Scrubbed hard floors, jet wash corners as necessary outside areas</li>
+                        </ul>
+                    </div>
+
+                    <!-- Weekly -->
+                    <div class="mb-4">
+                        <h4 class="text-sm font-bold text-slate-800 uppercase tracking-widest mb-2 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true" style="background-color: #f1f5f9;">🗓️ Weekly</h4>
+                        <ul class="task-list text-sm text-slate-700 leading-snug px-2" contenteditable="true">
+                            <li>Rubbish collection from the basement twice a week</li>
+                            <li>Bin store clean and sanitised B2</li>
+                            <li>Carpark floor scrubbed clean once</li>
+                            <li>Wiped carpark doors and fittings B2</li>
+                            <li>Window cleaning of main entrances</li>
+                            <li>Podium garden sweep and litter picking</li>
+                        </ul>
+                    </div>
+
+                    <!-- Monthly -->
+                    <div>
+                        <h4 class="text-sm font-bold text-slate-800 uppercase tracking-widest mb-2 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true" style="background-color: #f1f5f9;">📆 Monthly</h4>
+                        <ul class="task-list text-sm text-slate-700 leading-snug px-2" contenteditable="true">
+                            <li>Apply algin killer on external as necessary</li>
+                            <li>Clean plant pots</li>
+                            <li>Clean drains as necessary</li>
+                        </ul>
+                    </div>
                 </div>
 
-                <div class="block-section relative group">
-                    <button class="no-print absolute -left-8 top-1 text-red-400 hover:text-red-600 font-bold opacity-0 group-hover:opacity-100 transition-opacity" onclick="this.parentElement.remove()">X</button>
-                    <h3 class="text-lg font-black text-[#547C44] uppercase tracking-wider mb-3 border-b border-slate-200 pb-1" contenteditable="true">🏢 Apsley</h3>
-                    <ul class="task-list outline-none text-sm text-slate-700 leading-snug" contenteditable="true">
-                        <li>Bin replacements in B2 twice a day (general and recycling bins)</li>
-                        <li>Unblock bin shut floors as necessary</li>
-                        <li>Sweep and clean carpark area</li>
-                        <li>Scrubbed hard floors, jetwash corners as necessary</li>
-                        <li>Outside areas maintenance</li>
-                        <li>Carpark floor scrubbed clean once</li>
-                        <li>Wiped carpark doors</li>
-                    </ul>
-                </div>
+                <!-- BUILDING: COMMERCIAL UNITS & EXTERNAL -->
+                <div class="block-section relative group bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
+                    <button class="no-print absolute -right-2 -top-2 bg-red-100 text-red-600 hover:bg-red-200 font-bold rounded-full w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm" onclick="this.parentElement.remove()" title="Delete Block">X</button>
+                    
+                    <h3 class="text-xl font-black text-[#547C44] uppercase tracking-wider mb-4 border-b-2 border-[#547C44] pb-2" contenteditable="true">🏪 Commercial Units & External</h3>
+                    
+                    <!-- Daily -->
+                    <div class="mb-4">
+                        <h4 class="text-sm font-bold text-slate-800 uppercase tracking-widest mb-2 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true" style="background-color: #f1f5f9;">📅 Daily</h4>
+                        <ul class="task-list text-sm text-slate-700 leading-snug px-2" contenteditable="true">
+                            <li>Rubbish collection x2</li>
+                            <li>Scrubbing hard floors</li>
+                            <li>Clean frames and doors</li>
+                            <li>Clean service lift floor and doors</li>
+                            <li>Remove dust from fitting and skirting boards</li>
+                            <li>Sweeping all external areas</li>
+                            <li>Scrubbing all external floors by areas daily</li>
+                            <li>Cleaning plant pots and sitting areas</li>
+                            <li>Emptying bins as necessary</li>
+                        </ul>
+                    </div>
 
-                <div class="block-section relative group">
-                    <button class="no-print absolute -left-8 top-1 text-red-400 hover:text-red-600 font-bold opacity-0 group-hover:opacity-100 transition-opacity" onclick="this.parentElement.remove()">X</button>
-                    <h3 class="text-lg font-black text-[#547C44] uppercase tracking-wider mb-3 border-b border-slate-200 pb-1" contenteditable="true">🏪 Commercial Units</h3>
-                    <ul class="task-list outline-none text-sm text-slate-700 leading-snug" contenteditable="true">
-                        <li>Rubbish collection x2</li>
-                        <li>Scrubbing hard floors</li>
-                        <li>Clean frames and doors</li>
-                        <li>Clean service lift floor and doors</li>
-                        <li>Remove dust from fitting and skirting boards</li>
-                        <li>Frames and walls to be wiped free of dust</li>
-                        <li>Window cleaning all glasses</li>
-                        <li>Deep clean floors</li>
-                    </ul>
-                </div>
+                    <!-- Weekly -->
+                    <div class="mb-4">
+                        <h4 class="text-sm font-bold text-slate-800 uppercase tracking-widest mb-2 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true" style="background-color: #f1f5f9;">🗓️ Weekly</h4>
+                        <ul class="task-list text-sm text-slate-700 leading-snug px-2" contenteditable="true">
+                            <li>Frames and walls to be wiped free of dust</li>
+                            <li>Window cleaning all glasses</li>
+                            <li>Sweep and remove debris from top of the drains</li>
+                            <li>Apply algin killer as necessary</li>
+                        </ul>
+                    </div>
 
-                <div class="block-section relative group">
-                    <button class="no-print absolute -left-8 top-1 text-red-400 hover:text-red-600 font-bold opacity-0 group-hover:opacity-100 transition-opacity" onclick="this.parentElement.remove()">X</button>
-                    <h3 class="text-lg font-black text-[#547C44] uppercase tracking-wider mb-3 border-b border-slate-200 pb-1" contenteditable="true">🌳 External Areas</h3>
-                    <ul class="task-list outline-none text-sm text-slate-700 leading-snug" contenteditable="true">
-                        <li>Sweeping all areas</li>
-                        <li>Scrubbing all floors by areas daily</li>
-                        <li>Jetwash areas as necessary</li>
-                        <li>Cleaning plant pots</li>
-                        <li>Clean sitting areas</li>
-                        <li>Emptying bins as necessary</li>
-                        <li>Sweep and remove debris from top of the drains</li>
-                        <li>Apply algae killer as necessary</li>
-                        <li>Jetwash stone seats</li>
-                        <li>Deep clean front of shops floors</li>
-                    </ul>
+                    <!-- Monthly -->
+                    <div>
+                        <h4 class="text-sm font-bold text-slate-800 uppercase tracking-widest mb-2 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true" style="background-color: #f1f5f9;">📆 Monthly</h4>
+                        <ul class="task-list text-sm text-slate-700 leading-snug px-2" contenteditable="true">
+                            <li>Deep clean floors</li>
+                            <li>Jetwash stone seats</li>
+                            <li>Deep clean front of shops floors</li>
+                        </ul>
+                    </div>
                 </div>
 
             </div>
 
-            <div class="no-print mt-10 text-center">
-                <button onclick="addCustomBlock()" class="px-6 py-3 border-2 border-dashed border-[#547C44] text-[#547C44] font-bold rounded-2xl hover:bg-[#547C44] hover:text-white transition-all">
-                    + Add Custom Block / Segment
+            <div class="no-print mt-12 text-center border-t border-dashed border-slate-300 pt-8">
+                <button onclick="addBuilding()" class="px-8 py-3 border-2 border-[#547C44] bg-white text-[#547C44] font-black uppercase tracking-wider rounded-2xl shadow-sm hover:bg-[#547C44] hover:text-white transition-all flex items-center gap-2 mx-auto">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
+                    Add New Building / Segment
                 </button>
             </div>
 
-            <div class="mt-16 text-center border-t border-slate-200 pt-6 absolute bottom-[15mm] left-[15mm] right-[15mm]">
+            <!-- FOOTER -->
+            <div class="mt-16 text-center border-t border-slate-200 pt-6">
                 <p class="text-xs text-slate-400 mb-1">Official Document - West End Cleaning Services Ltd</p>
                 <p class="text-xs text-slate-400">Standard Operational Procedures</p>
             </div>
@@ -183,19 +236,42 @@
     </div>
 
     <script>
-        // Função para adicionar um novo bloco de prédio em branco
-        function addCustomBlock() {
-            const container = document.querySelector('.grid');
+        // Nova função melhorada para adicionar Prédios com a estrutura Daily/Weekly/Monthly
+        function addBuilding() {
+            const container = document.getElementById('buildings-container');
             const div = document.createElement('div');
-            div.className = "block-section relative group";
+            div.className = "block-section relative group bg-white border border-slate-200 p-5 rounded-2xl shadow-sm";
+            
             div.innerHTML = `
-                <button class="no-print absolute -left-8 top-1 text-red-400 hover:text-red-600 font-bold opacity-0 group-hover:opacity-100 transition-opacity" onclick="this.parentElement.remove()">X</button>
-                <h3 class="text-lg font-black text-[#547C44] uppercase tracking-wider mb-3 border-b border-slate-200 pb-1" contenteditable="true">🏢 New Segment</h3>
-                <ul class="task-list outline-none text-sm text-slate-700 leading-snug" contenteditable="true">
-                    <li>Type a task here...</li>
-                </ul>
+                <button class="no-print absolute -right-2 -top-2 bg-red-100 text-red-600 hover:bg-red-200 font-bold rounded-full w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm" onclick="this.parentElement.remove()" title="Delete Block">X</button>
+                
+                <h3 class="text-xl font-black text-[#547C44] uppercase tracking-wider mb-4 border-b-2 border-[#547C44] pb-2" contenteditable="true">🏢 New Building Name</h3>
+                
+                <div class="mb-4">
+                    <h4 class="text-sm font-bold text-slate-800 uppercase tracking-widest mb-2 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true" style="background-color: #f1f5f9;">📅 Daily</h4>
+                    <ul class="task-list text-sm text-slate-700 leading-snug px-2" contenteditable="true">
+                        <li>Type daily task here...</li>
+                    </ul>
+                </div>
+
+                <div class="mb-4">
+                    <h4 class="text-sm font-bold text-slate-800 uppercase tracking-widest mb-2 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true" style="background-color: #f1f5f9;">🗓️ Weekly</h4>
+                    <ul class="task-list text-sm text-slate-700 leading-snug px-2" contenteditable="true">
+                        <li>Type weekly task here...</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-sm font-bold text-slate-800 uppercase tracking-widest mb-2 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true" style="background-color: #f1f5f9;">📆 Monthly</h4>
+                    <ul class="task-list text-sm text-slate-700 leading-snug px-2" contenteditable="true">
+                        <li>Type monthly task here...</li>
+                    </ul>
+                </div>
             `;
             container.appendChild(div);
+            
+            // Fazer scroll automático para o novo prédio adicionado
+            div.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     </script>
 </body>
