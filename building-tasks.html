@@ -5,61 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Building Tasks - West End</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+
     <style>
         /* ===== REGRAS ESPECÍFICAS E FORÇADAS PARA O PDF ===== */
         @media print {
-            body { 
-                background-color: white !important; 
-                margin: 0; 
-                padding: 0; 
-            }
-            
-            * {
-                -webkit-print-color-adjust: exact !important; 
-                print-color-adjust: exact !important;
-            }
-
+            body { background-color: white !important; margin: 0; padding: 0; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
             .no-print { display: none !important; }
-            
-            #main-content { 
-                margin: 0 !important; 
-                width: 100% !important; 
-                display: block !important; 
-                padding: 0 !important;
-            }
-            
-            .a4-page { 
-                box-shadow: none !important; 
-                margin: 0 !important; 
-                padding: 0 !important; 
-                width: 100% !important; 
-                max-width: 100% !important; 
-                border: none !important; 
-            }
-            
-            @page { 
-                size: A4; 
-                margin: 15mm 15mm 20mm 15mm; 
-            }
+            #main-content { margin: 0 !important; width: 100% !important; display: block !important; padding: 0 !important; }
+            .a4-page { box-shadow: none !important; margin: 0 !important; padding: 0 !important; width: 100% !important; max-width: 100% !important; border: none !important; }
+            @page { size: A4; margin: 15mm 15mm 20mm 15mm; }
 
-            /* 1. COMPACTAÇÃO ("BEM JUNTINHO") E QUEBRA DE PÁGINA PARA CADA PRÉDIO */
             .block-section { 
                 border: 1px solid #cbd5e1 !important; 
                 background-color: #ffffff !important;
-                padding: 12px 15px !important; /* Mais apertado */
+                padding: 12px 15px !important; 
                 margin-bottom: 0 !important; 
                 border-radius: 8px !important;
-                page-break-before: always !important; /* Força CADA prédio a ir para uma nova página */
+                page-break-before: always !important; 
                 break-before: page !important;
             }
 
-            /* 2. O PRIMEIRO PRÉDIO NÃO QUEBRA DE PÁGINA (Preenche o espaço em branco da 1ª folha) */
             #buildings-container .block-section:first-child {
                 page-break-before: avoid !important;
                 break-before: auto !important;
             }
 
-            /* Protege para que o título do prédio não fique sozinho no final de uma página */
             .block-section h3 {
                 page-break-after: avoid !important;
                 break-after: avoid !important;
@@ -67,13 +41,11 @@
                 padding-bottom: 4px !important;
             }
 
-            /* Protege os blocos de Daily/Weekly/Monthly de serem cortados ao meio */
             .block-section > div {
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
             }
 
-            /* Diminui o espaçamento dos títulos (Daily/Weekly/Monthly) para ficar mais junto */
             .period-header {
                 background-color: #f1f5f9 !important;
                 color: #1e293b !important;
@@ -84,7 +56,6 @@
                 display: block !important;
             }
 
-            /* Diminui o espaçamento das listas de tarefas para ficar mais junto */
             .task-list li {
                 margin-bottom: 3px !important;
                 line-height: 1.2 !important;
@@ -106,9 +77,8 @@
         .task-list li::before { content: "•"; position: absolute; left: 0; color: #547C44; font-weight: bold; font-size: 1.2rem; line-height: 1rem; top: 0.1rem; }
     </style>
 </head>
-<body class="bg-slate-100 font-sans text-slate-900 min-h-screen">
+<body class="bg-slate-100 font-sans text-slate-900 min-h-screen relative">
 
-    <!-- TOOLBAR NO-PRINT -->
     <div class="no-print bg-white shadow-sm border-b border-slate-200 sticky top-0 z-50">
         <div class="max-w-[1200px] mx-auto px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-4">
@@ -128,33 +98,29 @@
         </div>
     </div>
 
-    <!-- MAIN A4 DOCUMENT -->
     <div id="main-content" class="py-10 flex justify-center px-4">
         <div class="a4-page bg-white shadow-2xl w-full max-w-[21cm] min-h-[29.7cm] p-[15mm] border border-slate-200 relative">
             
-            <!-- HEADER -->
             <div class="flex flex-col items-center mb-6 border-b-4 border-[#547C44] pb-6">
                 <img src="logo.png" alt="West End Cleaning" class="h-24 object-contain mb-4">
-                
                 <div contenteditable="true" class="w-full text-4xl font-black text-[#547C44] uppercase tracking-widest text-center outline-none bg-transparent mb-2">
-                    DICKENS YARD
+                    ROYAL GATEWAY
                 </div>
-                
                 <h2 class="text-xl font-bold text-slate-500 tracking-[0.2em] uppercase text-center" contenteditable="true">
                     Building Task Descriptions
                 </h2>
             </div>
 
-            <!-- BUILDINGS CONTAINER -->
             <div id="buildings-container" class="space-y-6">
 
-                <!-- BUILDING: SKYLINE -->
                 <div class="block-section relative group bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
-                    <button class="no-print absolute -right-2 -top-2 bg-red-100 text-red-600 hover:bg-red-200 font-bold rounded-full w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm" onclick="this.parentElement.remove()" title="Delete Block">X</button>
+                    <div class="no-print absolute -right-2 -top-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm">
+                        <button class="bg-blue-100 text-blue-600 hover:bg-blue-200 font-bold rounded-full w-8 h-8 flex items-center justify-center" onclick="openSaveModal(this)" title="Save to Library">💾</button>
+                        <button class="bg-red-100 text-red-600 hover:bg-red-200 font-bold rounded-full w-8 h-8 flex items-center justify-center" onclick="this.closest('.block-section').remove()" title="Delete Block">X</button>
+                    </div>
                     
-                    <h3 class="text-xl font-black text-[#547C44] uppercase tracking-wider mb-2 border-b-2 border-[#547C44] pb-2" contenteditable="true">🏢 Skyline</h3>
+                    <h3 class="text-xl font-black text-[#547C44] uppercase tracking-wider mb-2 border-b-2 border-[#547C44] pb-2" contenteditable="true">🏢 EMERALD BLOCK A</h3>
                     
-                    <!-- Daily -->
                     <div>
                         <h4 class="period-header text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true">📅 Daily</h4>
                         <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true">
@@ -163,146 +129,137 @@
                             <li>Lift floors and doors</li>
                             <li>Mopping hard floor</li>
                             <li>Bin empty reception area</li>
-                            <li>B1 & B2 general cleaning</li>
                             <li>Floors general cleaning includes dusting, vacuuming, skirting, marking on the walls, and lift doors smear-free</li>
-                            <li>Bin shut areas mopped and dusted</li>
-                            <li>Staircase general cleaning (dust removal in fitting, skirting boards, handrails, and vacuum floors. Mop as necessary)</li>
-                            <li>Bin replacements in B2 twice a day (general and recycling bins)</li>
-                            <li>Sweep and clean carpark area</li>
-                            <li>Scrubbed hard floors, jet wash corners as necessary outside areas</li>
-                            <li>Clean management office (toilets, kitchen, reception, office, staircase)</li>
-                            <li>Welfare area (toilet, showers, changing room, lunch area, corridors)</li>
-                        </ul>
-                    </div>
-
-                    <!-- Weekly -->
-                    <div>
-                        <h4 class="period-header text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true">🗓️ Weekly</h4>
-                        <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true">
-                            <li>Rubbish collection from the basement twice a week</li>
-                            <li>Bin store clean and sanitised B2</li>
-                            <li>Carpark floor scrubbed clean once</li>
-                            <li>Wiped carpark doors and fittings B2</li>
-                            <li>Window cleaning of main entrances</li>
-                            <li>Podium garden sweep and litter picking x2</li>
-                        </ul>
-                    </div>
-
-                    <!-- Monthly -->
-                    <div>
-                        <h4 class="period-header text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true">📆 Monthly</h4>
-                        <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true">
-                            <li>Apply algin killer on external as necessary</li>
-                            <li>Clean plant pots</li>
-                            <li>Clean drains as necessary</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- BUILDING: DASHWOOD / VISTA / BELGRAVIA -->
-                <div class="block-section relative group bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
-                    <button class="no-print absolute -right-2 -top-2 bg-red-100 text-red-600 hover:bg-red-200 font-bold rounded-full w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm" onclick="this.parentElement.remove()" title="Delete Block">X</button>
-                    
-                    <h3 class="text-xl font-black text-[#547C44] uppercase tracking-wider mb-2 border-b-2 border-[#547C44] pb-2" contenteditable="true">🏢 Dashwood / Vista / Belgravia</h3>
-                    
-                    <!-- Daily -->
-                    <div>
-                        <h4 class="period-header text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true">📅 Daily</h4>
-                        <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true">
-                            <li>Vacuum and dusting</li>
-                            <li>Glasses, mirrors and touchpoints</li>
-                            <li>Lift floors and doors</li>
-                            <li>Mopping hard floor</li>
-                            <li>Bin empty reception area</li>
-                            <li>B2 general cleaning</li>
-                            <li>Floors general cleaning includes dusting, vacuuming, skirting, marking on the walls, and lift doors smear-free</li>
-                            <li>Bin shut areas mopped and dusted</li>
-                            <li>Staircase general cleaning (dust removal in fitting, skirting boards, handrails, and vacuum floors)</li>
-                            <li>Bin replacements in B2 twice a day (general and recycling bins)</li>
-                            <li>Sweep and clean carpark area</li>
-                            <li>Scrubbed hard floors, jet wash corners as necessary outside areas</li>
-                        </ul>
-                    </div>
-
-                    <!-- Weekly -->
-                    <div>
-                        <h4 class="period-header text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true">🗓️ Weekly</h4>
-                        <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true">
-                            <li>Rubbish collection from the basement twice a week</li>
-                            <li>Bin store clean and sanitised B2</li>
-                            <li>Carpark floor scrubbed clean once</li>
-                            <li>Wiped carpark doors and fittings B2</li>
-                            <li>Window cleaning of main entrances</li>
+                            <li>Clean management & Welfare area office toilets, kitchen.</li>
+                            <li>Clean Gym</li>
+                            <li>Lounge Area</li>
                             <li>Podium garden sweep and litter picking</li>
+                            <li>Outside area</li>
                         </ul>
                     </div>
 
-                    <!-- Monthly -->
+                    <div>
+                        <h4 class="period-header text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true">🗓️ Weekly</h4>
+                        <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true">
+                            <li>Bin store clean and sanitised 2x WEEK</li>
+                            <li>Window cleaning of main entrances 3x WEEK</li>
+                            <li>Staircase general cleaning (dust removal in fitting, skirting boards, handrails, and vacuum floors. Mop as necessary) 1x WEEK</li>
+                        </ul>
+                    </div>
+
                     <div>
                         <h4 class="period-header text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true">📆 Monthly</h4>
                         <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true">
                             <li>Apply algin killer on external as necessary</li>
                             <li>Clean plant pots</li>
                             <li>Clean drains as necessary</li>
+                            <li>Internal window cleaning all floors.</li>
+                            <li>Cycle store</li>
                         </ul>
                     </div>
                 </div>
 
-                <!-- BUILDING: COMMERCIAL UNITS & EXTERNAL -->
                 <div class="block-section relative group bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
-                    <button class="no-print absolute -right-2 -top-2 bg-red-100 text-red-600 hover:bg-red-200 font-bold rounded-full w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm" onclick="this.parentElement.remove()" title="Delete Block">X</button>
+                    <div class="no-print absolute -right-2 -top-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm">
+                        <button class="bg-blue-100 text-blue-600 hover:bg-blue-200 font-bold rounded-full w-8 h-8 flex items-center justify-center" onclick="openSaveModal(this)" title="Save to Library">💾</button>
+                        <button class="bg-red-100 text-red-600 hover:bg-red-200 font-bold rounded-full w-8 h-8 flex items-center justify-center" onclick="this.closest('.block-section').remove()" title="Delete Block">X</button>
+                    </div>
                     
-                    <h3 class="text-xl font-black text-[#547C44] uppercase tracking-wider mb-2 border-b-2 border-[#547C44] pb-2" contenteditable="true">🏪 Commercial Units & External</h3>
+                    <h3 class="text-xl font-black text-[#547C44] uppercase tracking-wider mb-2 border-b-2 border-[#547C44] pb-2" contenteditable="true">🏢 EMERALD BLOCK B</h3>
                     
-                    <!-- Daily -->
                     <div>
                         <h4 class="period-header text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true">📅 Daily</h4>
                         <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true">
-                            <li>Rubbish collection x2</li>
-                            <li>Scrubbing hard floors</li>
-                            <li>Clean frames and doors</li>
-                            <li>Clean service lift floor and doors</li>
-                            <li>Remove dust from fitting and skirting boards</li>
-                            <li>Sweeping all external areas</li>
-                            <li>Scrubbing all external floors by areas daily</li>
-                            <li>Cleaning plant pots and sitting areas</li>
-                            <li>Emptying bins as necessary</li>
+                            <li>Vacuum and dusting</li>
+                            <li>Glasses, mirrors and touchpoints</li>
+                            <li>Lift floors and doors</li>
+                            <li>Mopping hard floor</li>
+                            <li>Bin empty reception area</li>
+                            <li>Floors general cleaning includes dusting, vacuuming, skirting, marking on the walls, and lift doors smear-free</li>
+                            <li>Podium garden sweep and litter picking</li>
+                            <li>Outside area</li>
+                            <li>Long Corridor</li>
                         </ul>
                     </div>
 
-                    <!-- Weekly -->
                     <div>
                         <h4 class="period-header text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true">🗓️ Weekly</h4>
                         <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true">
-                            <li>Frames and walls to be wiped free of dust</li>
-                            <li>Window cleaning all glasses</li>
-                            <li>Sweep and remove debris from top of the drains</li>
-                            <li>Apply algin killer as necessary</li>
+                            <li>Bin store clean and sanitised 2x WEEK</li>
+                            <li>Window cleaning of main entrances 3x WEEK</li>
+                            <li>Staircase general cleaning (dust removal in fitting, skirting boards, handrails, and vacuum floors. Mop as necessary) 1x WEEK</li>
                         </ul>
                     </div>
 
-                    <!-- Monthly -->
                     <div>
                         <h4 class="period-header text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true">📆 Monthly</h4>
                         <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true">
-                            <li>Deep clean floors</li>
-                            <li>Jetwash stone seats</li>
-                            <li>Deep clean front of shops floors</li>
+                            <li>Apply algin killer on external as necessary</li>
+                            <li>Clean plant pots</li>
+                            <li>Clean drains as necessary</li>
+                            <li>Internal window cleaning all floors</li>
+                            <li>Cycle store</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="block-section relative group bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
+                    <div class="no-print absolute -right-2 -top-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm">
+                        <button class="bg-blue-100 text-blue-600 hover:bg-blue-200 font-bold rounded-full w-8 h-8 flex items-center justify-center" onclick="openSaveModal(this)" title="Save to Library">💾</button>
+                        <button class="bg-red-100 text-red-600 hover:bg-red-200 font-bold rounded-full w-8 h-8 flex items-center justify-center" onclick="this.closest('.block-section').remove()" title="Delete Block">X</button>
+                    </div>
+                    
+                    <h3 class="text-xl font-black text-[#547C44] uppercase tracking-wider mb-2 border-b-2 border-[#547C44] pb-2" contenteditable="true">🏢 RUBY HOUSE</h3>
+                    
+                    <div>
+                        <h4 class="period-header text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true">📅 Daily</h4>
+                        <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true">
+                            <li>Vacuum and dusting</li>
+                            <li>Reception</li>
+                            <li>Glasses, mirrors and touchpoints</li>
+                            <li>Lift floors and doors</li>
+                            <li>Mopping hard floor</li>
+                            <li>Bin empty reception area</li>
+                            <li>Lounge Area</li>
+                            <li>Podium garden sweep and litter picking</li>
+                            <li>Outside area</li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h4 class="period-header text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true">🗓️ Weekly</h4>
+                        <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true">
+                            <li>Bin store clean and sanitised 2x WEEK</li>
+                            <li>Window cleaning of main entrances 3x WEEK</li>
+                            <li>Staircase general cleaning (dust removal in fitting, skirting boards, handrails, and vacuum floors. Mop as necessary) 1x WEEK</li>
+                            <li>Floors general cleaning includes dusting, vacuuming, skirting, marking on the walls, and lift doors smear-free 1x WEEK WEDNESDAY</li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h4 class="period-header text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true">📆 Monthly</h4>
+                        <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true">
+                            <li>Apply algin killer on external as necessary</li>
+                            <li>Clean plant pots</li>
+                            <li>Clean drains as necessary</li>
+                            <li>Internal window cleaning all floors</li>
+                            <li>Cycle store</li>
                         </ul>
                     </div>
                 </div>
 
             </div>
 
-            <!-- BUTTON ADD -->
-            <div class="no-print mt-12 text-center border-t border-dashed border-slate-300 pt-8">
-                <button onclick="addBuilding()" class="px-8 py-3 border-2 border-[#547C44] bg-white text-[#547C44] font-black uppercase tracking-wider rounded-2xl shadow-sm hover:bg-[#547C44] hover:text-white transition-all flex items-center gap-2 mx-auto">
+            <div class="no-print mt-12 text-center border-t border-dashed border-slate-300 pt-8 flex flex-col md:flex-row justify-center gap-4">
+                <button onclick="addBuilding()" class="px-6 py-3 border-2 border-[#547C44] bg-white text-[#547C44] font-black uppercase tracking-wider rounded-2xl shadow-sm hover:bg-[#547C44] hover:text-white transition-all flex items-center justify-center gap-2">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
-                    Add New Building / Segment
+                    Add Blank Segment
+                </button>
+                <button onclick="openLoadModal()" class="px-6 py-3 bg-slate-800 text-white font-black uppercase tracking-wider rounded-2xl shadow-sm hover:bg-slate-900 transition-all flex items-center justify-center gap-2">
+                    📥 Load from Library
                 </button>
             </div>
 
-            <!-- FOOTER -->
             <div class="footer-print text-center pt-6 mt-10">
                 <p class="text-xs text-slate-400 mb-1">Official Document - West End Cleaning Services Ltd</p>
                 <p class="text-xs text-slate-400">Standard Operational Procedures</p>
@@ -311,41 +268,213 @@
         </div>
     </div>
 
+    <div id="modal-save" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-white p-6 rounded-3xl w-full max-w-sm shadow-2xl border border-slate-100">
+            <h3 class="text-xl font-black text-slate-800 mb-2">Save to Library</h3>
+            <p class="text-sm text-slate-500 mb-4">Save this segment template so you can quickly insert it into other documents.</p>
+            
+            <label class="block text-xs font-bold text-slate-500 uppercase mb-2 pl-1">Segment Name</label>
+            <input type="text" id="save-segment-name" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl mb-6 font-bold" placeholder="e.g. Dashwood">
+            
+            <div class="flex gap-3">
+                <button onclick="closeModals()" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl">Cancel</button>
+                <button onclick="confirmSaveSegment()" id="btn-confirm-save" class="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-load" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border border-slate-100">
+            <h3 class="text-xl font-black text-slate-800 mb-2">Library</h3>
+            <p class="text-sm text-slate-500 mb-4">Select a saved segment to insert into this document.</p>
+            
+            <ul id="library-list" class="space-y-2 max-h-64 overflow-y-auto mb-6">
+                </ul>
+
+            <button onclick="closeModals()" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl">Close</button>
+        </div>
+    </div>
+
     <script>
+        // CONFIGURAÇÃO FIREBASE
+        const firebaseConfig = {
+            apiKey: "AIzaSyBSPim1j9yxA56AeWhWhdG_8TKzh_F-gZc",
+            authDomain: "westend-c6992.firebaseapp.com",
+            projectId: "westend-c6992",
+            storageBucket: "westend-c6992.firebasestorage.app",
+            messagingSenderId: "781546407326",
+            appId: "1:781546407326:web:ed4126214f41498153428f",
+            measurementId: "G-DEGC00501H"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        let currentBlockToSave = null;
+        let dbTemplates = [];
+
+        function closeModals() {
+            document.getElementById('modal-save').classList.add('hidden');
+            document.getElementById('modal-load').classList.add('hidden');
+            currentBlockToSave = null;
+        }
+
+        /* ===== ADD BLANK BLOCK ===== */
         function addBuilding() {
             const container = document.getElementById('buildings-container');
             const div = document.createElement('div');
             div.className = "block-section relative group bg-white border border-slate-200 p-5 rounded-2xl shadow-sm";
             
             div.innerHTML = `
-                <button class="no-print absolute -right-2 -top-2 bg-red-100 text-red-600 hover:bg-red-200 font-bold rounded-full w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm" onclick="this.parentElement.remove()" title="Delete Block">X</button>
+                <div class="no-print absolute -right-2 -top-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm">
+                    <button class="bg-blue-100 text-blue-600 hover:bg-blue-200 font-bold rounded-full w-8 h-8 flex items-center justify-center" onclick="openSaveModal(this)" title="Save to Library">💾</button>
+                    <button class="bg-red-100 text-red-600 hover:bg-red-200 font-bold rounded-full w-8 h-8 flex items-center justify-center" onclick="this.closest('.block-section').remove()" title="Delete Block">X</button>
+                </div>
                 
-                <h3 class="text-xl font-black text-[#547C44] uppercase tracking-wider mb-2 border-b-2 border-[#547C44] pb-2" contenteditable="true">🏢 New Building Name</h3>
+                <h3 class="text-xl font-black text-[#547C44] uppercase tracking-wider mb-2 border-b-2 border-[#547C44] pb-2" contenteditable="true">🏢 New Segment Name</h3>
                 
                 <div>
                     <h4 class="period-header text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true">📅 Daily</h4>
-                    <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true">
-                        <li>Type daily task here...</li>
-                    </ul>
+                    <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true"><li>Type daily task here...</li></ul>
                 </div>
-
                 <div>
                     <h4 class="period-header text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true">🗓️ Weekly</h4>
-                    <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true">
-                        <li>Type weekly task here...</li>
-                    </ul>
+                    <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true"><li>Type weekly task here...</li></ul>
                 </div>
-
                 <div>
                     <h4 class="period-header text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true">📆 Monthly</h4>
-                    <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true">
-                        <li>Type monthly task here...</li>
-                    </ul>
+                    <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true"><li>Type monthly task here...</li></ul>
                 </div>
             `;
             container.appendChild(div);
-            
             div.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        /* ===== SAVE TO LIBRARY ===== */
+        function openSaveModal(btn) {
+            currentBlockToSave = btn.closest('.block-section');
+            let rawName = currentBlockToSave.querySelector('h3').innerText;
+            let cleanName = rawName.replace('🏢', '').replace('🏪', '').replace('🌳', '').trim();
+            
+            document.getElementById('save-segment-name').value = cleanName;
+            document.getElementById('modal-save').classList.remove('hidden');
+        }
+
+        async function confirmSaveSegment() {
+            const name = document.getElementById('save-segment-name').value.trim();
+            if (!name) return alert("Please provide a name.");
+
+            const btnSave = document.getElementById('btn-confirm-save');
+            btnSave.innerText = "Saving..."; btnSave.disabled = true;
+
+            try {
+                const uls = currentBlockToSave.querySelectorAll('ul.task-list');
+                
+                const dailyTasks = uls[0] ? Array.from(uls[0].querySelectorAll('li')).map(li => li.innerText) : [];
+                const weeklyTasks = uls[1] ? Array.from(uls[1].querySelectorAll('li')).map(li => li.innerText) : [];
+                const monthlyTasks = uls[2] ? Array.from(uls[2].querySelectorAll('li')).map(li => li.innerText) : [];
+
+                await db.collection("segment_templates").add({
+                    name: name,
+                    daily: dailyTasks,
+                    weekly: weeklyTasks,
+                    monthly: monthlyTasks,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                closeModals();
+            } catch(e) {
+                alert("Error saving: " + e.message);
+            } finally {
+                btnSave.innerText = "Save"; btnSave.disabled = false;
+            }
+        }
+
+        /* ===== LOAD FROM LIBRARY ===== */
+        async function openLoadModal() {
+            const list = document.getElementById('library-list');
+            list.innerHTML = '<li class="text-center text-sm text-slate-400 py-4">Loading from database...</li>';
+            document.getElementById('modal-load').classList.remove('hidden');
+
+            try {
+                const snapshot = await db.collection("segment_templates").orderBy("timestamp", "desc").get();
+                dbTemplates = [];
+                
+                if (snapshot.empty) {
+                    list.innerHTML = '<li class="text-center text-sm text-slate-400 py-4">Library is empty. Save a segment first!</li>';
+                    return;
+                }
+
+                let html = '';
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    data.id = doc.id;
+                    dbTemplates.push(data);
+                    
+                    html += `
+                        <li class="flex justify-between items-center bg-slate-50 p-3 border border-slate-200 rounded-lg">
+                            <span class="font-bold text-slate-700 truncate pr-2 flex-1">${data.name}</span>
+                            <div class="flex gap-2">
+                                <button onclick="insertTemplate('${data.id}')" class="px-3 py-1.5 bg-[#547C44] text-white text-xs font-bold rounded-md hover:bg-[#436435]">Insert</button>
+                                <button onclick="deleteTemplate('${data.id}')" class="px-2 py-1.5 bg-red-100 text-red-600 text-xs font-bold rounded-md hover:bg-red-200">X</button>
+                            </div>
+                        </li>
+                    `;
+                });
+                list.innerHTML = html;
+            } catch(e) {
+                list.innerHTML = `<li class="text-center text-sm text-red-500 py-4">Error: ${e.message}</li>`;
+            }
+        }
+
+        function insertTemplate(id) {
+            const template = dbTemplates.find(t => t.id === id);
+            if (!template) return;
+
+            const container = document.getElementById('buildings-container');
+            const div = document.createElement('div');
+            div.className = "block-section relative group bg-white border border-slate-200 p-5 rounded-2xl shadow-sm";
+            
+            const generateLis = (arr) => {
+                if (!arr || arr.length === 0) return '<li>Type task here...</li>';
+                return arr.map(task => `<li>${task}</li>`).join('');
+            };
+
+            div.innerHTML = `
+                <div class="no-print absolute -right-2 -top-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm">
+                    <button class="bg-blue-100 text-blue-600 hover:bg-blue-200 font-bold rounded-full w-8 h-8 flex items-center justify-center" onclick="openSaveModal(this)" title="Save to Library">💾</button>
+                    <button class="bg-red-100 text-red-600 hover:bg-red-200 font-bold rounded-full w-8 h-8 flex items-center justify-center" onclick="this.closest('.block-section').remove()" title="Delete Block">X</button>
+                </div>
+                
+                <h3 class="text-xl font-black text-[#547C44] uppercase tracking-wider mb-2 border-b-2 border-[#547C44] pb-2" contenteditable="true">🏢 ${template.name}</h3>
+                
+                <div>
+                    <h4 class="period-header text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true">📅 Daily</h4>
+                    <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true">${generateLis(template.daily)}</ul>
+                </div>
+                <div>
+                    <h4 class="period-header text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true">🗓️ Weekly</h4>
+                    <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true">${generateLis(template.weekly)}</ul>
+                </div>
+                <div>
+                    <h4 class="period-header text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true">📆 Monthly</h4>
+                    <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true">${generateLis(template.monthly)}</ul>
+                </div>
+            `;
+            
+            container.appendChild(div);
+            closeModals();
+            div.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        async function deleteTemplate(id) {
+            if (confirm("Are you sure you want to delete this template from the Library?")) {
+                try {
+                    await db.collection("segment_templates").doc(id).delete();
+                    openLoadModal(); 
+                } catch(e) {
+                    alert("Error deleting: " + e.message);
+                }
+            }
         }
     </script>
 </body>
