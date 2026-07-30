@@ -771,17 +771,21 @@
             if(timeIndex !== -1 && timeIndex > 0) {
                 // Remove a coluna Time
                 theadTr.children[timeIndex].remove();
-                Array.from(tbody.children).forEach(tr => { if(tr.children[timeIndex]) tr.children[timeIndex].remove(); });
+                Array.from(tbody.children).forEach(tr => {
+                    const tdTime = tr.querySelector('[data-col="time"]');
+                    if (tdTime) tdTime.remove();
+                });
             } else {
                 // Adiciona a coluna Time
                 const th = document.createElement('th');
                 th.className = "border border-slate-300 py-2 px-3 text-left w-1/5";
                 th.setAttribute('data-col', 'time');
                 th.innerHTML = `<div contenteditable="true" class="outline-none">Time</div>`;
+                
+                // insere DEPOIS do employer (que é o primeiro filho fixo)
                 theadTr.insertBefore(th, theadTr.children[1]);
 
                 Array.from(tbody.children).forEach(tr => {
-                    // Checa se a linha é o separador verde ou a linha do empregado
                     if (tr.classList.contains('repeater-header')) {
                         const sepTh = document.createElement('th');
                         sepTh.className = "border border-slate-300 py-2 px-3 text-left w-1/5";
@@ -806,17 +810,18 @@
             const container = btn.closest('.shift-block') || btn.closest('.mb-10');
             const table = container.querySelector('table');
             
-            // Para tabelas antigas e novas, vamos pegar pela classe e index
             const theadTr = table.querySelector('thead tr');
             const tbody = table.querySelector('tbody');
             
-            if (theadTr && theadTr.children[0]) {
-                theadTr.children[0].classList.toggle('hidden');
+            if (theadTr) {
+                const employerTh = theadTr.querySelector('[data-col="employer"]');
+                if (employerTh) employerTh.classList.toggle('hidden');
             }
             
             Array.from(tbody.children).forEach(tr => {
-                if (tr.children[0]) {
-                    tr.children[0].classList.toggle('hidden');
+                const employerTd = tr.querySelector('[data-col="employer"]');
+                if (employerTd) {
+                    employerTd.classList.toggle('hidden');
                 }
             });
         }
@@ -953,7 +958,9 @@
             const time = document.getElementById('input-time').value;
 
             const theadTr = targetTable.closest('table').querySelector('thead tr');
-            const hasTimeCol = theadTr.children.length >= 3;
+            const hasTimeCol = theadTr.querySelector('[data-col="time"]') !== null;
+            const isEmpHidden = theadTr.querySelector('[data-col="employer"]')?.classList.contains('hidden');
+            const empHiddenClass = isEmpHidden ? ' hidden' : '';
 
             // Se a tabela já tem alguém, adiciona a barrinha separadora antes
             if (targetTable.children.length > 0) {
@@ -964,7 +971,7 @@
                 const thTimeHtml = hasTimeCol ? `<th class="border border-slate-300 py-2 px-3 text-left w-1/5" data-col="time"><div contenteditable="true" class="outline-none">Time</div></th>` : '';
                 
                 separatorTr.innerHTML = `
-                    <th class="border border-slate-300 py-2 px-3 text-left w-1/4 relative" data-col="employer">
+                    <th class="border border-slate-300 py-2 px-3 text-left w-1/4 relative${empHiddenClass}" data-col="employer">
                         <button class="no-print absolute -left-6 top-2 text-red-400 font-bold hidden group-hover/sep:block bg-red-50 px-2 rounded text-xs" onclick="this.closest('tr').remove()" title="Remover Barrinha">X</button>
                         Employer
                     </th>
@@ -979,7 +986,7 @@
             const tr = document.createElement('tr');
             tr.className = "group/row";
             tr.innerHTML = `
-                <td class="border border-slate-300 py-3 px-3 font-bold align-top relative" data-col="employer">
+                <td class="border border-slate-300 py-3 px-3 font-bold align-top relative${empHiddenClass}" data-col="employer">
                     <button class="no-print absolute -left-6 top-3 text-red-500 font-bold hidden group-hover/row:block bg-red-50 px-2 rounded" onclick="this.closest('tr').remove()">X</button>
                     <div contenteditable="true" class="outline-none">${emp}</div>
                 </td>
