@@ -530,7 +530,7 @@
                             </span>
                             <button class="no-print text-[10px] text-red-400 hover:text-red-600 font-bold opacity-0 group-hover/sub:opacity-100 transition-opacity" onclick="this.closest('.subtitle-block').remove()" title="Remove sub-title">×</button>
                         </div>
-                        <ul class="task-list outline-none" contenteditable="true">${tasksHtml}</ul>
+                        <ul class="task-list outline-none">${tasksHtml}</ul>
                         <button class="no-print text-[10px] font-bold text-slate-400 hover:text-[#547C44] mt-1 flex items-center gap-1 transition-colors" onclick="addSubTaskToBlock(this)">+ Add Sub-task</button>
                     </div>
                 </div>
@@ -581,6 +581,27 @@
                     ${removeBtnHtml}
                 `;
             });
+
+            scope.querySelectorAll('ul.task-list').forEach(ul => {
+                ul.removeAttribute('contenteditable');
+                ul.querySelectorAll('li').forEach(li => {
+                    if (!li.querySelector('.task-text')) {
+                        let text = li.innerHTML || 'New task...';
+                        li.className = 'group/li relative pr-20 mb-1';
+                        li.innerHTML = `
+                            <span class="task-text outline-none focus:bg-[#547C44]/5 rounded px-1 -mx-1 inline-block w-full min-h-[1.2rem] align-top" contenteditable="true">${text}</span>
+                            <div class="absolute right-0 top-0 flex items-center gap-1 no-print">
+                                <button class="add-li-time-btn opacity-0 group-hover/li:opacity-100 text-[10px] font-bold bg-[#547C44]/10 text-[#547C44] px-1.5 py-0.5 rounded-full hover:bg-[#547C44]/20 transition-all font-sans" contenteditable="false" onclick="addLiTime(this)">+ Time</button>
+                                <button class="remove-li-btn opacity-0 group-hover/li:opacity-100 text-[10px] text-slate-400 hover:text-red-500 font-bold px-1" contenteditable="false" onclick="this.closest('li').remove()" title="Remove task">X</button>
+                            </div>
+                            <span class="li-time-badge hidden absolute right-12 top-0 items-center gap-1 bg-[#547C44]/10 text-[#547C44] text-[10px] font-bold px-1.5 py-0.5 rounded-full" contenteditable="false">
+                                <span class="li-time-text outline-none min-w-[20px] text-center" contenteditable="true"></span>
+                                <button class="no-print text-[#547C44] hover:text-red-600 leading-none font-black" contenteditable="false" onclick="removeLiTime(this)" title="Remove time">×</button>
+                            </span>
+                        `;
+                    }
+                });
+            });
         }
 
         function refreshTaskTimeButtons(scope = document) {
@@ -605,6 +626,24 @@
                     addBtn.classList.remove('hidden');
                 } else {
                     addBtn.classList.add('hidden');
+                    badge.classList.add('hidden');
+                    badge.classList.remove('inline-flex');
+                }
+            });
+
+            scope.querySelectorAll('ul.task-list li').forEach(li => {
+                const addBtn = li.querySelector('.add-li-time-btn');
+                const badge = li.querySelector('.li-time-badge');
+                if(!addBtn || !badge) return;
+                const timeText = li.querySelector('.li-time-text');
+                const hasTime = timeText && timeText.innerText.trim().length > 0;
+                
+                if (hasTime) {
+                    addBtn.classList.add('hidden');
+                    badge.classList.remove('hidden');
+                    badge.classList.add('inline-flex');
+                } else {
+                    addBtn.classList.remove('hidden');
                     badge.classList.add('hidden');
                     badge.classList.remove('inline-flex');
                 }
@@ -674,7 +713,7 @@
                     </span>
                     <button class="no-print text-[10px] text-red-400 hover:text-red-600 font-bold opacity-0 group-hover/sub:opacity-100 transition-opacity" onclick="this.closest('.subtitle-block').remove()" title="Remove sub-title">×</button>
                 </div>
-                <ul class="task-list outline-none" contenteditable="true"><li>New sub-task...</li></ul>
+                <ul class="task-list outline-none"><li>New sub-task...</li></ul>
                 <button class="no-print text-[10px] font-bold text-slate-400 hover:text-[#547C44] mt-1 flex items-center gap-1 transition-colors" onclick="addSubTaskToBlock(this)">+ Add Sub-task</button>
             `;
             container.appendChild(block);
@@ -692,12 +731,84 @@
         function addSubTaskToBlock(btn) {
             const block = btn.closest('.subtitle-block');
             const taskList = block.querySelector('.task-list');
-            const li = document.createElement('li');
-            li.textContent = 'New sub-task...';
-            li.contentEditable = 'true';
-            taskList.appendChild(li);
-            li.focus();
+            appendNewSubTaskLi(taskList, true);
         }
+
+        function appendNewSubTaskLi(ul, focus = true) {
+            const li = document.createElement('li');
+            li.className = 'group/li relative pr-20 mb-1';
+            li.innerHTML = `
+                <span class="task-text outline-none focus:bg-[#547C44]/5 rounded px-1 -mx-1 inline-block w-full min-h-[1.2rem]" contenteditable="true"></span>
+                <div class="absolute right-0 top-0 flex items-center gap-1 no-print">
+                    <button class="add-li-time-btn opacity-0 group-hover/li:opacity-100 text-[10px] font-bold bg-[#547C44]/10 text-[#547C44] px-1.5 py-0.5 rounded-full hover:bg-[#547C44]/20 transition-all font-sans" contenteditable="false" onclick="addLiTime(this)">+ Time</button>
+                    <button class="remove-li-btn opacity-0 group-hover/li:opacity-100 text-[10px] text-slate-400 hover:text-red-500 font-bold px-1" contenteditable="false" onclick="this.closest('li').remove()" title="Remove task">X</button>
+                </div>
+                <span class="li-time-badge hidden absolute right-12 top-0 items-center gap-1 bg-[#547C44]/10 text-[#547C44] text-[10px] font-bold px-1.5 py-0.5 rounded-full" contenteditable="false">
+                    <span class="li-time-text outline-none min-w-[20px] text-center" contenteditable="true"></span>
+                    <button class="no-print text-[#547C44] hover:text-red-600 leading-none font-black" contenteditable="false" onclick="removeLiTime(this)" title="Remove time">×</button>
+                </span>
+            `;
+            const activeLi = document.activeElement ? document.activeElement.closest('li') : null;
+            if (activeLi && ul.contains(activeLi)) {
+                activeLi.after(li);
+            } else {
+                ul.appendChild(li);
+            }
+            const span = li.querySelector('.task-text');
+            if (focus && span) span.focus();
+        }
+
+        function addLiTime(btn) {
+            const li = btn.closest('li');
+            const badge = li.querySelector('.li-time-badge');
+            const timeText = li.querySelector('.li-time-text');
+            btn.classList.add('hidden');
+            badge.classList.remove('hidden');
+            badge.classList.add('inline-flex');
+            if(!timeText.innerText.trim()) timeText.innerText = '10m';
+            timeText.focus();
+        }
+
+        function removeLiTime(btn) {
+            const li = btn.closest('li');
+            const badge = li.querySelector('.li-time-badge');
+            const addBtn = li.querySelector('.add-li-time-btn');
+            const timeText = li.querySelector('.li-time-text');
+            timeText.innerText = '';
+            badge.classList.add('hidden');
+            badge.classList.remove('inline-flex');
+            addBtn.classList.remove('hidden');
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.target.classList.contains('task-text')) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const ul = e.target.closest('ul.task-list');
+                    if (ul) appendNewSubTaskLi(ul, true);
+                } else if (e.key === 'Backspace' && e.target.innerText.trim() === '') {
+                    e.preventDefault();
+                    const li = e.target.closest('li');
+                    const previousLi = li.previousElementSibling;
+                    const ul = e.target.closest('ul.task-list');
+                    li.remove();
+                    if (previousLi) {
+                        const prevText = previousLi.querySelector('.task-text');
+                        if(prevText) {
+                            prevText.focus();
+                            const range = document.createRange();
+                            const sel = window.getSelection();
+                            range.selectNodeContents(prevText);
+                            range.collapse(false);
+                            sel.removeAllRanges();
+                            sel.addRange(range);
+                        }
+                    } else if (ul && ul.children.length === 0) {
+                        appendNewSubTaskLi(ul, true);
+                    }
+                }
+            }
+        });
 
         function addSubBlockTime(btn) {
             const block = btn.closest('.subtitle-block');
