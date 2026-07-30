@@ -801,6 +801,26 @@
             refreshTaskTimeButtons(container);
         }
 
+        /* ====== EVENTO HIDE EMPLOYER ====== */
+        function toggleEmployerColumn(btn) {
+            const container = btn.closest('.shift-block') || btn.closest('.mb-10');
+            const table = container.querySelector('table');
+            
+            // Para tabelas antigas e novas, vamos pegar pela classe e index
+            const theadTr = table.querySelector('thead tr');
+            const tbody = table.querySelector('tbody');
+            
+            if (theadTr && theadTr.children[0]) {
+                theadTr.children[0].classList.toggle('hidden');
+            }
+            
+            Array.from(tbody.children).forEach(tr => {
+                if (tr.children[0]) {
+                    tr.children[0].classList.toggle('hidden');
+                }
+            });
+        }
+
         /* ====== SUMMARY ROWS ====== */
         function checkSummaryVisibility() {
             const tbody = document.getElementById('tbody-summary');
@@ -858,7 +878,7 @@
                 <table class="w-full border-collapse border border-slate-300 mt-2 text-sm relative">
                     <thead>
                         <tr class="uppercase print-color-exact" style="background-color: #edf3eb; color: #436435;">
-                            <th class="border border-slate-300 py-2 px-3 text-left w-1/4">Employer</th>
+                            <th class="border border-slate-300 py-2 px-3 text-left w-1/4" data-col="employer">Employer</th>
                             <th class="border border-slate-300 py-2 px-3 text-left w-1/5" data-col="time"><div contenteditable="true" class="outline-none">Time</div></th>
                             <th class="border border-slate-300 py-2 px-3 text-left">Task</th>
                         </tr>
@@ -869,6 +889,7 @@
                     <div class="flex gap-4">
                         <button class="text-sm font-bold text-[#547C44] hover:underline" onclick="openRowModal(this)">+ Add Staff</button>
                         <button class="text-sm font-bold text-slate-500 hover:underline" onclick="toggleTimeColumn(this)">⏱️ Toggle Time Column</button>
+                        <button class="text-sm font-bold text-slate-500 hover:underline" onclick="toggleEmployerColumn(this)">👥 Toggle Employer</button>
                     </div>
                     <button class="text-sm font-bold text-red-500 hover:underline" onclick="if(confirm('Delete entire table?')) this.closest('.shift-block').remove()">Delete Table</button>
                 </div>
@@ -943,7 +964,7 @@
                 const thTimeHtml = hasTimeCol ? `<th class="border border-slate-300 py-2 px-3 text-left w-1/5" data-col="time"><div contenteditable="true" class="outline-none">Time</div></th>` : '';
                 
                 separatorTr.innerHTML = `
-                    <th class="border border-slate-300 py-2 px-3 text-left w-1/4 relative">
+                    <th class="border border-slate-300 py-2 px-3 text-left w-1/4 relative" data-col="employer">
                         <button class="no-print absolute -left-6 top-2 text-red-400 font-bold hidden group-hover/sep:block bg-red-50 px-2 rounded text-xs" onclick="this.closest('tr').remove()" title="Remover Barrinha">X</button>
                         Employer
                     </th>
@@ -958,7 +979,7 @@
             const tr = document.createElement('tr');
             tr.className = "group/row";
             tr.innerHTML = `
-                <td class="border border-slate-300 py-3 px-3 font-bold align-top relative">
+                <td class="border border-slate-300 py-3 px-3 font-bold align-top relative" data-col="employer">
                     <button class="no-print absolute -left-6 top-3 text-red-500 font-bold hidden group-hover/row:block bg-red-50 px-2 rounded" onclick="this.closest('tr').remove()">X</button>
                     <div contenteditable="true" class="outline-none">${emp}</div>
                 </td>
