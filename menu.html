@@ -17,7 +17,28 @@
                     <p class="text-xs text-slate-500 font-bold uppercase tracking-widest mt-0.5">West End System</p>
                 </div>
             </div>
-            <button onclick="logout()" class="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm transition-colors border border-slate-200">Logout</button>
+            <div class="flex items-center gap-2">
+                <div class="relative" id="settings-wrapper">
+                    <button onclick="toggleSettingsMenu()" class="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-colors" title="Settings">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    </button>
+                    <div id="settings-menu" class="hidden absolute right-0 top-full mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-slate-200 py-2 z-50">
+                        <button onclick="openProfilesModal()" class="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-slate-50 transition-colors text-left">
+                            <span class="w-8 h-8 bg-slate-800 text-white rounded-lg flex items-center justify-center text-sm">🔒</span>
+                            <span>
+                                <span class="block font-bold text-slate-800 text-sm">Manage Profiles</span>
+                                <span class="block text-xs text-slate-500">Users, passwords and roles</span>
+                            </span>
+                        </button>
+                        <div class="border-t border-slate-100 my-1"></div>
+                        <button onclick="logout()" class="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-red-50 transition-colors text-left">
+                            <span class="w-8 h-8 bg-red-100 text-red-600 rounded-lg flex items-center justify-center text-sm">↪</span>
+                            <span class="font-bold text-red-600 text-sm">Logout</span>
+                        </button>
+                    </div>
+                </div>
+                <button onclick="logout()" class="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm transition-colors border border-slate-200">Logout</button>
+            </div>
         </div>
     </div>
 
@@ -50,12 +71,6 @@
                 <h3 class="text-xl font-black text-slate-800 mb-2">Task Descriptions</h3>
                 <p class="text-slate-500 font-medium text-sm">View, edit, and print official building task allocations.</p>
             </button>
-            
-            <button onclick="window.location.href='lista.html'" class="group bg-white p-6 rounded-3xl shadow-sm border border-slate-200 hover:shadow-md hover:border-[#547C44] transition-all text-left flex flex-col h-full relative overflow-hidden">
-                <div class="w-12 h-12 bg-slate-100 text-[#547C44] rounded-2xl flex items-center justify-center mb-4 shadow-inner group-hover:bg-[#547C44] group-hover:text-white transition-colors">📄</div>
-                <h3 class="text-xl font-black text-slate-800 mb-2">Saved Reports</h3>
-                <p class="text-slate-500 font-medium text-sm">View, edit or export past reports to PDF.</p>
-            </button>
 
             <button onclick="window.location.href='schedule.html'" class="group bg-white p-6 rounded-3xl shadow-sm border border-slate-200 hover:shadow-md hover:border-[#547C44] transition-all text-left flex flex-col h-full relative overflow-hidden">
                 <div class="w-12 h-12 bg-slate-100 text-[#547C44] rounded-2xl flex items-center justify-center mb-4 shadow-inner group-hover:bg-[#547C44] group-hover:text-white transition-colors">📅</div>
@@ -63,10 +78,10 @@
                 <p class="text-slate-500 font-medium text-sm">Access, build and print official staff schedules.</p>
             </button>
 
-            <button onclick="openProfilesModal()" class="group bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-700 hover:shadow-md hover:bg-slate-900 transition-all text-left flex flex-col h-full relative overflow-hidden">
-                <div class="w-12 h-12 bg-slate-700 text-white rounded-2xl flex items-center justify-center mb-4 shadow-inner">🔒</div>
-                <h3 class="text-xl font-black text-white mb-2">Manage Profiles</h3>
-                <p class="text-slate-300 font-medium text-sm">Admin access to manage users, passwords and assign roles.</p>
+            <button onclick="window.location.href='invoices.html'" class="group bg-white p-6 rounded-3xl shadow-sm border border-slate-200 hover:shadow-md hover:border-[#547C44] transition-all text-left flex flex-col h-full relative overflow-hidden">
+                <div class="w-12 h-12 bg-[#547C44] text-white rounded-2xl flex items-center justify-center mb-4 shadow-inner font-bold text-2xl">£</div>
+                <h3 class="text-xl font-black text-slate-800 mb-2">Invoices</h3>
+                <p class="text-slate-500 font-medium text-sm">Create and manage service invoices with items and totals.</p>
             </button>
 
         </div>
@@ -168,10 +183,23 @@
             }
         };
 
+        window.toggleSettingsMenu = function() {
+            const menu = document.getElementById('settings-menu');
+            menu.classList.toggle('hidden');
+        };
+
         window.logout = function() {
             localStorage.clear();
             window.location.href = 'index.html';
         };
+
+        // Fecha o menu de configurações ao clicar fora
+        document.addEventListener('click', function(e) {
+            const wrapper = document.getElementById('settings-wrapper');
+            if (wrapper && !wrapper.contains(e.target)) {
+                document.getElementById('settings-menu').classList.add('hidden');
+            }
+        });
 
         /* --- ADMIN PROFILES LOGIC --- */
         window.openProfilesModal = function() {

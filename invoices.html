@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoices - West End Cleaning</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+    <style>
+        @media print {
+            body { background-color: white !important; margin: 0; padding: 0; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            .no-print { display: none !important; }
+            #main-content { margin: 0 !important; width: 100% !important; display: block !important; padding: 0 !important; }
+            .a4-page { box-shadow: none !important; margin: 0 auto !important; padding: 8mm 10mm !important; width: 100% !important; max-width: 100% !important; border: none !important; }
+            @page { size: A4; margin: 5mm; }
+            .invoice-header { background-color: #1e3a29 !important; color: white !important; }
+            .invoice-header * { color: white !important; }
+            .invoice-header img { filter: none !important; }
+        }
+
+        :root {
+            --green: #1e3a29;
+            --green-light: #edf5e9;
+            --green-border: #c5d9b7;
+        }
+
+        [contenteditable="true"]:hover { background-color: rgba(30, 58, 41, 0.05); cursor: text; border-radius: 4px; outline: 1px dashed #1e3a29; }
+        [contenteditable="true"]:focus { background-color: rgba(30, 58, 41, 0.05); outline: 1px dashed #1e3a29; border-radius: 4px; }
+
+        .invoice-item-row:hover { background-color: #f8faf8; }
+        .total-line { border-top: 2px solid #1e3a29; }
+
+        /* Toggle switch */
+        .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .3s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+        input:checked + .slider { background-color: #1e3a29; }
+        input:checked + .slider:before { transform: translateX(20px); }
+    </style>
+</head>
+<body class="bg-slate-100 font-sans text-slate-900 min-h-screen">
+
+    <!-- TOP BAR -->
+    <div class="no-print bg-white shadow-sm border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-[1200px] mx-auto px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-4">
+                <a href="menu.html" class="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                </a>
+                <div>
+                    <h2 class="text-xl font-extrabold text-slate-800">Invoices</h2>
+                    <p class="text-xs text-slate-500 font-medium uppercase mt-1">Document: <span id="current-doc-name" class="font-bold text-[#1e3a29]">Unsaved Invoice</span></p>
+                </div>
+            </div>
+            <div class="flex gap-3 flex-wrap">
+                <button onclick="openTemplateModal()" class="px-4 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold text-sm rounded-xl border border-amber-200 transition-colors flex items-center gap-2">📦 Item Templates</button>
+                <button onclick="openClientModal()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl border transition-colors flex items-center gap-2">👥 Clients</button>
+                <button onclick="saveInvoice()" id="btn-save" class="px-5 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-sm rounded-xl border border-blue-200 transition-colors flex items-center gap-2">💾 Save Invoice</button>
+                <button onclick="loadSidebar()" class="px-5 py-2.5 bg-slate-800 text-white font-bold text-sm rounded-xl hover:bg-slate-900 transition-colors flex items-center gap-2">📂 Load</button>
+                <button onclick="window.print()" class="px-6 py-2.5 bg-[#1e3a29] hover:bg-[#13241a] text-white font-bold text-sm rounded-xl shadow-md transition-colors flex items-center gap-2">🖨️ Export to PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main-content" class="py-10 flex justify-center px-4">
+        <div class="a4-page bg-white shadow-2xl w-full max-w-[21cm] min-h-[29.7cm] p-[12mm] border border-slate-200" id="document-body">
+
+            <!-- INVOICE HEADER -->
+            <div class="invoice-header bg-[#1e3a29] text-white p-6 rounded-t-xl -mx-[12mm] -mt-[12mm] px-[12mm] pt-[12mm] pb-6 mb-6">
+                <div class="flex items-center justify-between gap-6">
+                    <img src="logo.png" alt="West End Cleaning Services Ltd" class="h-16 object-contain shrink-0 bg-white rounded-lg p-1" onerror="this.style.display='none'">
+                    <div class="flex-1 text-right">
+                        <div contenteditable="true" class="text-3xl font-black uppercase tracking-wide outline-none">INVOICE</div>
+                        <div contenteditable="true" class="text-lg mt-1 opacity-90 outline-none">West End Cleaning Services Ltd</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- INVOICE INFO ROW -->
+            <div class="flex flex-col md:flex-row justify-between gap-6 mb-8">
+                <div class="flex-1">
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1 flex items-center gap-2">
+                        Bill To
+                        <button onclick="pickClient()" class="no-print text-[#1e3a29] bg-[#edf5e9] px-2 py-0.5 rounded text-xs font-bold hover:bg-[#c5d9b7] transition-colors" title="Choose a saved client">📋 Choose Client</button>
+                    </p>
+                    <div id="bill-to" contenteditable="true" class="outline-none font-bold text-slate-800">
+                        Client Name Here<br>
+                        Address Line 1<br>
+                        Address Line 2<br>
+                        City, Postcode
+                    </div>
+                </div>
+                <div class="flex-1 text-right">
+                    <div class="space-y-0.5">
+                        <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Invoice Details</p>
+                        <p contenteditable="true" class="outline-none text-slate-700"><span class="font-bold">Invoice #:</span> INV-001</p>
+                        <p class="outline-none text-slate-700"><span class="font-bold">Date:</span> <input type="date" class="bg-transparent font-bold text-slate-700 outline-none" id="invoice-date" value="2026-07-30"></p>
+                        <p contenteditable="true" class="outline-none text-slate-700"><span class="font-bold">Status:</span> <span class="bg-green-100 text-green-800 px-3 py-0.5 rounded-full text-xs font-bold">Pending</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VAT TOGGLE -->
+            <div class="no-print flex items-center justify-end mb-2">
+                <label class="flex items-center gap-2 cursor-pointer select-none">
+                    <span class="text-xs font-bold text-slate-600">Apply VAT (20%)</span>
+                    <span class="switch">
+                        <input type="checkbox" id="vat-toggle" checked onchange="calculateTotals()">
+                        <span class="slider"></span>
+                    </span>
+                </label>
+            </div>
+
+            <!-- INVOICE ITEMS TABLE -->
+            <table class="w-full border-collapse mb-1" id="items-table">
+                <thead>
+                    <tr class="bg-[#edf5e9] text-[#1e3a29] uppercase text-xs font-black tracking-wider">
+                        <th class="py-3 px-3 text-left w-[50%]" contenteditable="true">Description</th>
+                        <th class="py-3 px-3 text-center w-[15%]" contenteditable="true">Qty</th>
+                        <th class="py-3 px-3 text-right w-[17%]" contenteditable="true">Unit Price (£)</th>
+                        <th class="py-3 px-3 text-right w-[18%]" contenteditable="true">Total (£)</th>
+                    </tr>
+                </thead>
+                <tbody id="items-tbody">
+                    <!-- Rows injected by JS -->
+                </tbody>
+            </table>
+            <button onclick="addItemRow()" class="no-print text-xs font-bold text-[#1e3a29] hover:underline flex items-center gap-1 mb-6 mt-1">
+                + Add Item
+            </button>
+
+            <!-- TOTALS -->
+            <div class="flex justify-end mt-4">
+                <div class="w-72 space-y-2">
+                    <div class="flex justify-between text-sm text-slate-600">
+                        <span>Subtotal:</span>
+                        <span class="font-bold text-slate-800 text-right" id="subtotal-val">£0.00</span>
+                    </div>
+                    <div class="flex justify-between text-sm text-slate-600" id="vat-row">
+                        <span>VAT (20%):</span>
+                        <span class="font-bold text-slate-800 text-right" id="vat-val">£0.00</span>
+                    </div>
+                    <div class="total-line flex justify-between text-base pt-2 font-black text-[#1e3a29]">
+                        <span>Total Due:</span>
+                        <span class="text-right" id="total-val">£0.00</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NOTES -->
+            <div class="mt-10 pt-6 border-t border-slate-200">
+                <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Notes & Payment Terms</p>
+                <div contenteditable="true" class="outline-none text-sm text-slate-600">
+                    Payment due within 30 days. Please make cheques payable to West End Cleaning Services Ltd. Bank transfer details available on request.
+                </div>
+            </div>
+
+            <!-- FOOTER -->
+            <div class="text-center pt-8 mt-6">
+                <p class="text-xs text-slate-400 mb-1">Thank you for your business!</p>
+                <p class="text-xs text-slate-400">West End Cleaning Services Ltd | Registered in England & Wales</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- TEMPLATES MODAL -->
+    <div id="modal-templates" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-white p-6 rounded-3xl w-full max-w-lg shadow-2xl border border-slate-100 max-h-[85vh] flex flex-col">
+            <h3 class="text-xl font-black text-slate-800 mb-2">📦 Item Templates</h3>
+            <p class="text-sm text-slate-500 mb-4">Save invoice items with pre-defined values, then insert them with one click.</p>
+
+            <div class="border-b border-slate-200 pb-4 mb-4 flex flex-col gap-2">
+                <input type="text" id="new-template-name" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none font-bold" placeholder="Template name (e.g. Cleaning Service)">
+                <div class="flex gap-2">
+                    <input type="text" id="new-template-desc" class="flex-1 p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none" placeholder="Description (e.g. Full Office Clean)">
+                    <input type="number" id="new-template-qty" min="1" value="1" class="w-16 p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none text-center font-bold">
+                </div>
+                <div class="flex gap-2">
+                    <input type="number" id="new-template-price" min="0" step="0.01" value="0.00" class="flex-1 p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none font-bold" placeholder="Unit Price (£)">
+                    <button onclick="saveTemplate()" class="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl transition-colors whitespace-nowrap">💾 Save</button>
+                </div>
+            </div>
+
+            <ul id="templates-list" class="space-y-2 overflow-y-auto flex-1 mb-4">
+                <li class="text-center text-sm text-slate-400 py-4">Loading templates...</li>
+            </ul>
+
+            <button onclick="closeTemplateModal()" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl">Close</button>
+        </div>
+    </div>
+
+    <!-- CLIENTS MODAL -->
+    <div id="modal-clients" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-white p-6 rounded-3xl w-full max-w-lg shadow-2xl border border-slate-100 max-h-[85vh] flex flex-col">
+            <h3 class="text-xl font-black text-slate-800 mb-2">👥 Client Library</h3>
+            <p class="text-sm text-slate-500 mb-4">Save fixed clients with their details. Click a client to load it into the invoice.</p>
+
+            <div class="border-b border-slate-200 pb-4 mb-4 flex flex-col gap-2">
+                <input type="text" id="new-client-name" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none font-bold" placeholder="Client Name">
+                <input type="text" id="new-client-line1" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none" placeholder="Address Line 1">
+                <input type="text" id="new-client-line2" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none" placeholder="Address Line 2">
+                <input type="text" id="new-client-city" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none" placeholder="City, Postcode">
+                <button onclick="saveNewClient()" class="w-full py-2.5 bg-[#1e3a29] hover:bg-[#13241a] text-white font-bold rounded-xl transition-colors mt-1">+ Save Client</button>
+            </div>
+
+            <ul id="clients-list" class="space-y-2 overflow-y-auto flex-1 mb-4">
+                <li class="text-center text-sm text-slate-400 py-4">Loading...</li>
+            </ul>
+
+            <div class="flex gap-3">
+                <button onclick="closeClientModal()" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOAD MODAL -->
+    <div id="modal-load" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-white p-6 rounded-3xl w-full max-w-lg shadow-2xl border border-slate-100 max-h-[80vh] flex flex-col">
+            <h3 class="text-xl font-black text-slate-800 mb-2">Saved Invoices</h3>
+            <p class="text-sm text-slate-500 mb-4">Select an invoice to load.</p>
+            <div class="flex gap-2 mb-4">
+                <button onclick="createNewDocument()" class="px-4 py-2 bg-[#1e3a29] text-white font-bold text-sm rounded-xl hover:bg-[#13241a]">+ New Invoice</button>
+            </div>
+            <ul id="docs-list" class="space-y-2 overflow-y-auto flex-1 mb-4">
+                <li class="text-center text-sm text-slate-400 py-4">Loading...</li>
+            </ul>
+            <button onclick="closeLoadModal()" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl">Close</button>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBSPim1j9yxA56AeWhWhdG_8TKzh_F-gZc",
+            authDomain: "westend-c6992.firebaseapp.com",
+            projectId: "westend-c6992",
+            storageBucket: "westend-c6992.firebasestorage.app",
+            messagingSenderId: "781546407326",
+            appId: "1:781546407326:web:ed4126214f41498153428f",
+            measurementId: "G-DEGC00501H"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        let currentDocId = null;
+        let dbClients = [];
+
+        window.onload = function() {
+            let loggedUser = localStorage.getItem('loggedUser');
+            if (!loggedUser) window.location.href = 'index.html';
+
+            fetchClients();
+            fetchTemplates();
+
+            const lastId = localStorage.getItem('lastInvoiceDocId');
+            if (lastId) {
+                loadDocumentById(lastId);
+            } else {
+                populateDefaults();
+            }
+        };
+
+        function populateDefaults() {
+            currentDocId = null;
+            updateStatusName(null);
+            document.getElementById('items-tbody').innerHTML = '';
+            addItemRow('Cleaning Services - General', '1', '250.00');
+            addItemRow('Window Cleaning', '2', '85.00');
+            addItemRow('Deep Sanitisation', '1', '120.00');
+            document.getElementById('vat-toggle').checked = true;
+            document.getElementById('vat-row').classList.remove('hidden');
+            calculateTotals();
+            document.getElementById('invoice-date').value = new Date().toISOString().slice(0, 10);
+            localStorage.removeItem('lastInvoiceDocId');
+        }
+
+        function updateStatusName(name) {
+            document.getElementById('current-doc-name').innerText = name || 'Unsaved Invoice';
+        }
+
+        // ===== CLIENTS =====
+        async function fetchClients() {
+            try {
+                const snap = await db.collection('clients').orderBy('name', 'asc').get();
+                dbClients = [];
+                snap.forEach(doc => dbClients.push({ id: doc.id, ...doc.data() }));
+                renderClientsList();
+            } catch(e) {
+                console.warn('Could not load clients', e);
+            }
+        }
+
+        function openClientModal() {
+            renderClientsList();
+            document.getElementById('modal-clients').classList.remove('hidden');
+        }
+
+        function closeClientModal() {
+            document.getElementById('modal-clients').classList.add('hidden');
+        }
+
+        async function saveNewClient() {
+            const name = document.getElementById('new-client-name').value.trim();
+            const line1 = document.getElementById('new-client-line1').value.trim();
+            const line2 = document.getElementById('new-client-line2').value.trim();
+            const city = document.getElementById('new-client-city').value.trim();
+
+            if (!name) { alert('Please enter a client name.'); return; }
+
+            const clientData = {
+                name: name,
+                line1: line1,
+                line2: line2,
+                city: city,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            try {
+                const docRef = await db.collection('clients').add(clientData);
+                dbClients.push({ id: docRef.id, ...clientData });
+                document.getElementById('new-client-name').value = '';
+                document.getElementById('new-client-line1').value = '';
+                document.getElementById('new-client-line2').value = '';
+                document.getElementById('new-client-city').value = '';
+                renderClientsList();
+            } catch(e) {
+                alert('Error saving client: ' + e.message);
+            }
+        }
+
+        function renderClientsList() {
+            const list = document.getElementById('clients-list');
+            if (dbClients.length === 0) {
+                list.innerHTML = '<li class="text-center text-sm text-slate-400 py-4">No clients saved yet. Add one above!</li>';
+                return;
+            }
+            list.innerHTML = dbClients.map(c => `
+                <li class="flex justify-between items-center bg-slate-50 p-3 border border-slate-200 rounded-lg">
+                    <div class="flex-1 min-w-0 pr-2 cursor-pointer" onclick="useClient('${c.id}')">
+                        <span class="font-bold text-slate-800 block truncate">${c.name}</span>
+                        <span class="text-xs text-slate-500 block truncate">${[c.line1, c.line2, c.city].filter(Boolean).join(', ')}</span>
+                    </div>
+                    <button onclick="useClient('${c.id}')" class="px-3 py-1.5 bg-[#1e3a29] text-white text-xs font-bold rounded-md hover:bg-[#13241a] mr-1">Use</button>
+                    <button onclick="deleteClient('${c.id}')" class="px-2 py-1.5 bg-red-100 text-red-600 text-xs font-bold rounded-md hover:bg-red-200">✕</button>
+                </li>
+            `).join('');
+        }
+
+        async function deleteClient(id) {
+            if (!confirm('Delete this client from the library?')) return;
+            try {
+                await db.collection('clients').doc(id).delete();
+                dbClients = dbClients.filter(c => c.id !== id);
+                renderClientsList();
+            } catch(e) {
+                alert('Error deleting client: ' + e.message);
+            }
+        }
+
+        function useClient(id) {
+            const client = dbClients.find(c => c.id === id);
+            if (!client) return;
+            const lines = [];
+            if (client.line1) lines.push(client.line1);
+            if (client.line2) lines.push(client.line2);
+            if (client.city) lines.push(client.city);
+            document.getElementById('bill-to').innerHTML = (client.name || '') + (lines.length ? '<br>' + lines.join('<br>') : '');
+            closeClientModal();
+        }
+
+        function pickClient() {
+            openClientModal();
+        }
+
+        // ===== ITEM TEMPLATES =====
+        let dbTemplates = [];
+
+        async function fetchTemplates() {
+            try {
+                const snap = await db.collection('invoice_templates').orderBy('name', 'asc').get();
+                dbTemplates = [];
+                snap.forEach(doc => dbTemplates.push({ id: doc.id, ...doc.data() }));
+                renderTemplatesList();
+            } catch(e) {
+                console.warn('Could not load templates', e);
+            }
+        }
+
+        function openTemplateModal() {
+            renderTemplatesList();
+            document.getElementById('modal-templates').classList.remove('hidden');
+        }
+
+        function closeTemplateModal() {
+            document.getElementById('modal-templates').classList.add('hidden');
+        }
+
+        async function saveTemplate() {
+            const name = document.getElementById('new-template-name').value.trim();
+            const desc = document.getElementById('new-template-desc').value.trim();
+            const qty = document.getElementById('new-template-qty').value;
+            const price = document.getElementById('new-template-price').value;
+
+            if (!name || !desc) { alert('Please fill in Template Name and Description.'); return; }
+
+            const templateData = {
+                name: name,
+                desc: desc,
+                qty: qty || '1',
+                price: price || '0.00',
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            try {
+                const docRef = await db.collection('invoice_templates').add(templateData);
+                dbTemplates.push({ id: docRef.id, ...templateData });
+                document.getElementById('new-template-name').value = '';
+                document.getElementById('new-template-desc').value = '';
+                document.getElementById('new-template-qty').value = '1';
+                document.getElementById('new-template-price').value = '0.00';
+                renderTemplatesList();
+            } catch(e) {
+                alert('Error saving template: ' + e.message);
+            }
+        }
+
+        function renderTemplatesList() {
+            const list = document.getElementById('templates-list');
+            if (dbTemplates.length === 0) {
+                list.innerHTML = '<li class="text-center text-sm text-slate-400 py-4">No templates saved yet. Add one above!</li>';
+                return;
+            }
+            list.innerHTML = dbTemplates.map(t => `
+                <li class="flex justify-between items-center bg-slate-50 p-3 border border-slate-200 rounded-lg">
+                    <div class="flex-1 min-w-0 pr-2 cursor-pointer" onclick="insertTemplate('${t.id}')">
+                        <span class="font-bold text-slate-800 block truncate">📦 ${t.name}</span>
+                        <span class="text-xs text-slate-500 block truncate">${t.desc} | £${t.price} x ${t.qty}</span>
+                    </div>
+                    <button onclick="insertTemplate('${t.id}')" class="px-3 py-1.5 bg-[#1e3a29] text-white text-xs font-bold rounded-md hover:bg-[#13241a] mr-1">Add</button>
+                    <button onclick="deleteTemplate('${t.id}')" class="px-2 py-1.5 bg-red-100 text-red-600 text-xs font-bold rounded-md hover:bg-red-200">✕</button>
+                </li>
+            `).join('');
+        }
+
+        function insertTemplate(id) {
+            const template = dbTemplates.find(t => t.id === id);
+            if (!template) return;
+            addItemRow(template.desc, template.qty, template.price);
+            calculateTotals();
+        }
+
+        async function deleteTemplate(id) {
+            if (!confirm('Delete this template permanently?')) return;
+            try {
+                await db.collection('invoice_templates').doc(id).delete();
+                dbTemplates = dbTemplates.filter(t => t.id !== id);
+                renderTemplatesList();
+            } catch(e) {
+                alert('Error deleting template: ' + e.message);
+            }
+        }
+
+        // ===== ITEMS =====
+        function addItemRow(desc, qty, price) {
+            const tbody = document.getElementById('items-tbody');
+            const tr = document.createElement('tr');
+            tr.className = 'invoice-item-row group/row';
+            const d = desc || 'Service description...';
+            const q = qty || '1';
+            const p = price || '0.00';
+            tr.innerHTML = `
+                <td class="py-2.5 px-3 border-b border-slate-200 relative">
+                    <button class="no-print absolute -left-2 top-2 text-red-400 hover:text-red-600 font-bold text-xs hidden group-hover/row:block bg-red-50 px-1 py-0.5 rounded" onclick="deleteItemRow(this)" title="Remove item">✕</button>
+                    <div contenteditable="true" class="outline-none text-sm font-medium">${d}</div>
+                </td>
+                <td class="py-2.5 px-3 border-b border-slate-200 text-center">
+                    <input type="number" min="1" value="${q}" class="w-full text-center font-bold bg-transparent outline-none item-qty" onchange="calculateTotals()" onkeyup="calculateTotals()">
+                </td>
+                <td class="py-2.5 px-3 border-b border-slate-200 text-right">
+                    <input type="number" min="0" step="0.01" value="${p}" class="w-full text-right font-bold bg-transparent outline-none item-price" onchange="calculateTotals()" onkeyup="calculateTotals()">
+                </td>
+                <td class="py-2.5 px-3 border-b border-slate-200 text-right font-bold item-total">£${(parseFloat(q) * parseFloat(p)).toFixed(2)}</td>
+            `;
+            tbody.appendChild(tr);
+        }
+
+        function deleteItemRow(btn) {
+            btn.closest('tr').remove();
+            calculateTotals();
+        }
+
+        function calculateTotals() {
+            const rows = document.querySelectorAll('#items-tbody tr');
+            let subtotal = 0;
+
+            rows.forEach(tr => {
+                const qty = parseFloat(tr.querySelector('.item-qty').value) || 0;
+                const price = parseFloat(tr.querySelector('.item-price').value) || 0;
+                const total = qty * price;
+                tr.querySelector('.item-total').innerText = '£' + total.toFixed(2);
+                subtotal += total;
+            });
+
+            const vatApplied = document.getElementById('vat-toggle').checked;
+            const vatRow = document.getElementById('vat-row');
+
+            if (vatApplied) {
+                vatRow.classList.remove('hidden');
+                const vat = subtotal * 0.20;
+                document.getElementById('vat-val').innerText = '£' + vat.toFixed(2);
+                document.getElementById('total-val').innerText = '£' + (subtotal + vat).toFixed(2);
+            } else {
+                vatRow.classList.add('hidden');
+                document.getElementById('vat-val').innerText = '£0.00';
+                document.getElementById('total-val').innerText = '£' + subtotal.toFixed(2);
+            }
+
+            document.getElementById('subtotal-val').innerText = '£' + subtotal.toFixed(2);
+        }
+
+        // ===== SAVE / LOAD =====
+        function collectDocumentData() {
+            const docBody = document.getElementById('document-body').cloneNode(true);
+            docBody.querySelectorAll('.no-print').forEach(el => el.remove());
+            docBody.querySelectorAll('button').forEach(el => el.remove());
+            docBody.querySelectorAll('input[type="date"]').forEach(inp => {
+                const text = document.createTextNode(inp.value || inp.getAttribute('value') || '');
+                inp.parentNode.replaceChild(text, inp);
+            });
+            docBody.querySelectorAll('input[type="number"]').forEach(inp => {
+                const text = document.createTextNode(inp.value || '0');
+                inp.parentNode.replaceChild(text, inp);
+            });
+            // Remove VAT toggle checkbox from saved HTML, keep the vat row state
+            const toggleWrap = docBody.querySelector('#vat-toggle');
+            if (toggleWrap) toggleWrap.closest('label').remove();
+            return docBody.innerHTML;
+        }
+
+        async function saveInvoice() {
+            const btnSave = document.getElementById('btn-save');
+            btnSave.innerText = '⏳ Saving...';
+            btnSave.disabled = true;
+
+            try {
+                const htmlData = collectDocumentData();
+                let docName = 'Invoice INV-001';
+
+                if (!currentDocId) {
+                    const name = prompt('Enter a name/reference for this invoice:', docName);
+                    if (!name) throw new Error('Canceled');
+                    const docRef = await db.collection('invoices').add({
+                        name: name,
+                        html_data: htmlData,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    currentDocId = docRef.id;
+                    updateStatusName(name);
+                    localStorage.setItem('lastInvoiceDocId', currentDocId);
+                } else {
+                    await db.collection('invoices').doc(currentDocId).update({
+                        html_data: htmlData,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+                alert('Invoice saved successfully!');
+            } catch (e) {
+                if (e.message !== 'Canceled') alert('Error saving: ' + e.message);
+            } finally {
+                btnSave.innerText = '💾 Save Invoice';
+                btnSave.disabled = false;
+            }
+        }
+
+        function loadSidebar() {
+            const modal = document.getElementById('modal-load');
+            const list = document.getElementById('docs-list');
+            list.innerHTML = '<li class="text-center text-sm text-slate-400 py-4">Loading from database...</li>';
+            modal.classList.remove('hidden');
+
+            db.collection('invoices').orderBy('timestamp', 'desc').get()
+                .then(snapshot => {
+                    if (snapshot.empty) {
+                        list.innerHTML = '<li class="text-center text-sm text-slate-400 py-4">No invoices saved yet.</li>';
+                        return;
+                    }
+                    let html = '';
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        const bg = currentDocId === doc.id ? 'bg-[#1e3a29]/10 border-[#1e3a29]' : 'bg-white border-slate-200';
+                        html += `
+                            <li class="flex justify-between items-center p-3 rounded-xl border ${bg}">
+                                <span class="font-bold text-slate-800 text-sm truncate pr-2 flex-1 cursor-pointer" onclick="loadDocumentById('${doc.id}'); closeLoadModal();">${data.name}</span>
+                                <button onclick="deleteDoc('${doc.id}')" class="text-red-400 hover:text-red-600 font-bold px-2 py-1 text-xs shrink-0">Delete</button>
+                            </li>`;
+                    });
+                    list.innerHTML = html;
+                })
+                .catch(e => {
+                    list.innerHTML = `<li class="text-center text-sm text-red-500 py-4">Error: ${e.message}</li>`;
+                });
+        }
+
+        function closeLoadModal() {
+            document.getElementById('modal-load').classList.add('hidden');
+        }
+
+        async function loadDocumentById(id) {
+            try {
+                const docSnap = await db.collection('invoices').doc(id).get();
+                if (!docSnap.exists) { populateDefaults(); return; }
+                const data = docSnap.data();
+                document.getElementById('document-body').innerHTML = data.html_data;
+                currentDocId = id;
+                updateStatusName(data.name);
+                localStorage.setItem('lastInvoiceDocId', id);
+                reinject();
+            } catch (e) {
+                alert('Error loading: ' + e.message);
+                populateDefaults();
+            }
+        }
+
+        function createNewDocument() {
+            if (confirm('Start a new invoice? Unsaved changes will be lost.')) {
+                populateDefaults();
+                closeLoadModal();
+            }
+        }
+
+        async function deleteDoc(id) {
+            if (!confirm('Delete this invoice permanently?')) return;
+            try {
+                await db.collection('invoices').doc(id).delete();
+                if (currentDocId === id) populateDefaults();
+                loadSidebar();
+            } catch (e) {
+                alert('Error deleting: ' + e.message);
+            }
+        }
+
+        function reinject() {
+            // Add VAT toggle back after load (it was stripped on save)
+            const vatRow = document.getElementById('vat-row');
+            if (vatRow) {
+                const docBody = document.getElementById('document-body');
+                const toggleLabel = document.createElement('label');
+                toggleLabel.className = 'no-print flex items-center justify-end gap-2 cursor-pointer select-none mb-2';
+                toggleLabel.innerHTML = `
+                    <span class="text-xs font-bold text-slate-600">Apply VAT (20%)</span>
+                    <span class="switch">
+                        <input type="checkbox" id="vat-toggle" onchange="calculateTotals()">
+                        <span class="slider"></span>
+                    </span>
+                `;
+                const firstChild = docBody.querySelector('.invoice-header').nextElementSibling;
+                docBody.insertBefore(toggleLabel, firstChild);
+            }
+
+            // Add remove buttons to item rows
+            document.querySelectorAll('#items-tbody tr').forEach(tr => {
+                if (tr.querySelector('button')) return;
+                const td = tr.querySelector('td');
+                if (!td) return;
+                const btn = document.createElement('button');
+                btn.className = 'no-print absolute -left-2 top-2 text-red-400 hover:text-red-600 font-bold text-xs hidden group-hover/row:block bg-red-50 px-1 py-0.5 rounded';
+                btn.innerText = '✕';
+                btn.setAttribute('onclick', 'deleteItemRow(this)');
+                btn.title = 'Remove item';
+                td.style.position = 'relative';
+                td.appendChild(btn);
+            });
+
+            // Recalculate totals honoring saved vat row visibility
+            const vatToggle = document.getElementById('vat-toggle');
+            if (vatToggle) {
+                const savedRow = document.getElementById('vat-row');
+                // Default VAT on if not saved with row, else match visibility
+                vatToggle.checked = savedRow ? !savedRow.classList.contains('hidden') : true;
+            }
+            calculateTotals();
+
+            // Re-add "+ Add Item" button if missing
+            const tbody = document.getElementById('items-tbody');
+            if (tbody && !document.querySelector('#items-table + button')) {
+                const btn = document.createElement('button');
+                btn.className = 'no-print text-xs font-bold text-[#1e3a29] hover:underline flex items-center gap-1 mb-6 mt-1';
+                btn.innerText = '+ Add Item';
+                btn.setAttribute('onclick', 'addItemRow()');
+                document.querySelector('#items-table').after(btn);
+            }
+
+            // Re-add "Choose Client" button if bill-to header exists without it
+            const billTo = document.getElementById('bill-to');
+            if (billTo) {
+                const heading = billTo.previousElementSibling;
+                if (heading && !heading.querySelector('button')) {
+                    const pick = document.createElement('button');
+                    pick.className = 'no-print text-[#1e3a29] bg-[#edf5e9] px-2 py-0.5 rounded text-xs font-bold hover:bg-[#c5d9b7] transition-colors';
+                    pick.innerText = '📋 Choose Client';
+                    pick.setAttribute('onclick', 'pickClient()');
+                    pick.title = 'Choose a saved client';
+                    heading.appendChild(pick);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
