@@ -3,82 +3,247 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Building Tasks - West End</title>
+    <title>Bin Store Management Report - West End</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
 
     <style>
-        /* ===== REGRAS ESPECÍFICAS E FORÇADAS PARA O PDF ===== */
         @media print {
             body { background-color: white !important; margin: 0; padding: 0; }
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
             .no-print { display: none !important; }
-            #main-content { margin: 0 !important; width: 100% !important; display: block !important; padding: 0 !important; }
-            .a4-page { box-shadow: none !important; margin: 0 !important; padding: 0 !important; width: 100% !important; max-width: 100% !important; border: none !important; }
-            @page { size: A4; margin: 15mm 15mm 20mm 15mm; }
-
-            .block-section { 
-                border: 1px solid #cbd5e1 !important; 
-                background-color: #ffffff !important;
-                padding: 12px 15px !important; 
-                margin-bottom: 0 !important; 
-                border-radius: 8px !important;
-                page-break-before: always !important; 
-                break-before: page !important;
+            #main-content { margin: 0 !important; width: 100% !important; display: block !important; padding: 0 !important; overflow: visible !important; }
+            .a4-page { 
+                box-shadow: none !important; 
+                margin: 0 auto !important; 
+                padding: 8mm 10mm !important; 
+                width: 100% !important; 
+                max-width: 100% !important; 
+                border: none !important; 
+                min-height: auto !important;
             }
+            @page { size: A4; margin: 5mm; }
 
-            #buildings-container .block-section:first-child {
-                page-break-before: avoid !important;
-                break-before: auto !important;
-            }
+            /* HEADER */
+            .a4-page .flex.items-center.justify-between > img { height: 3.5rem !important; }
+            .a4-page .text-4xl { font-size: 1.6rem !important; line-height: 1.15 !important; }
+            .a4-page .text-2xl { font-size: 1.1rem !important; line-height: 1.15 !important; }
+            .a4-page .text-lg[contenteditable] { font-size: 0.8rem !important; margin-top: 3px !important; }
+            .a4-page .border-b-\[3px\] { padding-bottom: 8px !important; margin-bottom: 8px !important; border-bottom-width: 2px !important; }
 
-            .block-section h3 {
-                page-break-after: avoid !important;
-                break-after: avoid !important;
-                margin-bottom: 8px !important;
-                padding-bottom: 4px !important;
-            }
-
-            .block-section > div {
+            /* SECTION BLOCKS */
+            .section-block {
+                padding: 8px 10px !important;
+                margin-bottom: 10px !important;
+                border-radius: 5px !important;
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
             }
-
-            .period-header {
-                background-color: #f1f5f9 !important;
-                color: #1e293b !important;
-                padding: 4px 10px !important;
-                border-radius: 6px !important;
-                margin-top: 8px !important;
+            .section-block h2 {
+                font-size: 0.9rem !important;
                 margin-bottom: 6px !important;
-                display: block !important;
+                padding-bottom: 3px !important;
+                letter-spacing: 0.03em !important;
             }
 
-            .task-list li {
-                margin-bottom: 3px !important;
-                line-height: 1.2 !important;
+            /* TABELAS */
+            table { font-size: 0.8rem !important; }
+            table thead th { 
+                background-color: #e8f5ee !important; 
+                color: #0e7f63 !important; 
+                font-size: 0.8rem !important;
+                padding: 5px 6px !important;
+                letter-spacing: 0.02em !important;
             }
-            
-            .footer-print {
-                margin-top: 30px !important;
-                padding-top: 10px !important;
-                border-top: 1px solid #cbd5e1 !important;
-                page-break-inside: avoid !important;
+            .schedule-table td, .collection-table td {
+                padding: 5px 6px !important;
+                font-size: 0.8rem !important;
             }
+            .schedule-table td ul li, .collection-table td ul li {
+                margin-bottom: 2px !important;
+                line-height: 1.3 !important;
+            }
+            .schedule-table td .uppercase { font-size: 0.8rem !important; }
+
+            /* TASK ITEMS */
+            .task-li {
+                padding-left: 13px !important;
+                margin-bottom: 2px !important;
+                line-height: 1.3 !important;
+                padding-right: 0 !important;
+            }
+            .task-li::before { font-size: 0.9rem !important; line-height: 1.1rem !important; top: 0 !important; }
+
+            /* TIME BADGES - visíveis sem decoração */
+            .time-badge { 
+                display: inline-flex !important;
+                background: none !important;
+                border: none !important;
+                padding: 0 !important;
+                font-size: 0.75rem !important;
+                color: #0e7f63 !important;
+                position: static !important;
+                margin-left: 8px !important;
+            }
+            .time-badge .time-text { min-width: 0 !important; }
+            .time-badge button { display: none !important; }
+
+            /* INSPECTION SLOTS */
+            .inspection-slot {
+                padding: 4px 10px !important;
+                font-size: 0.85rem !important;
+                border-radius: 5px !important;
+            }
+            .inspection-slot button { display: none !important; }
+
+            /* SPECIAL NOTES */
+            .special-note-row {
+                padding: 6px 10px !important;
+                margin-bottom: 4px !important;
+                font-size: 0.8rem !important;
+            }
+
+            /* SUBTITLE */
+            .section-block p.text-sm { font-size: 0.8rem !important; margin-bottom: 6px !important; }
+
+            /* FOOTER */
+            .a4-page > .text-xs.italic { font-size: 0.65rem !important; margin-top: 10px !important; padding-top: 6px !important; }
+            .a4-page > .text-center.pt-6 { padding-top: 8px !important; margin-top: 8px !important; }
+            .a4-page > .text-center p { font-size: 0.6rem !important; }
         }
-        
-        /* ===== REGRAS DA TELA ===== */
-        [contenteditable="true"]:hover { background-color: rgba(84, 124, 68, 0.05); cursor: text; border-radius: 4px; outline: 1px dashed #547C44; }
-        [contenteditable="true"]:focus { background-color: rgba(84, 124, 68, 0.05); outline: 1px dashed #547C44; border-radius: 4px; }
-        .task-list { outline: none; }
-        .task-list li { margin-bottom: 0.35rem; position: relative; padding-left: 1.25rem; }
-        .task-list li::before { content: "•"; position: absolute; left: 0; color: #547C44; font-weight: bold; font-size: 1.2rem; line-height: 1rem; top: 0.1rem; }
+
+        :root {
+            --green: #0e7f63;
+            --green-dark: #0a5e4a;
+            --green-light: #e8f5ee;
+            --green-border: #b6eed8;
+        }
+
+        [contenteditable="true"]:hover { background-color: rgba(14, 127, 99, 0.06); cursor: text; border-radius: 4px; outline: 1px dashed #0e7f63; }
+        [contenteditable="true"]:focus { background-color: rgba(14, 127, 99, 0.06); outline: 1px dashed #0e7f63; border-radius: 4px; }
+
+        .section-block {
+            border: 1px solid #e2e8f0;
+            border-left: 4px solid var(--green);
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 24px;
+            background: white;
+        }
+        .section-block:hover {
+            border-color: var(--green-border);
+            border-left-width: 4px;
+        }
+
+        .section-block h2 {
+            color: var(--green-dark);
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-size: 1rem;
+            margin-bottom: 12px;
+            padding-bottom: 6px;
+        }
+
+        .schedule-table th, .collection-table th {
+            background-color: var(--green-light);
+            color: var(--green-dark);
+            font-weight: 900;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            border: 1px solid var(--green-border);
+        }
+        .schedule-table td, .collection-table td {
+            border: 1px solid var(--green-border);
+            vertical-align: top;
+        }
+        .schedule-table tbody tr:nth-child(even) td {
+            background-color: #fafdfb;
+        }
+        .schedule-table td ul, .collection-table td ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        /* TASK ITEMS WITH TIME BADGES */
+        .task-li {
+            position: relative;
+            padding-left: 18px;
+            margin-bottom: 3px;
+            line-height: 1.45;
+            padding-right: 70px;
+        }
+        .task-li::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: #0e7f63;
+            font-weight: bold;
+            font-size: 1.1rem;
+            line-height: 1.2rem;
+            top: 1px;
+        }
+        .task-li .task-text {
+            outline: none;
+        }
+        .task-li .task-text:focus {
+            background-color: rgba(14,127,99,0.06);
+            border-radius: 3px;
+            outline: 1px dashed #0e7f63;
+        }
+        .time-badge {
+            display: none;
+            align-items: center;
+            gap: 3px;
+            background: var(--green-light);
+            color: var(--green-dark);
+            padding: 1px 7px;
+            border-radius: 5px;
+            font-weight: 700;
+            font-size: 0.7rem;
+            border: 1px solid var(--green-border);
+            white-space: nowrap;
+        }
+        .time-badge .time-text {
+            outline: none;
+            min-width: 30px;
+            text-align: center;
+        }
+        .time-badge .time-text:focus {
+            background: rgba(255,255,255,0.5);
+            border-radius: 2px;
+        }
+
+        /* INSPECTION TIME SLOTS */
+        .inspection-slot {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: var(--green-light);
+            color: var(--green-dark);
+            padding: 5px 12px;
+            border-radius: 7px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            border: 1px solid var(--green-border);
+        }
+
+        /* THURSDAY / SPECIAL NOTES */
+        .special-note-row {
+            background: var(--green-light);
+            border: 1px solid var(--green-border);
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin-bottom: 6px;
+        }
     </style>
 </head>
-<body class="bg-slate-100 font-sans text-slate-900 min-h-screen relative">
+<body class="bg-slate-100 font-sans text-slate-900 min-h-screen">
 
+    <!-- TOP BAR -->
     <div class="no-print bg-white shadow-sm border-b border-slate-200 sticky top-0 z-50">
         <div class="max-w-[1200px] mx-auto px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-4">
@@ -86,217 +251,91 @@
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
                 </a>
                 <div>
-                    <h2 class="text-xl font-extrabold text-slate-800">Task Descriptions Viewer</h2>
-                    <p class="text-xs text-slate-500 font-medium uppercase mt-1">Review and Export</p>
+                    <h2 class="text-xl font-extrabold text-slate-800">Bin Store Management Report</h2>
+                    <p class="text-xs text-slate-500 font-medium uppercase mt-1">Document: <span id="current-doc-name" class="font-bold text-[#0e7f63]">Unsaved</span></p>
                 </div>
             </div>
-            <div class="flex gap-3">
-                <button onclick="window.print()" class="px-6 py-2.5 bg-[#547C44] hover:bg-[#436435] text-white font-bold rounded-xl shadow-md transition-colors flex items-center gap-2">
-                    🖨️ Export to PDF
-                </button>
+            <div class="flex gap-3 flex-wrap">
+                <button onclick="saveDocument()" id="btn-save" class="px-5 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-sm rounded-xl border border-blue-200 transition-colors flex items-center gap-2">💾 Save</button>
+                <button onclick="loadSidebar()" class="px-5 py-2.5 bg-slate-800 text-white font-bold text-sm rounded-xl hover:bg-slate-900 transition-colors flex items-center gap-2">📂 Load</button>
+                <button onclick="window.print()" class="px-6 py-2.5 bg-[#0e7f63] hover:bg-[#0a5e4a] text-white font-bold rounded-xl shadow-md transition-colors flex items-center gap-2">🖨️ Export to PDF</button>
             </div>
         </div>
     </div>
 
+    <!-- MAIN CONTENT -->
     <div id="main-content" class="py-10 flex justify-center px-4">
-        <div class="a4-page bg-white shadow-2xl w-full max-w-[21cm] min-h-[29.7cm] p-[15mm] border border-slate-200 relative">
-            
-            <div class="flex flex-col items-center mb-6 border-b-4 border-[#547C44] pb-6">
-                <img src="logo.png" alt="West End Cleaning" class="h-24 object-contain mb-4">
-                <div contenteditable="true" class="w-full text-4xl font-black text-[#547C44] uppercase tracking-widest text-center outline-none bg-transparent mb-2">
-                    ROYAL GATEWAY
+        <div class="a4-page bg-white shadow-2xl w-full max-w-[21cm] min-h-[29.7cm] p-[12mm] border border-slate-200" id="document-body">
+
+            <!-- HEADER -->
+            <div class="mb-6 pb-6 border-b-[3px] border-[#0e7f63] relative group/head">
+                <button class="no-print absolute -top-2 -right-2 text-red-400 hover:text-red-600 font-bold text-xs hidden group-hover/head:block bg-red-50 px-2 py-1 rounded" onclick="this.closest('.border-b-\\[3px\\]').remove()" title="Remove header">✕ Delete Header</button>
+                <div class="flex items-center justify-between gap-6">
+                    <img src="logo.png" alt="West End Cleaning" class="h-20 object-contain shrink-0">
+                    <div class="flex-1 text-right">
+                        <div contenteditable="true" class="text-4xl font-black uppercase tracking-wide text-[#0e7f63] outline-none">WEST END GATE</div>
+                        <div contenteditable="true" class="text-2xl font-black text-[#0e7f63] uppercase leading-tight mt-1">BIN STORE MANAGEMENT REPORT</div>
+                        <p contenteditable="true" class="text-lg text-slate-500 mt-2">Operational Schedules & Strategic Recommendations</p>
+                    </div>
                 </div>
-                <h2 class="text-xl font-bold text-slate-500 tracking-[0.2em] uppercase text-center" contenteditable="true">
-                    Building Task Descriptions
-                </h2>
             </div>
 
-            <div id="buildings-container" class="space-y-6">
-
-                <div class="block-section relative group bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
-                    <div class="no-print absolute -right-2 -top-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm">
-                        <button class="bg-blue-100 text-blue-600 hover:bg-blue-200 font-bold rounded-full w-8 h-8 flex items-center justify-center" onclick="openSaveModal(this)" title="Save to Library">💾</button>
-                        <button class="bg-red-100 text-red-600 hover:bg-red-200 font-bold rounded-full w-8 h-8 flex items-center justify-center" onclick="this.closest('.block-section').remove()" title="Delete Block">X</button>
-                    </div>
-                    
-                    <h3 class="text-xl font-black text-[#547C44] uppercase tracking-wider mb-2 border-b-2 border-[#547C44] pb-2" contenteditable="true">🏢 EMERALD BLOCK A</h3>
-                    
-                    <div>
-                        <h4 class="period-header text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true">📅 Daily</h4>
-                        <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true">
-                            <li>Vacuum and dusting</li>
-                            <li>Glasses, mirrors and touchpoints</li>
-                            <li>Lift floors and doors</li>
-                            <li>Mopping hard floor</li>
-                            <li>Bin empty reception area</li>
-                            <li>Floors general cleaning includes dusting, vacuuming, skirting, marking on the walls, and lift doors smear-free</li>
-                            <li>Clean management & Welfare area office toilets, kitchen.</li>
-                            <li>Clean Gym</li>
-                            <li>Lounge Area</li>
-                            <li>Podium garden sweep and litter picking</li>
-                            <li>Outside area</li>
-                        </ul>
-                    </div>
-
-                    <div>
-                        <h4 class="period-header text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true">🗓️ Weekly</h4>
-                        <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true">
-                            <li>Bin store clean and sanitised 2x WEEK</li>
-                            <li>Window cleaning of main entrances 3x WEEK</li>
-                            <li>Staircase general cleaning (dust removal in fitting, skirting boards, handrails, and vacuum floors. Mop as necessary) 1x WEEK</li>
-                        </ul>
-                    </div>
-
-                    <div>
-                        <h4 class="period-header text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true">📆 Monthly</h4>
-                        <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true">
-                            <li>Apply algin killer on external as necessary</li>
-                            <li>Clean plant pots</li>
-                            <li>Clean drains as necessary</li>
-                            <li>Internal window cleaning all floors.</li>
-                            <li>Cycle store</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <div class="block-section relative group bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
-                    <div class="no-print absolute -right-2 -top-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm">
-                        <button class="bg-blue-100 text-blue-600 hover:bg-blue-200 font-bold rounded-full w-8 h-8 flex items-center justify-center" onclick="openSaveModal(this)" title="Save to Library">💾</button>
-                        <button class="bg-red-100 text-red-600 hover:bg-red-200 font-bold rounded-full w-8 h-8 flex items-center justify-center" onclick="this.closest('.block-section').remove()" title="Delete Block">X</button>
-                    </div>
-                    
-                    <h3 class="text-xl font-black text-[#547C44] uppercase tracking-wider mb-2 border-b-2 border-[#547C44] pb-2" contenteditable="true">🏢 EMERALD BLOCK B</h3>
-                    
-                    <div>
-                        <h4 class="period-header text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true">📅 Daily</h4>
-                        <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true">
-                            <li>Vacuum and dusting</li>
-                            <li>Glasses, mirrors and touchpoints</li>
-                            <li>Lift floors and doors</li>
-                            <li>Mopping hard floor</li>
-                            <li>Bin empty reception area</li>
-                            <li>Floors general cleaning includes dusting, vacuuming, skirting, marking on the walls, and lift doors smear-free</li>
-                            <li>Podium garden sweep and litter picking</li>
-                            <li>Outside area</li>
-                            <li>Long Corridor</li>
-                        </ul>
-                    </div>
-
-                    <div>
-                        <h4 class="period-header text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true">🗓️ Weekly</h4>
-                        <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true">
-                            <li>Bin store clean and sanitised 2x WEEK</li>
-                            <li>Window cleaning of main entrances 3x WEEK</li>
-                            <li>Staircase general cleaning (dust removal in fitting, skirting boards, handrails, and vacuum floors. Mop as necessary) 1x WEEK</li>
-                        </ul>
-                    </div>
-
-                    <div>
-                        <h4 class="period-header text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true">📆 Monthly</h4>
-                        <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true">
-                            <li>Apply algin killer on external as necessary</li>
-                            <li>Clean plant pots</li>
-                            <li>Clean drains as necessary</li>
-                            <li>Internal window cleaning all floors</li>
-                            <li>Cycle store</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <div class="block-section relative group bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
-                    <div class="no-print absolute -right-2 -top-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm">
-                        <button class="bg-blue-100 text-blue-600 hover:bg-blue-200 font-bold rounded-full w-8 h-8 flex items-center justify-center" onclick="openSaveModal(this)" title="Save to Library">💾</button>
-                        <button class="bg-red-100 text-red-600 hover:bg-red-200 font-bold rounded-full w-8 h-8 flex items-center justify-center" onclick="this.closest('.block-section').remove()" title="Delete Block">X</button>
-                    </div>
-                    
-                    <h3 class="text-xl font-black text-[#547C44] uppercase tracking-wider mb-2 border-b-2 border-[#547C44] pb-2" contenteditable="true">🏢 RUBY HOUSE</h3>
-                    
-                    <div>
-                        <h4 class="period-header text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true">📅 Daily</h4>
-                        <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true">
-                            <li>Vacuum and dusting</li>
-                            <li>Reception</li>
-                            <li>Glasses, mirrors and touchpoints</li>
-                            <li>Lift floors and doors</li>
-                            <li>Mopping hard floor</li>
-                            <li>Bin empty reception area</li>
-                            <li>Lounge Area</li>
-                            <li>Podium garden sweep and litter picking</li>
-                            <li>Outside area</li>
-                        </ul>
-                    </div>
-
-                    <div>
-                        <h4 class="period-header text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true">🗓️ Weekly</h4>
-                        <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true">
-                            <li>Bin store clean and sanitised 2x WEEK</li>
-                            <li>Window cleaning of main entrances 3x WEEK</li>
-                            <li>Staircase general cleaning (dust removal in fitting, skirting boards, handrails, and vacuum floors. Mop as necessary) 1x WEEK</li>
-                            <li>Floors general cleaning includes dusting, vacuuming, skirting, marking on the walls, and lift doors smear-free 1x WEEK WEDNESDAY</li>
-                        </ul>
-                    </div>
-
-                    <div>
-                        <h4 class="period-header text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true">📆 Monthly</h4>
-                        <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true">
-                            <li>Apply algin killer on external as necessary</li>
-                            <li>Clean plant pots</li>
-                            <li>Clean drains as necessary</li>
-                            <li>Internal window cleaning all floors</li>
-                            <li>Cycle store</li>
-                        </ul>
-                    </div>
-                </div>
-
+            <!-- SECTIONS CONTAINER -->
+            <div id="sections-container">
+                <!-- Sections injected by JS -->
             </div>
 
-            <div class="no-print mt-12 text-center border-t border-dashed border-slate-300 pt-8 flex flex-col md:flex-row justify-center gap-4">
-                <button onclick="addBuilding()" class="px-6 py-3 border-2 border-[#547C44] bg-white text-[#547C44] font-black uppercase tracking-wider rounded-2xl shadow-sm hover:bg-[#547C44] hover:text-white transition-all flex items-center justify-center gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
-                    Add Blank Segment
+            <!-- ADD SECTION BUTTONS -->
+            <div class="no-print mt-8 pt-6 border-t-2 border-dashed border-slate-300 flex flex-wrap justify-center gap-3">
+                <button onclick="addSection('schedule')" class="px-5 py-3 bg-white border-2 border-[#0e7f63] text-[#0e7f63] font-bold rounded-xl hover:bg-[#0e7f63] hover:text-white transition-all flex items-center gap-2 text-sm">
+                    + Cleaning Schedule Table
                 </button>
-                <button onclick="openLoadModal()" class="px-6 py-3 bg-slate-800 text-white font-black uppercase tracking-wider rounded-2xl shadow-sm hover:bg-slate-900 transition-all flex items-center justify-center gap-2">
-                    📥 Load from Library
+                <button onclick="addSection('inspection')" class="px-5 py-3 bg-white border-2 border-[#0e7f63] text-[#0e7f63] font-bold rounded-xl hover:bg-[#0e7f63] hover:text-white transition-all flex items-center gap-2 text-sm">
+                    + Inspection Rota
+                </button>
+                <button onclick="addSection('collection')" class="px-5 py-3 bg-white border-2 border-[#0e7f63] text-[#0e7f63] font-bold rounded-xl hover:bg-[#0e7f63] hover:text-white transition-all flex items-center gap-2 text-sm">
+                    + Collection Schedule
+                </button>
+                <button onclick="addSection('special')" class="px-5 py-3 bg-white border-2 border-[#0e7f63] text-[#0e7f63] font-bold rounded-xl hover:bg-[#0e7f63] hover:text-white transition-all flex items-center gap-2 text-sm">
+                    + Special Note Block
+                </button>
+                <button onclick="addSection('generic')" class="px-5 py-3 bg-white border-2 border-[#0e7f63] text-[#0e7f63] font-bold rounded-xl hover:bg-[#0e7f63] hover:text-white transition-all flex items-center gap-2 text-sm">
+                    + Generic Section
                 </button>
             </div>
 
-            <div class="footer-print text-center pt-6 mt-10">
-                <p class="text-xs text-slate-400 mb-1">Official Document - West End Cleaning Services Ltd</p>
-                <p class="text-xs text-slate-400">Standard Operational Procedures</p>
+            <!-- FOOTER NOTE -->
+            <div contenteditable="true" class="text-xs text-slate-500 mt-8 pt-4 border-t border-slate-200 italic relative group/note">
+                <button class="no-print absolute -top-2 -right-2 text-red-400 hover:text-red-600 font-bold text-xs hidden group-hover/note:block bg-red-50 px-1.5 py-0.5 rounded z-10" onclick="this.closest('.flex-wrap, .border-t').remove() || this.closest('[contenteditable]').remove()" title="Remove footer note">✕ Delete Note</button>
+                * Bins are taken to the collection point in accordance with the above collection schedule. Bin rotation is carried out as part of the daily operational process to ensure accessibility and cleanliness.
             </div>
 
-        </div>
-    </div>
-
-    <div id="modal-save" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div class="bg-white p-6 rounded-3xl w-full max-w-sm shadow-2xl border border-slate-100">
-            <h3 class="text-xl font-black text-slate-800 mb-2">Save to Library</h3>
-            <p class="text-sm text-slate-500 mb-4">Save this segment template so you can quickly insert it into other documents.</p>
-            
-            <label class="block text-xs font-bold text-slate-500 uppercase mb-2 pl-1">Segment Name</label>
-            <input type="text" id="save-segment-name" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl mb-6 font-bold" placeholder="e.g. Dashwood">
-            
-            <div class="flex gap-3">
-                <button onclick="closeModals()" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl">Cancel</button>
-                <button onclick="confirmSaveSegment()" id="btn-confirm-save" class="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl">Save</button>
+            <!-- FOOTER -->
+            <div class="text-center pt-6 mt-6 border-t border-slate-200 relative group/ftr">
+                <button class="no-print absolute -top-2 -right-2 text-red-400 hover:text-red-600 font-bold text-xs hidden group-hover/ftr:block bg-red-50 px-1.5 py-0.5 rounded z-10" onclick="this.closest('.text-center').remove()" title="Remove footer">✕ Delete Footer</button>
+                <p contenteditable="true" class="text-xs text-slate-400 mb-1">Official Document - West End Cleaning Services Ltd</p>
+                <p contenteditable="true" class="text-xs text-slate-400">Standard Operational Procedures</p>
             </div>
         </div>
     </div>
 
+    <!-- LOAD MODAL -->
     <div id="modal-load" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div class="bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border border-slate-100">
-            <h3 class="text-xl font-black text-slate-800 mb-2">Library</h3>
-            <p class="text-sm text-slate-500 mb-4">Select a saved segment to insert into this document.</p>
-            
-            <ul id="library-list" class="space-y-2 max-h-64 overflow-y-auto mb-6">
-                </ul>
-
-            <button onclick="closeModals()" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl">Close</button>
+        <div class="bg-white p-6 rounded-3xl w-full max-w-lg shadow-2xl border border-slate-100 max-h-[80vh] flex flex-col">
+            <h3 class="text-xl font-black text-slate-800 mb-2">Saved Documents</h3>
+            <p class="text-sm text-slate-500 mb-4">Select a document to load, or create a new one.</p>
+            <div class="flex gap-2 mb-4">
+                <button onclick="createNewDocument()" class="px-4 py-2 bg-[#0e7f63] text-white font-bold text-sm rounded-xl hover:bg-[#0a5e4a]">+ New Document</button>
+            </div>
+            <ul id="docs-list" class="space-y-2 overflow-y-auto flex-1 mb-4">
+                <li class="text-center text-sm text-slate-400 py-4">Loading...</li>
+            </ul>
+            <button onclick="closeLoadModal()" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl">Close</button>
         </div>
     </div>
 
     <script>
-        // CONFIGURAÇÃO FIREBASE
+        // FIREBASE CONFIG
         const firebaseConfig = {
             apiKey: "AIzaSyBSPim1j9yxA56AeWhWhdG_8TKzh_F-gZc",
             authDomain: "westend-c6992.firebaseapp.com",
@@ -309,172 +348,657 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        let currentBlockToSave = null;
-        let dbTemplates = [];
+        let currentDocId = null;
 
-        function closeModals() {
-            document.getElementById('modal-save').classList.add('hidden');
-            document.getElementById('modal-load').classList.add('hidden');
-            currentBlockToSave = null;
+        // ===== DEFAULT SECTIONS (matches PDF) =====
+        const defaultSections = [
+            {
+                type: 'schedule',
+                title: '1. BIN STORE CLEANING & INSPECTION SCHEDULE',
+                rows: [
+                    { area: 'B1 Bin Store', daily: ['Litter pick and disinfect doors daily'], weekly: ['Every Wednesday: Jet washing'], monthly: ['End of month: High-level cobweb removal'] },
+                    { area: 'B2 Bin Store', daily: ['Litter pick and disinfect doors daily'], weekly: ['Every Wednesday: Jet washing and deep cleaning'], monthly: ['End of month: High-level cobweb removal'] },
+                    { area: 'WT B2 (Westmark Tower) Bin Store', daily: ['Litter pick and disinfect doors daily'], weekly: ['Every Wednesday: Jet washing and deep cleaning'], monthly: ['End of month: High-level cobweb removal'] },
+                    { area: 'Block H Bin Store', daily: ['Litter pick and disinfect doors daily'], weekly: ['Every Wednesday: Jet washing and deep cleaning'], monthly: ['End of month: High-level cobweb removal'] },
+                    { area: 'Block C Bin Store', daily: ['Litter pick and disinfect doors daily'], weekly: ['Every Wednesday: Jet washing'], monthly: ['End of month: High-level cobweb removal'] },
+                    { area: 'Block D Bin Store', daily: ['Litter pick and disinfect doors daily'], weekly: ['Every Wednesday: Jet washing'], monthly: ['End of month: High-level cobweb removal'] }
+                ]
+            },
+            {
+                type: 'special',
+                title: 'Thursday Special Schedule',
+                rows: [
+                    { text: 'Full external jet washing around the building perimeter.' }
+                ]
+            },
+            {
+                type: 'inspection',
+                title: '2. BIN STORE INSPECTION ROTA',
+                subtitle: 'Routine inspections are carried out throughout the day at the following scheduled times:',
+                slots: ['06:30 – 07:30', '12:00 – 13:00', '15:00 – 16:00', '18:00 – 19:00']
+            },
+            {
+                type: 'collection',
+                title: '3. BIN COLLECTION SCHEDULE',
+                rows: [
+                    { day: 'Monday', waste: 'General Waste' },
+                    { day: 'Tuesday', waste: 'Recycling' },
+                    { day: 'Wednesday', waste: 'General Waste' },
+                    { day: 'Friday', waste: 'General Waste & Recycling' }
+                ]
+            }
+        ];
+
+        // ===== INIT =====
+        window.onload = function() {
+            let loggedUser = localStorage.getItem('loggedUser');
+            if (!loggedUser) window.location.href = 'index.html';
+
+            const lastId = localStorage.getItem('lastBinStoreDocId');
+            if (lastId) {
+                loadDocumentById(lastId);
+            } else {
+                populateDefaults();
+            }
+        };
+
+        function populateDefaults() {
+            currentDocId = null;
+            updateStatusName(null);
+            document.getElementById('sections-container').innerHTML = '';
+            defaultSections.forEach(s => buildSection(s));
+            localStorage.removeItem('lastBinStoreDocId');
         }
 
-        /* ===== ADD BLANK BLOCK ===== */
-        function addBuilding() {
-            const container = document.getElementById('buildings-container');
-            const div = document.createElement('div');
-            div.className = "block-section relative group bg-white border border-slate-200 p-5 rounded-2xl shadow-sm";
-            
-            div.innerHTML = `
-                <div class="no-print absolute -right-2 -top-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm">
-                    <button class="bg-blue-100 text-blue-600 hover:bg-blue-200 font-bold rounded-full w-8 h-8 flex items-center justify-center" onclick="openSaveModal(this)" title="Save to Library">💾</button>
-                    <button class="bg-red-100 text-red-600 hover:bg-red-200 font-bold rounded-full w-8 h-8 flex items-center justify-center" onclick="this.closest('.block-section').remove()" title="Delete Block">X</button>
-                </div>
-                
-                <h3 class="text-xl font-black text-[#547C44] uppercase tracking-wider mb-2 border-b-2 border-[#547C44] pb-2" contenteditable="true">🏢 New Segment Name</h3>
-                
-                <div>
-                    <h4 class="period-header text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true">📅 Daily</h4>
-                    <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true"><li>Type daily task here...</li></ul>
-                </div>
-                <div>
-                    <h4 class="period-header text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true">🗓️ Weekly</h4>
-                    <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true"><li>Type weekly task here...</li></ul>
-                </div>
-                <div>
-                    <h4 class="period-header text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true">📆 Monthly</h4>
-                    <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true"><li>Type monthly task here...</li></ul>
-                </div>
+        function updateStatusName(name) {
+            document.getElementById('current-doc-name').innerText = name || 'Unsaved Document';
+        }
+
+        // ===== SECTION BUILDER =====
+        function addSection(type) {
+            const sectionData = {
+                type: type,
+                title: type === 'schedule' ? 'New Cleaning Schedule' :
+                      type === 'inspection' ? 'New Inspection Rota' :
+                      type === 'collection' ? 'New Collection Schedule' :
+                      type === 'special' ? 'New Special Note' : 'New Section',
+                rows: [],
+                slots: [],
+                subtitle: ''
+            };
+            buildSection(sectionData);
+        }
+
+        function buildSection(data) {
+            const container = document.getElementById('sections-container');
+            const block = document.createElement('div');
+            block.className = 'section-block relative group/sec';
+            block.setAttribute('data-type', data.type);
+
+            let innerHTML = '';
+
+            // Delete section button
+            innerHTML += `
+                <button class="no-print absolute -top-3 -right-3 bg-red-100 hover:bg-red-200 text-red-600 font-bold text-xs px-2.5 py-1 rounded-full shadow-sm opacity-0 group-hover/sec:opacity-100 transition-opacity z-10" onclick="deleteSection(this)" title="Delete entire section">✕ Delete Section</button>
             `;
-            container.appendChild(div);
-            div.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            // Section title
+            innerHTML += `<h2 contenteditable="true" class="outline-none pr-16">${data.title || 'Untitled Section'}</h2>`;
+
+            // Optional subtitle (for inspection type)
+            if (data.type === 'inspection' && data.subtitle !== undefined) {
+                innerHTML += `<p contenteditable="true" class="text-sm text-slate-600 mb-3 outline-none">${data.subtitle || ''}</p>`;
+            } else if (data.type === 'inspection') {
+                innerHTML += `<p contenteditable="true" class="text-sm text-slate-600 mb-3 outline-none">Routine inspections are carried out throughout the day at the following scheduled times:</p>`;
+            }
+
+            if (data.type === 'schedule') {
+                innerHTML += buildScheduleTable(data.rows || []);
+            } else if (data.type === 'inspection') {
+                innerHTML += buildInspectionContent(data.slots || []);
+            } else if (data.type === 'collection') {
+                innerHTML += buildCollectionTable(data.rows || []);
+            } else if (data.type === 'special') {
+                innerHTML += buildSpecialNotes(data.rows || []);
+            } else {
+                // generic
+                innerHTML += `
+                    <div contenteditable="true" class="outline-none text-sm text-slate-700 min-h-[40px] border border-dashed border-slate-200 rounded-lg p-3">
+                        Type your content here...
+                    </div>
+                `;
+            }
+
+            // Add row/slot buttons at bottom of section
+            innerHTML += `<div class="no-print mt-3 flex flex-wrap gap-2 sec-actions">`;
+            if (data.type === 'schedule') {
+                innerHTML += `<button onclick="addScheduleRowInSection(this)" class="text-xs font-bold text-[#0e7f63] hover:underline">+ Add Area Row</button>`;
+            } else if (data.type === 'inspection') {
+                innerHTML += `<button onclick="addInspectionSlotInSection(this)" class="text-xs font-bold text-[#0e7f63] hover:underline">+ Add Inspection Time Slot</button>`;
+            } else if (data.type === 'collection') {
+                innerHTML += `<button onclick="addCollectionRowInSection(this)" class="text-xs font-bold text-[#0e7f63] hover:underline">+ Add Collection Day</button>`;
+            } else if (data.type === 'special') {
+                innerHTML += `<button onclick="addSpecialNoteInSection(this)" class="text-xs font-bold text-[#0e7f63] hover:underline">+ Add Note Row</button>`;
+            } else {
+                innerHTML += `<button onclick="addGenericRow(this)" class="text-xs font-bold text-[#0e7f63] hover:underline">+ Add Row</button>`;
+            }
+            innerHTML += `</div>`;
+
+            block.innerHTML = innerHTML;
+            container.appendChild(block);
+            block.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
 
-        /* ===== SAVE TO LIBRARY ===== */
-        function openSaveModal(btn) {
-            currentBlockToSave = btn.closest('.block-section');
-            let rawName = currentBlockToSave.querySelector('h3').innerText;
-            let cleanName = rawName.replace('🏢', '').replace('🏪', '').replace('🌳', '').trim();
-            
-            document.getElementById('save-segment-name').value = cleanName;
-            document.getElementById('modal-save').classList.remove('hidden');
-        }
-
-        async function confirmSaveSegment() {
-            const name = document.getElementById('save-segment-name').value.trim();
-            if (!name) return alert("Please provide a name.");
-
-            const btnSave = document.getElementById('btn-confirm-save');
-            btnSave.innerText = "Saving..."; btnSave.disabled = true;
-
-            try {
-                const uls = currentBlockToSave.querySelectorAll('ul.task-list');
-                
-                const dailyTasks = uls[0] ? Array.from(uls[0].querySelectorAll('li')).map(li => li.innerText) : [];
-                const weeklyTasks = uls[1] ? Array.from(uls[1].querySelectorAll('li')).map(li => li.innerText) : [];
-                const monthlyTasks = uls[2] ? Array.from(uls[2].querySelectorAll('li')).map(li => li.innerText) : [];
-
-                await db.collection("segment_templates").add({
-                    name: name,
-                    daily: dailyTasks,
-                    weekly: weeklyTasks,
-                    monthly: monthlyTasks,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
-
-                closeModals();
-            } catch(e) {
-                alert("Error saving: " + e.message);
-            } finally {
-                btnSave.innerText = "Save"; btnSave.disabled = false;
+        function deleteSection(btn) {
+            if (confirm('Delete this entire section?')) {
+                btn.closest('.section-block').remove();
             }
         }
 
-        /* ===== LOAD FROM LIBRARY ===== */
-        async function openLoadModal() {
-            const list = document.getElementById('library-list');
-            list.innerHTML = '<li class="text-center text-sm text-slate-400 py-4">Loading from database...</li>';
-            document.getElementById('modal-load').classList.remove('hidden');
-
-            try {
-                const snapshot = await db.collection("segment_templates").orderBy("timestamp", "desc").get();
-                dbTemplates = [];
-                
-                if (snapshot.empty) {
-                    list.innerHTML = '<li class="text-center text-sm text-slate-400 py-4">Library is empty. Save a segment first!</li>';
-                    return;
-                }
-
-                let html = '';
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    data.id = doc.id;
-                    dbTemplates.push(data);
-                    
-                    html += `
-                        <li class="flex justify-between items-center bg-slate-50 p-3 border border-slate-200 rounded-lg">
-                            <span class="font-bold text-slate-700 truncate pr-2 flex-1">${data.name}</span>
-                            <div class="flex gap-2">
-                                <button onclick="insertTemplate('${data.id}')" class="px-3 py-1.5 bg-[#547C44] text-white text-xs font-bold rounded-md hover:bg-[#436435]">Insert</button>
-                                <button onclick="deleteTemplate('${data.id}')" class="px-2 py-1.5 bg-red-100 text-red-600 text-xs font-bold rounded-md hover:bg-red-200">X</button>
-                            </div>
-                        </li>
-                    `;
+        // ===== SCHEDULE TABLE (Area | Daily | Weekly | Monthly) =====
+        function buildScheduleTable(rows) {
+            let html = `
+                <table class="schedule-table w-full border-collapse mb-1">
+                    <thead>
+                        <tr>
+                            <th class="py-2 px-3 text-left w-[22%]" contenteditable="true">Area</th>
+                            <th class="py-2 px-3 text-left w-[26%]" contenteditable="true">Daily</th>
+                            <th class="py-2 px-3 text-left w-[26%]" contenteditable="true">Weekly</th>
+                            <th class="py-2 px-3 text-left w-[26%]" contenteditable="true">Monthly</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+            
+            if (rows.length === 0) {
+                html += buildScheduleRowHTML('New Area', ['Type daily task...'], ['Type weekly task...'], ['Type monthly task...']);
+            } else {
+                rows.forEach(r => {
+                    html += buildScheduleRowHTML(r.area, r.daily || [], r.weekly || [], r.monthly || []);
                 });
-                list.innerHTML = html;
-            } catch(e) {
-                list.innerHTML = `<li class="text-center text-sm text-red-500 py-4">Error: ${e.message}</li>`;
             }
+
+            html += `</tbody></table>`;
+            return html;
         }
 
-        function insertTemplate(id) {
-            const template = dbTemplates.find(t => t.id === id);
-            if (!template) return;
-
-            const container = document.getElementById('buildings-container');
-            const div = document.createElement('div');
-            div.className = "block-section relative group bg-white border border-slate-200 p-5 rounded-2xl shadow-sm";
-            
-            const generateLis = (arr) => {
-                if (!arr || arr.length === 0) return '<li>Type task here...</li>';
-                return arr.map(task => `<li>${task}</li>`).join('');
+        function buildScheduleRowHTML(area, daily, weekly, monthly) {
+            const makeUl = (tasks, colName) => {
+                return `<ul class="task-list outline-none min-h-[20px] text-sm">${tasks.map(t => buildTaskLiHTML(t)).join('')}</ul>
+                <button class="no-print text-[10px] font-bold text-slate-400 hover:text-[#0e7f63] mt-1" onclick="addTaskItem(this, '${colName}')">+ Add task</button>`;
             };
 
-            div.innerHTML = `
-                <div class="no-print absolute -right-2 -top-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm">
-                    <button class="bg-blue-100 text-blue-600 hover:bg-blue-200 font-bold rounded-full w-8 h-8 flex items-center justify-center" onclick="openSaveModal(this)" title="Save to Library">💾</button>
-                    <button class="bg-red-100 text-red-600 hover:bg-red-200 font-bold rounded-full w-8 h-8 flex items-center justify-center" onclick="this.closest('.block-section').remove()" title="Delete Block">X</button>
-                </div>
-                
-                <h3 class="text-xl font-black text-[#547C44] uppercase tracking-wider mb-2 border-b-2 border-[#547C44] pb-2" contenteditable="true">🏢 ${template.name}</h3>
-                
-                <div>
-                    <h4 class="period-header text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true">📅 Daily</h4>
-                    <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true">${generateLis(template.daily)}</ul>
-                </div>
-                <div>
-                    <h4 class="period-header text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true">🗓️ Weekly</h4>
-                    <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true">${generateLis(template.weekly)}</ul>
-                </div>
-                <div>
-                    <h4 class="period-header text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 bg-slate-100 py-1.5 px-3 rounded-lg" contenteditable="true">📆 Monthly</h4>
-                    <ul class="task-list text-sm text-slate-700 px-2" contenteditable="true">${generateLis(template.monthly)}</ul>
-                </div>
-            `;
-            
-            container.appendChild(div);
-            closeModals();
-            div.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return `
+                <tr class="group/row">
+                    <td class="py-3 px-3 font-bold text-[#0e7f63] align-top relative">
+                        <button class="no-print absolute -left-2 -top-1 text-red-400 hover:text-red-600 font-bold text-xs hidden group-hover/row:block bg-red-50 px-1.5 py-0.5 rounded z-10" onclick="deleteTableRow(this)" title="Remove row">✕</button>
+                        <div contenteditable="true" class="outline-none uppercase text-sm">${area}</div>
+                    </td>
+                    <td class="py-3 px-3 align-top">${makeUl(daily, 'daily')}</td>
+                    <td class="py-3 px-3 align-top">${makeUl(weekly, 'weekly')}</td>
+                    <td class="py-3 px-3 align-top">${makeUl(monthly, 'monthly')}</td>
+                </tr>`;
         }
 
-        async function deleteTemplate(id) {
-            if (confirm("Are you sure you want to delete this template from the Library?")) {
-                try {
-                    await db.collection("segment_templates").doc(id).delete();
-                    openLoadModal(); 
-                } catch(e) {
-                    alert("Error deleting: " + e.message);
+        function addScheduleRowInSection(btn) {
+            const tbody = btn.closest('.section-block').querySelector('tbody');
+            const tr = document.createElement('tr');
+            tr.innerHTML = buildScheduleRowHTML('New Area', ['Type daily task...'], ['Type weekly task...'], ['Type monthly task...']);
+            tbody.appendChild(tr);
+        }
+
+        // ===== TASK LI WITH TIME BADGE =====
+        function buildTaskLiHTML(text) {
+            return `
+                <li class="task-li group/li">
+                    <span class="task-text" contenteditable="true">${text || 'New task...'}</span>
+                    <button class="no-print add-time-btn absolute right-0 top-0 text-[10px] font-bold bg-[#0e7f63]/10 text-[#0e7f63] px-1.5 py-0.5 rounded-full opacity-0 group-hover/li:opacity-100 hover:bg-[#0e7f63]/20 transition-all" onclick="toggleTaskTime(this)" title="Add time to this task">+ Time</button>
+                    <span class="no-print time-badge absolute right-0 top-0">
+                        <span class="time-text" contenteditable="true"></span>
+                        <button class="text-[#0e7f63] hover:text-red-600 font-black" onclick="removeTaskTime(this)" title="Remove time">×</button>
+                    </span>
+                    <button class="no-print absolute right-0 top-0 text-[10px] text-slate-400 hover:text-red-500 font-bold px-1 opacity-0 group-hover/li:opacity-100 del-li-btn" onclick="deleteTaskItem(this)" title="Remove task">✕</button>
+                </li>`;
+        }
+
+        function toggleTaskTime(btn) {
+            const li = btn.closest('.task-li');
+            const badge = li.querySelector('.time-badge');
+            const timeText = li.querySelector('.time-text');
+            const delBtn = li.querySelector('.del-li-btn');
+
+            btn.style.display = 'none';
+            badge.style.display = 'inline-flex';
+            delBtn.style.right = (badge.offsetWidth + 10) + 'px';
+            
+            if (!timeText.innerText.trim()) {
+                timeText.innerText = '19:00';
+            }
+            timeText.focus();
+        }
+
+        function removeTaskTime(btn) {
+            const li = btn.closest('.task-li');
+            const badge = li.querySelector('.time-badge');
+            const addBtn = li.querySelector('.add-time-btn');
+            const delBtn = li.querySelector('.del-li-btn');
+
+            badge.style.display = 'none';
+            badge.querySelector('.time-text').innerText = '';
+            addBtn.style.display = '';
+            delBtn.style.right = '0px';
+        }
+
+        function deleteTaskItem(btn) {
+            const li = btn.closest('.task-li');
+            const ul = li.closest('ul');
+            li.remove();
+            if (ul && ul.children.length === 0) {
+                const newLi = document.createElement('li');
+                newLi.innerHTML = buildTaskLiHTML('Type task here...');
+                ul.appendChild(newLi);
+            }
+        }
+
+        function addTaskItem(btn, colName) {
+            const ul = btn.parentElement.querySelector('ul.task-list');
+            if (!ul) return;
+            const li = document.createElement('li');
+            li.innerHTML = buildTaskLiHTML('New task...');
+            ul.appendChild(li);
+            const span = li.querySelector('.task-text');
+            if (span) {
+                span.focus();
+                const range = document.createRange();
+                range.selectNodeContents(span);
+                const sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(range);
+            }
+        }
+
+        function deleteTableRow(btn) {
+            btn.closest('tr').remove();
+        }
+
+        // ===== INSPECTION ROTA =====
+        function buildInspectionContent(slots) {
+            let html = `<div class="flex flex-wrap gap-3 mb-2 slots-wrapper">`;
+            if (slots.length === 0) {
+                html += buildInspectionSlotHTML('00:00 – 00:00');
+            } else {
+                slots.forEach(s => { html += buildInspectionSlotHTML(s); });
+            }
+            html += `</div>`;
+            return html;
+        }
+
+        function buildInspectionSlotHTML(timeText) {
+            return `
+                <span class="inspection-slot group/slot">
+                    <span contenteditable="true" class="outline-none">${timeText || '00:00 – 00:00'}</span>
+                    <button class="no-print text-[#0e7f63] hover:text-red-600 font-black text-sm leading-none opacity-0 group-hover/slot:opacity-100 transition-opacity" onclick="deleteInspectionSlot(this)" title="Remove slot">×</button>
+                </span>`;
+        }
+
+        function addInspectionSlotInSection(btn) {
+            const wrapper = btn.closest('.section-block').querySelector('.slots-wrapper');
+            if (!wrapper) return;
+            const span = document.createElement('span');
+            span.innerHTML = buildInspectionSlotHTML('00:00 – 00:00');
+            wrapper.appendChild(span.firstElementChild || span);
+        }
+
+        function deleteInspectionSlot(btn) {
+            btn.closest('.inspection-slot').remove();
+        }
+
+        // ===== COLLECTION TABLE =====
+        function buildCollectionTable(rows) {
+            let html = `
+                <table class="collection-table w-full border-collapse mb-1">
+                    <thead>
+                        <tr>
+                            <th class="py-2 px-3 text-left w-1/2" contenteditable="true">Day</th>
+                            <th class="py-2 px-3 text-left w-1/2" contenteditable="true">Waste Type</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+            
+            if (rows.length === 0) {
+                html += buildCollectionRowHTML('New Day', 'Waste Type');
+            } else {
+                rows.forEach(r => { html += buildCollectionRowHTML(r.day, r.waste); });
+            }
+
+            html += `</tbody></table>`;
+            return html;
+        }
+
+        function buildCollectionRowHTML(day, waste) {
+            return `
+                <tr class="group/row">
+                    <td class="py-2 px-3 font-bold text-slate-700 relative">
+                        <button class="no-print absolute -left-2 top-1 text-red-400 hover:text-red-600 font-bold text-xs hidden group-hover/row:block bg-red-50 px-1.5 py-0.5 rounded z-10" onclick="deleteTableRow(this)" title="Remove row">✕</button>
+                        <div contenteditable="true" class="outline-none">${day || 'New Day'}</div>
+                    </td>
+                    <td class="py-2 px-3">
+                        <div contenteditable="true" class="outline-none">${waste || 'Waste Type'}</div>
+                    </td>
+                </tr>`;
+        }
+
+        function addCollectionRowInSection(btn) {
+            const tbody = btn.closest('.section-block').querySelector('tbody');
+            const tr = document.createElement('tr');
+            tr.innerHTML = buildCollectionRowHTML('New Day', 'Waste Type');
+            tbody.appendChild(tr);
+        }
+
+        // ===== SPECIAL NOTES (THURSDAY STYLE) =====
+        function buildSpecialNotes(rows) {
+            let html = `<div class="space-y-2 notes-wrapper">`;
+            if (rows.length === 0) {
+                html += buildSpecialNoteHTML('Type note here...');
+            } else {
+                rows.forEach(r => { html += buildSpecialNoteHTML(r.text); });
+            }
+            html += `</div>`;
+            return html;
+        }
+
+        function buildSpecialNoteHTML(text) {
+            return `
+                <div class="special-note-row group/note relative">
+                    <button class="no-print absolute -top-2 -right-2 text-red-400 hover:text-red-600 font-bold text-xs hidden group-hover/note:block bg-red-50 px-1.5 py-0.5 rounded z-10" onclick="deleteSpecialNote(this)" title="Remove note">✕</button>
+                    <div contenteditable="true" class="outline-none text-sm font-bold text-[#0e7f63]">${text || 'Type note here...'}</div>
+                </div>`;
+        }
+
+        function addSpecialNoteInSection(btn) {
+            const wrapper = btn.closest('.section-block').querySelector('.notes-wrapper');
+            if (!wrapper) return;
+            const div = document.createElement('div');
+            div.innerHTML = buildSpecialNoteHTML('Type note here...');
+            wrapper.appendChild(div.firstElementChild || div);
+        }
+
+        function deleteSpecialNote(btn) {
+            btn.closest('.special-note-row').remove();
+        }
+
+        // ===== GENERIC ROW =====
+        function addGenericRow(btn) {
+            const block = btn.closest('.section-block');
+            const contentArea = block.querySelector('[contenteditable="true"].border-dashed');
+            if (contentArea) {
+                contentArea.innerHTML += '<br>New row...';
+                contentArea.focus();
+            }
+        }
+
+        // ===== KEYBOARD SUPPORT FOR TASK ITEMS =====
+        document.addEventListener('keydown', function(e) {
+            if (e.target.classList.contains('task-text')) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const li = e.target.closest('.task-li');
+                    const ul = li.closest('ul.task-list');
+                    const newLi = document.createElement('li');
+                    newLi.innerHTML = buildTaskLiHTML('');
+                    li.after(newLi);
+                    const newSpan = newLi.querySelector('.task-text');
+                    if (newSpan) newSpan.focus();
+                } else if (e.key === 'Backspace' && e.target.innerText.trim() === '') {
+                    e.preventDefault();
+                    const li = e.target.closest('.task-li');
+                    const prev = li.previousElementSibling;
+                    li.remove();
+                    if (prev) {
+                        const prevSpan = prev.querySelector('.task-text');
+                        if (prevSpan) {
+                            prevSpan.focus();
+                            const range = document.createRange();
+                            range.selectNodeContents(prevSpan);
+                            range.collapse(false);
+                            const sel = window.getSelection();
+                            sel.removeAllRanges();
+                            sel.addRange(range);
+                        }
+                    }
                 }
             }
+        });
+
+        // ===== SAVE / LOAD =====
+        function collectDocumentData() {
+            const docBody = document.getElementById('document-body').cloneNode(true);
+            docBody.querySelectorAll('.no-print').forEach(el => el.remove());
+            docBody.querySelectorAll('button').forEach(el => el.remove());
+            return docBody.innerHTML;
+        }
+
+        async function saveDocument() {
+            const btnSave = document.getElementById('btn-save');
+            btnSave.innerText = '⏳ Saving...';
+            btnSave.disabled = true;
+
+            try {
+                const htmlData = collectDocumentData();
+                const titleEl = document.querySelector('#document-body [contenteditable="true"]');
+                let docName = 'Bin Store Report';
+                if (titleEl) {
+                    const lines = titleEl.innerText.split('\n').filter(l => l.trim());
+                    docName = lines.slice(0, 2).join(' - ') || 'Bin Store Report';
+                }
+
+                if (!currentDocId) {
+                    const name = prompt('Enter a name for this document:', docName);
+                    if (!name) throw new Error('Canceled');
+                    const docRef = await db.collection('bin_store_reports').add({
+                        name: name,
+                        html_data: htmlData,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    currentDocId = docRef.id;
+                    updateStatusName(name);
+                    localStorage.setItem('lastBinStoreDocId', currentDocId);
+                } else {
+                    await db.collection('bin_store_reports').doc(currentDocId).update({
+                        html_data: htmlData,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+                alert('Document saved successfully!');
+            } catch (e) {
+                if (e.message !== 'Canceled') alert('Error saving: ' + e.message);
+            } finally {
+                btnSave.innerText = '💾 Save';
+                btnSave.disabled = false;
+            }
+        }
+
+        function loadSidebar() {
+            const modal = document.getElementById('modal-load');
+            const list = document.getElementById('docs-list');
+            list.innerHTML = '<li class="text-center text-sm text-slate-400 py-4">Loading from database...</li>';
+            modal.classList.remove('hidden');
+
+            db.collection('bin_store_reports').orderBy('timestamp', 'desc').get()
+                .then(snapshot => {
+                    if (snapshot.empty) {
+                        list.innerHTML = '<li class="text-center text-sm text-slate-400 py-4">No documents saved yet.</li>';
+                        return;
+                    }
+                    let html = '';
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        const bg = currentDocId === doc.id ? 'bg-[#0e7f63]/10 border-[#0e7f63]' : 'bg-white border-slate-200';
+                        html += `
+                            <li class="flex justify-between items-center p-3 rounded-xl border ${bg}">
+                                <span class="font-bold text-slate-800 text-sm truncate pr-2 flex-1 cursor-pointer" onclick="loadDocumentById('${doc.id}'); closeLoadModal();">${data.name}</span>
+                                <button onclick="deleteBinDoc('${doc.id}')" class="text-red-400 hover:text-red-600 font-bold px-2 py-1 text-xs shrink-0">Delete</button>
+                            </li>`;
+                    });
+                    list.innerHTML = html;
+                })
+                .catch(e => {
+                    list.innerHTML = `<li class="text-center text-sm text-red-500 py-4">Error: ${e.message}</li>`;
+                });
+        }
+
+        function closeLoadModal() {
+            document.getElementById('modal-load').classList.add('hidden');
+        }
+
+        async function loadDocumentById(id) {
+            try {
+                const docSnap = await db.collection('bin_store_reports').doc(id).get();
+                if (!docSnap.exists) { populateDefaults(); return; }
+                const data = docSnap.data();
+                document.getElementById('document-body').innerHTML = data.html_data;
+                currentDocId = id;
+                updateStatusName(data.name);
+                localStorage.setItem('lastBinStoreDocId', id);
+                reinjectAllButtons();
+            } catch (e) {
+                alert('Error loading: ' + e.message);
+                populateDefaults();
+            }
+        }
+
+        function createNewDocument() {
+            if (confirm('Start a new document? Unsaved changes will be lost.')) {
+                populateDefaults();
+                closeLoadModal();
+            }
+        }
+
+        async function deleteBinDoc(id) {
+            if (!confirm('Delete this document permanently?')) return;
+            try {
+                await db.collection('bin_store_reports').doc(id).delete();
+                if (currentDocId === id) populateDefaults();
+                loadSidebar();
+            } catch (e) {
+                alert('Error deleting: ' + e.message);
+            }
+        }
+
+        function reinjectAllButtons() {
+            const container = document.getElementById('document-body');
+
+            // Rebuild all task-li items with buttons
+            container.querySelectorAll('.task-li').forEach(li => {
+                if (li.querySelector('.add-time-btn')) return; // already processed
+                const textSpan = li.querySelector('.task-text');
+                const text = textSpan ? textSpan.innerText : '';
+                li.innerHTML = buildTaskLiHTML(text);
+            });
+
+            // Add delete buttons to schedule rows
+            container.querySelectorAll('.schedule-table tbody tr').forEach(tr => {
+                if (tr.querySelector('button')) return;
+                const td = tr.querySelector('td');
+                if (!td) return;
+                const btn = document.createElement('button');
+                btn.className = 'no-print absolute -left-2 -top-1 text-red-400 hover:text-red-600 font-bold text-xs hidden group-hover/row:block bg-red-50 px-1.5 py-0.5 rounded z-10';
+                btn.innerText = '✕';
+                btn.setAttribute('onclick', 'deleteTableRow(this)');
+                btn.title = 'Remove row';
+                td.style.position = 'relative';
+                td.insertBefore(btn, td.firstChild);
+            });
+
+            // Add delete buttons to collection rows
+            container.querySelectorAll('.collection-table tbody tr').forEach(tr => {
+                if (tr.querySelector('button')) return;
+                const td = tr.querySelector('td');
+                if (!td) return;
+                const btn = document.createElement('button');
+                btn.className = 'no-print absolute -left-2 top-1 text-red-400 hover:text-red-600 font-bold text-xs hidden group-hover/row:block bg-red-50 px-1.5 py-0.5 rounded z-10';
+                btn.innerText = '✕';
+                btn.setAttribute('onclick', 'deleteTableRow(this)');
+                btn.title = 'Remove row';
+                td.style.position = 'relative';
+                td.insertBefore(btn, td.firstChild);
+            });
+
+            // Add delete buttons to inspection slots
+            container.querySelectorAll('.inspection-slot').forEach(slot => {
+                if (slot.querySelector('button')) return;
+                const btn = document.createElement('button');
+                btn.className = 'no-print text-[#0e7f63] hover:text-red-600 font-black text-sm leading-none opacity-0 group-hover/slot:opacity-100 transition-opacity';
+                btn.innerText = '×';
+                btn.setAttribute('onclick', 'deleteInspectionSlot(this)');
+                btn.title = 'Remove slot';
+                slot.appendChild(btn);
+            });
+
+            // Add delete buttons to special notes
+            container.querySelectorAll('.special-note-row').forEach(note => {
+                if (note.querySelector('button')) return;
+                const btn = document.createElement('button');
+                btn.className = 'no-print absolute -top-2 -right-2 text-red-400 hover:text-red-600 font-bold text-xs hidden group-hover/note:block bg-red-50 px-1.5 py-0.5 rounded z-10';
+                btn.innerText = '✕';
+                btn.setAttribute('onclick', 'deleteSpecialNote(this)');
+                btn.title = 'Remove note';
+                note.style.position = 'relative';
+                note.appendChild(btn);
+            });
+
+            // Add section delete buttons
+            container.querySelectorAll('.section-block').forEach(block => {
+                if (block.querySelector('[onclick*="deleteSection"]')) return;
+                const btn = document.createElement('button');
+                btn.className = 'no-print absolute -top-3 -right-3 bg-red-100 hover:bg-red-200 text-red-600 font-bold text-xs px-2.5 py-1 rounded-full shadow-sm opacity-0 group-hover/sec:opacity-100 transition-opacity z-10';
+                btn.innerText = '✕ Delete Section';
+                btn.setAttribute('onclick', 'deleteSection(this)');
+                btn.title = 'Delete entire section';
+                block.style.position = 'relative';
+                block.insertBefore(btn, block.firstChild);
+            });
+
+            // Add section action buttons at bottom of each section
+            container.querySelectorAll('.section-block').forEach(block => {
+                const type = block.getAttribute('data-type');
+                if (!type) return;
+                
+                // Check if actions div already exists
+                let actionsDiv = block.querySelector('.sec-actions');
+                if (!actionsDiv) {
+                    actionsDiv = document.createElement('div');
+                    actionsDiv.className = 'no-print mt-3 flex flex-wrap gap-2 sec-actions';
+                    block.appendChild(actionsDiv);
+                }
+
+                if (actionsDiv.children.length === 0) {
+                    let btnHTML = '';
+                    if (type === 'schedule') {
+                        btnHTML = `<button onclick="addScheduleRowInSection(this)" class="text-xs font-bold text-[#0e7f63] hover:underline">+ Add Area Row</button>`;
+                    } else if (type === 'inspection') {
+                        btnHTML = `<button onclick="addInspectionSlotInSection(this)" class="text-xs font-bold text-[#0e7f63] hover:underline">+ Add Inspection Time Slot</button>`;
+                    } else if (type === 'collection') {
+                        btnHTML = `<button onclick="addCollectionRowInSection(this)" class="text-xs font-bold text-[#0e7f63] hover:underline">+ Add Collection Day</button>`;
+                    } else if (type === 'special') {
+                        btnHTML = `<button onclick="addSpecialNoteInSection(this)" class="text-xs font-bold text-[#0e7f63] hover:underline">+ Add Note Row</button>`;
+                    }
+                    actionsDiv.innerHTML = btnHTML;
+                }
+            });
+
+            // Add "Add task" buttons to schedule cells if missing
+            container.querySelectorAll('.schedule-table td').forEach((td, idx) => {
+                const colIdx = idx % 4;
+                if (colIdx === 0) return; // Area column
+                const ul = td.querySelector('ul.task-list');
+                if (!ul) return;
+                if (td.querySelector('.no-print.text-\\[10px\\]')) return; // already has button
+                const btn = document.createElement('button');
+                btn.className = 'no-print text-[10px] font-bold text-slate-400 hover:text-[#0e7f63] mt-1';
+                btn.innerText = '+ Add task';
+                btn.setAttribute('onclick', "addTaskItem(this, '')");
+                td.appendChild(btn);
+            });
         }
     </script>
 </body>
