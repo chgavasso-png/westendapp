@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificates - West End Cleaning</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        @media print {
+            body { background-color: white !important; margin: 0; padding: 0; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            .no-print { display: none !important; }
+            #main-content { margin: 0 !important; width: 100% !important; display: block !important; padding: 0 !important; overflow: visible !important; }
+            .a4-page { box-shadow: none !important; margin: 0 auto !important; padding: 10mm 12mm !important; width: 100% !important; max-width: 100% !important; border: none !important; }
+            @page { size: A4; margin: 0mm; }
+            .print-no-arrow { appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; }
+            .print-no-icon::-webkit-calendar-picker-indicator { display: none !important; }
+            input[type="date"] { border: none !important; background: transparent !important; color: #111 !important; }
+            .cert-title { font-size: 1.5rem !important; line-height: 1.2 !important; }
+            .cert-name { font-size: 1.6rem !important; line-height: 1.2 !important; }
+            .signature-line { border-bottom: 1px solid #333 !important; }
+            .footer-address { font-size: 0.75rem !important; }
+        }
+
+        [contenteditable="true"]:hover { background-color: rgba(84, 124, 68, 0.05); cursor: text; border-radius: 4px; }
+        [contenteditable="true"]:focus { background-color: rgba(84, 124, 68, 0.05); outline: 1px dashed #547C44; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-slate-100 font-sans text-slate-900 min-h-screen">
+
+    <!-- TOP BAR -->
+    <div class="no-print bg-white shadow-sm border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-[1200px] mx-auto px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-4">
+                <a href="menu.html" class="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                </a>
+                <div>
+                    <h2 class="text-xl font-extrabold text-slate-800">Certificate of Training</h2>
+                    <p class="text-xs text-slate-500 font-medium uppercase mt-1">Document: <span id="current-doc-name" class="font-bold text-[#547C44]">Unsaved Certificate</span></p>
+                </div>
+            </div>
+            <div class="flex gap-3 flex-wrap">
+                <button onclick="saveCertificate()" id="btn-save" class="px-5 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-sm rounded-xl border border-blue-200 transition-colors flex items-center gap-2">💾 Save</button>
+                <button onclick="openLoadModal()" class="px-5 py-2.5 bg-slate-800 text-white font-bold text-sm rounded-xl hover:bg-slate-900 transition-colors flex items-center gap-2">📂 Load</button>
+                <button onclick="createNewCertificate()" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl border transition-colors flex items-center gap-2">✨ New</button>
+                <button onclick="window.print()" class="px-6 py-2.5 bg-[#547C44] hover:bg-[#436435] text-white font-bold text-sm rounded-xl shadow-md transition-colors flex items-center gap-2">🖨️ Export to PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main-content" class="py-10 flex justify-center px-4">
+        <div id="document-a4" class="a4-page bg-white shadow-2xl w-full max-w-[21cm] min-h-[29.7cm] p-[12mm] border border-slate-200 relative flex flex-col">
+
+            <!-- CERTIFICATE CONTENT -->
+            <div class="flex-1 flex flex-col">
+
+                <!-- Top: Company Logo (right) -->
+                <div class="flex items-center justify-end mb-8">
+                    <img src="logo.png" alt="West End Cleaning" class="h-28 object-contain" onerror="this.style.display='none'">
+                </div>
+
+                <!-- Title -->
+                <div class="text-center mb-10">
+                    <h1 contenteditable="true" class="cert-title text-3xl font-black text-slate-900 uppercase tracking-wide outline-none leading-snug">Certificate of Training on Electric Vehicles</h1>
+                </div>
+
+                <!-- This is to certify that -->
+                <div class="text-center text-slate-700 text-xl font-medium mb-8">
+                    <span contenteditable="true">This is to certify that</span>
+                </div>
+
+                <!-- Name -->
+                <div class="text-center mb-8">
+                    <div contenteditable="true" class="cert-name inline-block text-4xl font-black text-slate-900 border-b-2 border-slate-400 pb-1 px-8 outline-none min-w-[300px]">Name of Person</div>
+                </div>
+
+                <!-- Of -->
+                <div class="text-center text-slate-700 text-xl font-medium mb-8">
+                    <span contenteditable="true">Of</span>
+                </div>
+
+                <!-- Company -->
+                <div class="text-center mb-12">
+                    <div contenteditable="true" class="text-2xl font-bold text-slate-800 border-b border-slate-300 pb-1 px-6 outline-none inline-block min-w-[280px]">West End Cleaning Services Ltd – King’s Road Park</div>
+                </div>
+
+                <!-- Attended text -->
+                <div class="text-center text-slate-700 text-lg leading-relaxed mb-10 max-w-[90%] mx-auto">
+                    <span contenteditable="true">Has attended a training course on</span>
+                    <span class="inline-block align-middle cursor-pointer select-none hover:bg-[#547C44]/10 rounded transition-colors" onclick="openCustomDatePicker()" title="Click to change date">
+                        <span id="cert-date-display" class="font-bold text-slate-900 border-b border-slate-300 px-3 py-0.5">9 April 2026</span>
+                        <span class="ml-1 text-sm">📅</span>
+                    </span>
+                    <input type="hidden" id="cert-date" value="2026-04-09">
+                    <span contenteditable="true">and has passed as a trainer to train others on the</span>
+                    <span contenteditable="true" class="model-text font-bold text-slate-900 border-b border-slate-300 px-2">TTT54-3AC</span>
+                    <span contenteditable="true" class="tug-text text-slate-700">electric tow tug</span>
+                </div>
+
+                <!-- Instructor & Signature -->
+                <div class="mt-auto pt-4 pb-2 flex flex-col gap-2">
+                    <div class="flex items-center gap-3">
+                        <span class="text-lg font-bold text-slate-800 whitespace-nowrap">Name of instructor:</span>
+                        <span contenteditable="true" class="text-lg font-bold text-slate-900 border-b border-slate-300 pb-0.5 px-2 inline-block">Mr Trevor Ritson</span>
+                    </div>
+                    <div class="flex items-center gap-3 mt-3">
+                        <span class="text-lg font-bold text-slate-800 whitespace-nowrap">Signature:</span>
+                        <div class="relative inline-block">
+                            <canvas id="signature-canvas" width="280" height="90" class="border border-slate-400 rounded bg-white cursor-crosshair"></canvas>
+                            <button onclick="clearSignature()" class="no-print absolute -top-2 -right-2 bg-red-100 hover:bg-red-200 text-red-600 text-xs font-bold w-6 h-6 rounded-full shadow-sm flex items-center justify-center leading-none" title="Clear signature">✕</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="mt-14 pt-5 border-t border-slate-300 relative">
+                    <div class="text-center footer-address">
+                        <p contenteditable="true" class="text-xs text-slate-600 mb-0.5">Bradshaw Electric Vehicles</p>
+                        <p contenteditable="true" class="text-xs text-slate-600 mb-0.5">New Lane, Stibbington, Peterborough, PE8 6LW</p>
+                        <p contenteditable="true" class="text-xs text-slate-600">Registration No. 1260881</p>
+                    </div>
+                    <!-- SafeContractor Approved Badge - bottom right corner, no white background contrast -->
+                    <img src="safe.jpg" alt="SafeContractor Approved" class="absolute -bottom-3 right-0 w-20 object-contain" style="mix-blend-mode: multiply;" onerror="this.style.display='none'">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DATE PICKER MODAL -->
+    <div id="modal-date" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-white p-6 rounded-3xl w-full max-w-sm shadow-2xl border border-slate-100">
+            <h3 class="text-xl font-black text-slate-800 mb-1">Select Training Date</h3>
+            <p class="text-sm text-slate-500 mb-5">Choose the date of the training course.</p>
+
+            <div class="flex gap-3 mb-6">
+                <div class="flex-1">
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1 pl-1">Day</label>
+                    <select id="date-picker-day" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold outline-none focus:border-[#547C44]"></select>
+                </div>
+                <div class="flex-[2]">
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1 pl-1">Month</label>
+                    <select id="date-picker-month" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold outline-none focus:border-[#547C44]"></select>
+                </div>
+                <div class="flex-1">
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1 pl-1">Year</label>
+                    <select id="date-picker-year" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold outline-none focus:border-[#547C44]"></select>
+                </div>
+            </div>
+
+            <div class="flex gap-3">
+                <button onclick="closeCustomDatePicker()" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors">Cancel</button>
+                <button onclick="confirmCustomDate()" class="flex-1 py-3 bg-[#547C44] hover:bg-[#436435] text-white font-bold rounded-xl shadow-md transition-colors">Apply</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOAD MODAL -->
+    <div id="modal-load" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-white p-6 rounded-3xl w-full max-w-lg shadow-2xl border border-slate-100 max-h-[80vh] flex flex-col">
+            <h3 class="text-xl font-black text-slate-800 mb-2">Saved Certificates</h3>
+            <p class="text-sm text-slate-500 mb-4">Select a certificate to load, or create a new one.</p>
+            <div class="flex gap-2 mb-4">
+                <button onclick="createNewCertificate(); closeLoadModal();" class="px-4 py-2 bg-[#547C44] text-white font-bold text-sm rounded-xl hover:bg-[#436435]">+ New Certificate</button>
+            </div>
+            <ul id="docs-list" class="space-y-2 overflow-y-auto flex-1 mb-4">
+                <li class="text-center text-sm text-slate-400 py-4">Loading...</li>
+            </ul>
+            <button onclick="closeLoadModal()" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl">Close</button>
+        </div>
+    </div>
+
+    <script>
+        // FIREBASE CONFIG
+        const firebaseConfig = {
+            apiKey: "AIzaSyBSPim1j9yxA56AeWhWhdG_8TKzh_F-gZc",
+            authDomain: "westend-c6992.firebaseapp.com",
+            projectId: "westend-c6992",
+            storageBucket: "westend-c6992.firebasestorage.app",
+            messagingSenderId: "781546407326",
+            appId: "1:781546407326:web:ed4126214f41498153428f",
+            measurementId: "G-DEGC00501H"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        let currentDocId = null;
+
+        window.onload = function() {
+            let loggedUser = localStorage.getItem('loggedUser');
+            if (!loggedUser) window.location.href = 'index.html';
+            loadSidebar();
+            initSignaturePad();
+        };
+
+        function updateStatusName(name) {
+            document.getElementById('current-doc-name').innerText = name || 'Unsaved Certificate';
+        }
+
+        function createNewCertificate() {
+            if (confirm('Start a new certificate? Unsaved changes will be lost.')) {
+                currentDocId = null;
+                updateStatusName(null);
+                const docEl = document.getElementById('document-a4');
+                // Reset to defaults
+                const titleEl = docEl.querySelector('.cert-title');
+                if (titleEl) titleEl.innerText = 'Certificate of Training on Electric Vehicles';
+                const nameEl = docEl.querySelector('.cert-name');
+                if (nameEl) nameEl.innerText = 'Name of Person';
+                const companyEl = docEl.querySelector('.text-2xl.font-bold');
+                if (companyEl) companyEl.innerText = 'West End Cleaning Services Ltd – King’s Road Park';
+                const dateInput = docEl.querySelector('#cert-date');
+                if (dateInput) {
+                    dateInput.value = '2026-04-09';
+                    syncDateDisplay(dateInput);
+                }
+                const modelEl = docEl.querySelector('.model-text');
+                if (modelEl) modelEl.innerText = 'TTT54-3AC';
+                const tugEl = docEl.querySelector('.tug-text');
+                if (tugEl) tugEl.innerText = 'electric tow tug';
+                const instructorEl = docEl.querySelector('.flex.items-center.gap-3 span.text-lg.font-bold.text-slate-900');
+                if (instructorEl) instructorEl.innerText = 'Mr Trevor Ritson';
+                ensureSignatureCanvas();
+                loadSidebar();
+            }
+        }
+
+        function formatDateLong(dateStr) {
+            if (!dateStr) return '';
+            const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            const parts = dateStr.split('-');
+            if (parts.length !== 3) return dateStr;
+            const day = parseInt(parts[2], 10);
+            const month = parseInt(parts[1], 10) - 1;
+            const year = parts[0];
+            return `${day} ${months[month]} ${year}`;
+        }
+
+        function syncDateDisplay(input) {
+            const display = document.getElementById('cert-date-display');
+            if (display && input) display.innerText = formatDateLong(input.value) || input.value;
+        }
+
+        window.onDateChange = function(input) {
+            syncDateDisplay(input);
+        };
+
+        /* ===== CUSTOM DATE PICKER ===== */
+        const MONTHS_FULL = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+        function daysInMonth(monthIdx, year) {
+            return new Date(year, monthIdx + 1, 0).getDate();
+        }
+
+        function populateDatePicker(input) {
+            const parts = input.value ? input.value.split('-') : [2026, 4, 9];
+            let year = parseInt(parts[0], 10) || 2026;
+            let month = parseInt(parts[1], 10) || 4;
+            let day = parseInt(parts[2], 10) || 9;
+
+            const daySel = document.getElementById('date-picker-day');
+            const monthSel = document.getElementById('date-picker-month');
+            const yearSel = document.getElementById('date-picker-year');
+
+            // Years: current year - 5 to current year + 10
+            const currentYear = new Date().getFullYear();
+            let yearOptions = '';
+            for (let y = currentYear - 5; y <= currentYear + 10; y++) {
+                yearOptions += `<option value="${y}" ${y === year ? 'selected' : ''}>${y}</option>`;
+            }
+            yearSel.innerHTML = yearOptions;
+
+            let monthOptions = '';
+            MONTHS_FULL.forEach((m, i) => {
+                monthOptions += `<option value="${i + 1}" ${(i + 1) === month ? 'selected' : ''}>${m}</option>`;
+            });
+            monthSel.innerHTML = monthOptions;
+
+            renderDayOptions(daySel, month, year, day);
+        }
+
+        function renderDayOptions(daySel, month, year, selectedDay) {
+            const maxDays = daysInMonth(month - 1, year);
+            let dayOptions = '';
+            for (let d = 1; d <= maxDays; d++) {
+                dayOptions += `<option value="${d}" ${d === selectedDay ? 'selected' : ''}>${d}</option>`;
+            }
+            daySel.innerHTML = dayOptions;
+        }
+
+        window.openCustomDatePicker = function() {
+            const input = document.getElementById('cert-date');
+            if (!input) return;
+            populateDatePicker(input);
+            document.getElementById('modal-date').classList.remove('hidden');
+        };
+
+        window.closeCustomDatePicker = function() {
+            document.getElementById('modal-date').classList.add('hidden');
+        };
+
+        window.confirmCustomDate = function() {
+            const day = document.getElementById('date-picker-day').value;
+            const month = document.getElementById('date-picker-month').value;
+            const year = document.getElementById('date-picker-year').value;
+
+            const input = document.getElementById('cert-date');
+            input.value = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            syncDateDisplay(input);
+            closeCustomDatePicker();
+        };
+
+        // Recalcula dias quando muda mês/ano
+        document.addEventListener('change', function(e) {
+            if (e.target.id === 'date-picker-month' || e.target.id === 'date-picker-year') {
+                const month = parseInt(document.getElementById('date-picker-month').value, 10);
+                const year = parseInt(document.getElementById('date-picker-year').value, 10);
+                const daySel = document.getElementById('date-picker-day');
+                const currentDay = parseInt(daySel.value, 10) || 1;
+                renderDayOptions(daySel, month, year, currentDay);
+            }
+        });
+
+        async function saveCertificate() {
+            const btnSave = document.getElementById('btn-save');
+            btnSave.innerText = '⏳ Saving...';
+            btnSave.disabled = true;
+
+            try {
+                // Sincroniza o valor da data no atributo antes de salvar
+                const dateInput = document.getElementById('cert-date');
+                if (dateInput) dateInput.setAttribute('value', dateInput.value);
+
+                const docBody = document.getElementById('document-a4').cloneNode(true);
+                docBody.querySelectorAll('.no-print').forEach(el => el.remove());
+                docBody.querySelectorAll('button').forEach(el => el.remove());
+
+                // Converte o canvas da assinatura em imagem para salvar
+                const sigCanvas = docBody.querySelector('#signature-canvas');
+                if (sigCanvas) {
+                    const sigImg = document.createElement('img');
+                    sigImg.src = sigCanvas.toDataURL('image/png');
+                    sigImg.className = 'sig-img border border-slate-400 rounded bg-white';
+                    sigImg.width = 280;
+                    sigImg.height = 90;
+                    sigImg.alt = 'Signature';
+                    sigCanvas.replaceWith(sigImg);
+                }
+
+                const htmlData = docBody.innerHTML;
+
+                // Extract name for default document name
+                const nameEl = document.getElementById('document-a4').querySelector('.cert-name');
+                let docName = 'Certificate - ' + (nameEl ? nameEl.innerText.trim() : 'Untitled');
+
+                if (!currentDocId) {
+                    const name = prompt('Enter a name for this certificate:', docName);
+                    if (!name) throw new Error('Canceled');
+                    const docRef = await db.collection('certificates').add({
+                        name: name,
+                        html_data: htmlData,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    currentDocId = docRef.id;
+                    updateStatusName(name);
+                } else {
+                    await db.collection('certificates').doc(currentDocId).update({
+                        html_data: htmlData,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+                alert('Certificate saved successfully!');
+                loadSidebar();
+            } catch (e) {
+                if (e.message !== 'Canceled') alert('Error saving: ' + e.message);
+            } finally {
+                btnSave.innerText = '💾 Save';
+                btnSave.disabled = false;
+            }
+        }
+
+        function loadSidebar() {
+            const list = document.getElementById('docs-list');
+            list.innerHTML = '<li class="text-center text-sm text-slate-400 py-4">Loading from database...</li>';
+
+            db.collection('certificates').orderBy('timestamp', 'desc').get()
+                .then(snapshot => {
+                    if (snapshot.empty) {
+                        list.innerHTML = '<li class="text-center text-sm text-slate-400 py-4">No certificates saved yet.</li>';
+                        return;
+                    }
+                    let html = '';
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        const bg = currentDocId === doc.id ? 'bg-[#547C44]/10 border-[#547C44]' : 'bg-white border-slate-200';
+                        html += `
+                            <li class="flex justify-between items-center p-3 rounded-xl border ${bg}">
+                                <span class="font-bold text-slate-800 text-sm truncate pr-2 flex-1 cursor-pointer" onclick="loadCertificateById('${doc.id}'); closeLoadModal();">${data.name}</span>
+                                <button onclick="deleteCertificate('${doc.id}')" class="text-red-400 hover:text-red-600 font-bold px-2 py-1 text-xs">Delete</button>
+                            </li>`;
+                    });
+                    list.innerHTML = html;
+                })
+                .catch(e => {
+                    list.innerHTML = `<li class="text-center text-sm text-red-500 py-4">Error: ${e.message}</li>`;
+                });
+        }
+
+        function openLoadModal() {
+            document.getElementById('modal-load').classList.remove('hidden');
+            loadSidebar();
+        }
+
+        function closeLoadModal() {
+            document.getElementById('modal-load').classList.add('hidden');
+        }
+
+        async function loadCertificateById(id) {
+            try {
+                const docSnap = await db.collection('certificates').doc(id).get();
+                if (!docSnap.exists) return;
+                const data = docSnap.data();
+                document.getElementById('document-a4').innerHTML = data.html_data;
+                currentDocId = id;
+                updateStatusName(data.name);
+                restoreSignatureAfterLoad();
+                loadSidebar();
+            } catch (e) {
+                alert('Error loading: ' + e.message);
+            }
+        }
+
+        async function deleteCertificate(id) {
+            if (!confirm('Delete this certificate permanently?')) return;
+            try {
+                await db.collection('certificates').doc(id).delete();
+                if (currentDocId === id) createNewCertificate();
+                loadSidebar();
+            } catch (e) {
+                alert('Error deleting: ' + e.message);
+            }
+        }
+
+        /* ===== SIGNATURE PAD ===== */
+        function initSignaturePad() {
+            const canvas = document.getElementById('signature-canvas');
+            if (!canvas) return;
+
+            let drawing = false;
+            let lastX = 0, lastY = 0;
+
+            const ctx = canvas.getContext('2d');
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.strokeStyle = '#1e293b';
+
+            function getPos(e) {
+                const rect = canvas.getBoundingClientRect();
+                return {
+                    x: (e.clientX - rect.left) * (canvas.width / rect.width),
+                    y: (e.clientY - rect.top) * (canvas.height / rect.height)
+                };
+            }
+
+            canvas.addEventListener('mousedown', (e) => {
+                drawing = true;
+                const pos = getPos(e);
+                lastX = pos.x;
+                lastY = pos.y;
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+                ctx.lineTo(lastX + 0.1, lastY + 0.1);
+                ctx.stroke();
+            });
+
+            canvas.addEventListener('mousemove', (e) => {
+                if (!drawing) return;
+                const pos = getPos(e);
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+                ctx.lineTo(pos.x, pos.y);
+                ctx.stroke();
+                lastX = pos.x;
+                lastY = pos.y;
+            });
+
+            canvas.addEventListener('mouseup', () => drawing = false);
+            canvas.addEventListener('mouseleave', () => drawing = false);
+        }
+
+        function clearSignature() {
+            const canvas = document.getElementById('signature-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function ensureSignatureCanvas() {
+            const docEl = document.getElementById('document-a4');
+            if (docEl.querySelector('#signature-canvas')) {
+                clearSignature();
+                return;
+            }
+            const sigImg = docEl.querySelector('.sig-img');
+            if (sigImg) {
+                const canvas = document.createElement('canvas');
+                canvas.id = 'signature-canvas';
+                canvas.width = 280;
+                canvas.height = 90;
+                canvas.className = 'border border-slate-400 rounded bg-white cursor-crosshair';
+                sigImg.replaceWith(canvas);
+            }
+            initSignaturePad();
+        }
+
+        function restoreSignatureAfterLoad() {
+            const sigImg = document.getElementById('document-a4').querySelector('.sig-img');
+            if (!sigImg) {
+                initSignaturePad();
+                return;
+            }
+            const canvas = document.createElement('canvas');
+            canvas.id = 'signature-canvas';
+            canvas.width = 280;
+            canvas.height = 90;
+            canvas.className = 'border border-slate-400 rounded bg-white cursor-crosshair';
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+            img.onload = function() {
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                sigImg.replaceWith(canvas);
+                initSignaturePad();
+            };
+            img.onerror = function() {
+                sigImg.replaceWith(canvas);
+                initSignaturePad();
+            };
+            img.src = sigImg.src;
+        }
+    </script>
+</body>
+</html>
