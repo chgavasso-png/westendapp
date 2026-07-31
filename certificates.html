@@ -94,6 +94,7 @@
                     <span contenteditable="true">Has attended a training course on</span>
                     <span class="inline-block align-middle cursor-pointer select-none hover:bg-[#547C44]/10 rounded transition-colors" onclick="openCustomDatePicker()" title="Click to change date">
                         <span id="cert-date-display" class="font-bold text-slate-900 border-b border-slate-300 px-3 py-0.5">9 April 2026</span>
+                        <!-- CLASSE NO-PRINT ADICIONADA AO EMOJI ABAIXO -->
                         <span class="ml-1 text-sm no-print">📅</span>
                     </span>
                     <input type="hidden" id="cert-date" value="2026-04-09">
@@ -108,11 +109,18 @@
                         <span class="text-lg font-bold text-slate-800 whitespace-nowrap">Name of instructor:</span>
                         <span contenteditable="true" class="text-lg font-bold text-slate-900 border-b border-slate-300 pb-0.5 px-2 inline-block">Mr Trevor Ritson</span>
                     </div>
-                    <div class="flex items-center gap-3 mt-3">
-                        <span class="text-lg font-bold text-slate-800 whitespace-nowrap">Signature:</span>
-                        <div class="relative inline-block">
-                            <canvas id="signature-canvas" width="280" height="90" class="border border-slate-400 rounded bg-white cursor-crosshair"></canvas>
-                            <button onclick="clearSignature()" class="no-print absolute -top-2 -right-2 bg-red-100 hover:bg-red-200 text-red-600 text-xs font-bold w-6 h-6 rounded-full shadow-sm flex items-center justify-center leading-none" title="Clear signature">✕</button>
+                    <div class="flex items-start gap-3 mt-3">
+                        <span class="text-lg font-bold text-slate-800 whitespace-nowrap mt-2">Signature:</span>
+                        <div class="relative inline-flex flex-col">
+                            <div class="relative">
+                                <canvas id="signature-canvas" width="280" height="90" class="border border-slate-400 rounded bg-white cursor-crosshair"></canvas>
+                                <button onclick="clearSignature()" class="no-print absolute -top-2 -right-2 bg-red-100 hover:bg-red-200 text-red-600 text-xs font-bold w-6 h-6 rounded-full shadow-sm flex items-center justify-center leading-none" title="Clear signature">✕</button>
+                            </div>
+                            <!-- NOVOS BOTÕES DE SALVAR/CARREGAR ASSINATURA -->
+                            <div class="no-print flex justify-end gap-3 mt-1">
+                                <button onclick="saveSignatureToLocal()" class="text-[11px] font-bold text-blue-600 hover:text-blue-800 transition-colors">💾 Save as Default</button>
+                                <button onclick="loadSignatureFromLocal()" class="text-[11px] font-bold text-green-600 hover:text-green-800 transition-colors">📂 Load Default</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -124,7 +132,7 @@
                         <p contenteditable="true" class="text-xs text-slate-600 mb-0.5">New Lane, Stibbington, Peterborough, PE8 6LW</p>
                         <p contenteditable="true" class="text-xs text-slate-600">Registration No. 1260881</p>
                     </div>
-                    <!-- SafeContractor Approved Badge - bottom right corner, no white background contrast -->
+                    <!-- SafeContractor Approved Badge -->
                     <img src="safe.jpg" alt="SafeContractor Approved" class="absolute -bottom-3 right-0 w-20 object-contain" style="mix-blend-mode: multiply;" onerror="this.style.display='none'">
                 </div>
             </div>
@@ -206,7 +214,6 @@
                 currentDocId = null;
                 updateStatusName(null);
                 const docEl = document.getElementById('document-a4');
-                // Reset to defaults
                 const titleEl = docEl.querySelector('.cert-title');
                 if (titleEl) titleEl.innerText = 'Certificate of Training on Electric Vehicles';
                 const nameEl = docEl.querySelector('.cert-name');
@@ -266,7 +273,6 @@
             const monthSel = document.getElementById('date-picker-month');
             const yearSel = document.getElementById('date-picker-year');
 
-            // Years: current year - 5 to current year + 10
             const currentYear = new Date().getFullYear();
             let yearOptions = '';
             for (let y = currentYear - 5; y <= currentYear + 10; y++) {
@@ -314,7 +320,6 @@
             closeCustomDatePicker();
         };
 
-        // Recalcula dias quando muda mês/ano
         document.addEventListener('change', function(e) {
             if (e.target.id === 'date-picker-month' || e.target.id === 'date-picker-year') {
                 const month = parseInt(document.getElementById('date-picker-month').value, 10);
@@ -331,7 +336,6 @@
             btnSave.disabled = true;
 
             try {
-                // Sincroniza o valor da data no atributo antes de salvar
                 const dateInput = document.getElementById('cert-date');
                 if (dateInput) dateInput.setAttribute('value', dateInput.value);
 
@@ -339,7 +343,6 @@
                 docBody.querySelectorAll('.no-print').forEach(el => el.remove());
                 docBody.querySelectorAll('button').forEach(el => el.remove());
 
-                // Converte o canvas da assinatura em imagem para salvar
                 const sigCanvas = docBody.querySelector('#signature-canvas');
                 if (sigCanvas) {
                     const sigImg = document.createElement('img');
@@ -352,8 +355,6 @@
                 }
 
                 const htmlData = docBody.innerHTML;
-
-                // Extract name for default document name
                 const nameEl = document.getElementById('document-a4').querySelector('.cert-name');
                 let docName = 'Certificate - ' + (nameEl ? nameEl.innerText.trim() : 'Untitled');
 
@@ -541,6 +542,32 @@
                 initSignaturePad();
             };
             img.src = sigImg.src;
+        }
+
+        /* ===== SAVE/LOAD LOCAL SIGNATURE ===== */
+        function saveSignatureToLocal() {
+            const canvas = document.getElementById('signature-canvas');
+            if (!canvas) return;
+            const dataUrl = canvas.toDataURL('image/png');
+            localStorage.setItem('savedDefaultSignature', dataUrl);
+            alert('Assinatura salva como padrão neste dispositivo!');
+        }
+
+        function loadSignatureFromLocal() {
+            const dataUrl = localStorage.getItem('savedDefaultSignature');
+            if (!dataUrl) {
+                alert('Nenhuma assinatura padrão encontrada. Desenhe e clique em "Save as Default" primeiro.');
+                return;
+            }
+            const canvas = document.getElementById('signature-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+            img.onload = function() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            };
+            img.src = dataUrl;
         }
     </script>
 </body>
