@@ -14,12 +14,16 @@
             /* Hide app chrome */
             .no-print, #submit-bar, #signed-banner { display: none !important; }
 
-            /* Page setup: real margins so nothing is clipped at the edges */
-            @page { size: A4; margin: 11mm 12mm; }
+            /* Page setup: margin 0 removes the browser's automatic URL/date header & footer.
+               Page margins are simulated with padding on the document itself. */
+            @page { size: A4; margin: 0; }
 
             #state-document > div { padding: 0 !important; margin: 0 !important; }
             #document-a4 {
-                box-shadow: none !important; margin: 0 !important; padding: 0 !important;
+                box-shadow: none !important; margin: 0 !important;
+                padding: 12mm 14mm !important;        /* simulated page margins */
+                -webkit-box-decoration-break: clone;  /* repeat padding at every page break */
+                box-decoration-break: clone;
                 width: 100% !important; max-width: 100% !important;
                 border: none !important; border-radius: 0 !important;
                 font-size: 9pt !important; line-height: 1.45 !important;

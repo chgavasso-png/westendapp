@@ -14,12 +14,16 @@
             /* Hide app chrome */
             .no-print { display: none !important; }
 
-            /* Page setup: real margins so nothing is clipped at the edges */
-            @page { size: A4; margin: 11mm 12mm; }
+            /* Page setup: margin 0 removes the browser's automatic URL/date header & footer.
+               Page margins are simulated with padding on the document itself. */
+            @page { size: A4; margin: 0; }
 
             #main-content { margin: 0 !important; padding: 0 !important; display: block !important; }
             .a4-page {
-                box-shadow: none !important; margin: 0 !important; padding: 0 !important;
+                box-shadow: none !important; margin: 0 !important;
+                padding: 12mm 14mm !important;        /* simulated page margins */
+                -webkit-box-decoration-break: clone;  /* repeat padding at every page break */
+                box-decoration-break: clone;
                 width: 100% !important; max-width: 100% !important;
                 border: none !important; border-radius: 0 !important;
                 font-size: 9pt !important; line-height: 1.45 !important;
@@ -119,7 +123,7 @@
                     </div>
                     <div>
                         <h3 class="text-xl font-black text-slate-800">Send for Signature</h3>
-                        <p class="text-xs text-slate-500 font-medium">Create a secure link and send it via WhatsApp.</p>
+                        <p class="text-xs text-slate-500 font-medium">Create a secure signing link — send it now via WhatsApp or save it to send later.</p>
                     </div>
                 </div>
 
@@ -139,9 +143,10 @@
                     </div>
                 </div>
 
-                <div class="flex gap-3 mt-6">
-                    <button onclick="closeWhatsAppModal()" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors text-sm">Cancel</button>
-                    <button onclick="createAndSendWhatsApp()" id="btn-wa-create" class="flex-1 py-3 bg-[#25D366] hover:bg-[#1eb856] text-white font-bold rounded-xl shadow-md transition-colors text-sm">Create & Send</button>
+                <div class="flex gap-2.5 mt-6">
+                    <button onclick="closeWhatsAppModal()" class="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors text-sm">Cancel</button>
+                    <button onclick="createRequest(false)" id="btn-wa-save" class="flex-1 py-3 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl transition-colors text-sm" title="Save the request without opening WhatsApp — send it later from the SSOP page">💾 Save Only</button>
+                    <button onclick="createRequest(true)" id="btn-wa-create" class="flex-1 py-3 bg-[#25D366] hover:bg-[#1eb856] text-white font-bold rounded-xl shadow-md transition-colors text-sm" title="Save and open WhatsApp now">📱 Save & Send</button>
                 </div>
             </div>
 
@@ -149,8 +154,8 @@
             <div id="wa-step-done" class="hidden">
                 <div class="text-center mb-5">
                     <div class="w-16 h-16 bg-[#547C44]/10 text-[#547C44] rounded-full flex items-center justify-center text-3xl mx-auto mb-3">✓</div>
-                    <h3 class="text-xl font-black text-slate-800">Link Created!</h3>
-                    <p class="text-sm text-slate-500 mt-1">WhatsApp should have opened. You can also copy the link below:</p>
+                    <h3 class="text-xl font-black text-slate-800" id="wa-done-title">Link Created!</h3>
+                    <p class="text-sm text-slate-500 mt-1" id="wa-done-subtitle">WhatsApp should have opened. You can also copy the message below:</p>
                 </div>
                 <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 break-all text-xs font-mono text-slate-600 mb-4" id="wa-link-text"></div>
                 <div class="flex gap-3">
@@ -245,10 +250,11 @@
             return `Hello${name ? ' ' + name : ''},\n\n${SSOP_COMPANY_NAME} requires you to read and sign the ${SSOP_DOCUMENTS['fire-safety'].fullTitle}.\n\nPlease open the secure link below, read the document carefully and sign it:\n\n${link}\n\nThank you.`;
         }
 
-        async function createAndSendWhatsApp() {
+        async function createRequest(sendWhatsApp) {
             const name = document.getElementById('wa-name').value.trim();
             const phone = document.getElementById('wa-phone').value.trim();
-            const btn = document.getElementById('btn-wa-create');
+            const btn = sendWhatsApp ? document.getElementById('btn-wa-create') : document.getElementById('btn-wa-save');
+            const original = btn.innerText;
             btn.innerText = '⏳ Creating...';
             btn.disabled = true;
 
@@ -273,17 +279,23 @@
                 const link = signLink(id);
                 lastCreatedLink = link;
 
-                const msg = encodeURIComponent(buildWhatsAppMessage(name, link));
-                const digits = phone.replace(/\D/g, '');
-                window.open(digits ? `https://wa.me/${digits}?text=${msg}` : `https://wa.me/?text=${msg}`, '_blank');
+                if (sendWhatsApp) {
+                    const msg = encodeURIComponent(buildWhatsAppMessage(name, link));
+                    const digits = phone.replace(/\D/g, '');
+                    window.open(digits ? `https://wa.me/${digits}?text=${msg}` : `https://wa.me/?text=${msg}`, '_blank');
+                }
 
                 document.getElementById('wa-link-text').innerText = link;
+                document.getElementById('wa-done-title').innerText = sendWhatsApp ? 'Link Created!' : 'Request Saved!';
+                document.getElementById('wa-done-subtitle').innerText = sendWhatsApp
+                    ? 'WhatsApp should have opened. You can also copy the message below:'
+                    : 'Saved to the SSOP requests list. Copy the message now, or send it later via WhatsApp from the SSOP page:';
                 document.getElementById('wa-step-form').classList.add('hidden');
                 document.getElementById('wa-step-done').classList.remove('hidden');
             } catch (e) {
-                alert('Error creating signing link: ' + e.message + '\n\nMake sure the "ssop_signatures" table exists in Supabase.');
+                alert('Error creating signing request: ' + e.message + '\n\nMake sure the "ssop_signatures" table exists in Supabase.');
             } finally {
-                btn.innerText = 'Create & Send';
+                btn.innerText = original;
                 btn.disabled = false;
             }
         }
