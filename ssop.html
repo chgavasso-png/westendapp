@@ -86,6 +86,34 @@
         </div>
     </div>
 
+    <!-- EDIT DATES MODAL -->
+    <div id="modal-dates" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-white p-7 rounded-3xl w-full max-w-sm shadow-2xl border border-slate-100">
+            <div class="flex items-center gap-3 mb-1">
+                <div class="w-11 h-11 bg-[#547C44]/10 text-[#547C44] rounded-2xl flex items-center justify-center text-xl">📅</div>
+                <div>
+                    <h3 class="text-xl font-black text-slate-800">Edit Dates</h3>
+                    <p class="text-xs text-slate-500 font-medium">Update the document dates, even after signing.</p>
+                </div>
+            </div>
+            <input type="hidden" id="edit-dates-id">
+            <div class="mt-5 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Issue Date</label>
+                    <input type="date" id="edit-issue-date" class="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold focus:outline-none focus:border-[#547C44] focus:ring-2 focus:ring-[#547C44]/20">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Review Date</label>
+                    <input type="date" id="edit-review-date" class="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold focus:outline-none focus:border-[#547C44] focus:ring-2 focus:ring-[#547C44]/20">
+                </div>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button onclick="closeDatesModal()" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors text-sm">Cancel</button>
+                <button onclick="saveDates()" id="btn-save-dates" class="flex-1 py-3 bg-[#547C44] hover:bg-[#436435] text-white font-bold rounded-xl shadow-md transition-colors text-sm">Save Dates</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // ===== SUPABASE CONFIG =====
         const SUPABASE_URL = 'https://wkndzjnqypsyluhgrdil.supabase.co';
@@ -120,7 +148,7 @@
             list.innerHTML = '<p class="text-center text-sm text-slate-400 py-10">Loading requests...</p>';
 
             try {
-                const res = await fetch(`${SUPABASE_URL}/rest/v1/ssop_signatures?select=id,document_type,employee_name,phone,status,signed_at,created_at,created_by&order=created_at.desc&limit=100`, {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/ssop_signatures?select=id,document_type,employee_name,phone,status,signed_at,created_at,created_by,issue_date,review_date&order=created_at.desc&limit=100`, {
                     headers: sbHeaders
                 });
                 if (!res.ok) throw new Error(await res.text());
@@ -158,6 +186,7 @@
                         <div class="flex items-center gap-2 flex-wrap no-print">
                             ${!signed ? `<button onclick="resendWhatsApp('${r.id}', '${(r.phone || '').replace(/'/g, '')}', '${(r.employee_name || '').replace(/'/g, '')}')" class="px-3 py-2 bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#128C4B] text-xs font-bold rounded-lg transition-colors" title="Send via WhatsApp">📱 WhatsApp</button>` : ''}
                             <button onclick="copyLink('${r.id}', '${(r.employee_name || '').replace(/'/g, '')}')" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold rounded-lg transition-colors" title="Copy the full message with the signing link">📋 Copy</button>
+                            <button onclick="openDatesModal('${r.id}', '${r.issue_date || ''}', '${r.review_date || ''}')" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold rounded-lg transition-colors" title="Edit issue / review dates">📅 Dates</button>
                             <button onclick="window.open('ssop-sign.html?id=${r.id}', '_blank')" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold rounded-lg transition-colors" title="View document">👁 View</button>
                             <button onclick="deleteRequest('${r.id}')" class="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-500 text-xs font-bold rounded-lg transition-colors" title="Delete request">🗑</button>
                         </div>
@@ -189,6 +218,44 @@
                 navigator.clipboard.writeText(text).then(() => alert('Message and link copied to clipboard!'));
             } else {
                 prompt('Copy the message and signing link:', text);
+            }
+        }
+
+        /* ===== EDIT DATES ===== */
+        function openDatesModal(id, issue, review) {
+            document.getElementById('edit-dates-id').value = id;
+            document.getElementById('edit-issue-date').value = issue || '';
+            document.getElementById('edit-review-date').value = review || '';
+            document.getElementById('modal-dates').classList.remove('hidden');
+        }
+
+        function closeDatesModal() {
+            document.getElementById('modal-dates').classList.add('hidden');
+        }
+
+        async function saveDates() {
+            const id = document.getElementById('edit-dates-id').value;
+            const issue = document.getElementById('edit-issue-date').value || null;
+            const review = document.getElementById('edit-review-date').value || null;
+
+            const btn = document.getElementById('btn-save-dates');
+            btn.innerText = '⏳ Saving...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/ssop_signatures?id=eq.${id}`, {
+                    method: 'PATCH',
+                    headers: sbHeaders,
+                    body: JSON.stringify({ issue_date: issue, review_date: review })
+                });
+                if (!res.ok) throw new Error(await res.text());
+                closeDatesModal();
+                loadRequests();
+            } catch (e) {
+                alert('Error saving dates: ' + e.message);
+            } finally {
+                btn.innerText = 'Save Dates';
+                btn.disabled = false;
             }
         }
 
