@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fire Safety SSOP - West End Cleaning</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="ssop-documents.js"></script>
+    <style>
+        @media print {
+            body { background-color: white !important; margin: 0 !important; padding: 0 !important; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+            /* Hide app chrome */
+            .no-print { display: none !important; }
+
+            /* Page setup: real margins so nothing is clipped at the edges */
+            @page { size: A4; margin: 11mm 12mm; }
+
+            #main-content { margin: 0 !important; padding: 0 !important; display: block !important; }
+            .a4-page {
+                box-shadow: none !important; margin: 0 !important; padding: 0 !important;
+                width: 100% !important; max-width: 100% !important;
+                border: none !important; border-radius: 0 !important;
+                font-size: 9pt !important; line-height: 1.45 !important;
+            }
+
+            /* Slightly smaller type so pages flow cleanly */
+            .a4-page h1 { font-size: 15pt !important; }
+            .a4-page .doc-section-title { font-size: 10pt !important; margin-top: 14px !important; margin-bottom: 6px !important; }
+            .a4-page p, .a4-page li { font-size: 9pt !important; line-height: 1.45 !important; }
+            .a4-page ul, .a4-page ol { margin-top: 2px !important; }
+
+            /* Keep sections and boxes intact — never cut text across pages */
+            .doc-section { break-inside: avoid !important; page-break-inside: avoid !important; }
+            .doc-section-title { break-after: avoid !important; page-break-after: avoid !important; }
+            li { break-inside: avoid !important; }
+            p { orphans: 3 !important; widows: 3 !important; }
+            .bg-slate-50, .bg-red-50, .bg-\[\#547C44\]\/5 { break-inside: avoid !important; }
+
+            /* Compact spacing for print */
+            .a4-page .p-4 { padding: 8px !important; }
+            .a4-page .p-5 { padding: 10px !important; }
+            .a4-page .p-3 { padding: 6px !important; }
+            .a4-page .mt-7 { margin-top: 12px !important; }
+            .a4-page .mt-8 { margin-top: 14px !important; }
+            .a4-page .space-y-4 > * + * { margin-top: 6px !important; }
+            .a4-page .space-y-1\.5 > * + * { margin-top: 2px !important; }
+
+            /* Form fields look like a filled paper form */
+            input[type="text"] {
+                border: none !important; border-bottom: 1px solid #94a3b8 !important;
+                border-radius: 0 !important; background: transparent !important;
+                padding: 2px 0 !important; font-size: 10pt !important;
+            }
+            input[type="checkbox"] { width: 14px !important; height: 14px !important; }
+            #sign-date-display { border: none !important; background: transparent !important; padding: 2px 0 !important; }
+            #signature-canvas { height: 90px !important; border: 1px solid #94a3b8 !important; border-radius: 4px !important; }
+            #signature-canvas-wrap { margin-top: 4px !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 font-sans text-slate-900 min-h-screen">
+
+    <!-- TOP BAR -->
+    <div class="no-print bg-white shadow-sm border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-[1200px] mx-auto px-4 md:px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-4">
+                <a href="ssop.html" class="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                </a>
+                <div>
+                    <h2 class="text-xl font-extrabold text-slate-800">Fire Safety SSOP</h2>
+                    <p class="text-xs text-slate-500 font-medium uppercase mt-0.5">Audit Version 1.0 · British English</p>
+                </div>
+            </div>
+            <div class="flex gap-2.5 flex-wrap justify-center">
+                <button onclick="openWhatsAppModal()" class="px-4 py-2.5 bg-[#25D366] hover:bg-[#1eb856] text-white font-bold text-sm rounded-xl shadow-md transition-colors flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                    Send via WhatsApp
+                </button>
+                <button onclick="saveSigned()" id="btn-save" class="px-4 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-sm rounded-xl border border-blue-200 transition-colors flex items-center gap-2">💾 Save Signed</button>
+                <button onclick="window.print()" class="px-4 py-2.5 bg-[#547C44] hover:bg-[#436435] text-white font-bold text-sm rounded-xl shadow-md transition-colors flex items-center gap-2">🖨️ Print / PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DOCUMENT SETTINGS BAR -->
+    <div class="no-print bg-white border-b border-slate-200">
+        <div class="max-w-[1200px] mx-auto px-4 md:px-6 py-3 flex flex-wrap items-center gap-x-6 gap-y-2">
+            <span class="text-[11px] font-black text-slate-400 uppercase tracking-widest">Document Dates:</span>
+            <label class="flex items-center gap-2 text-sm font-bold text-slate-600">
+                Issue Date
+                <input type="date" id="issue-date-input" onchange="updateDocDates()" class="p-1.5 bg-slate-50 border border-slate-300 rounded-lg text-sm font-bold text-slate-800 focus:outline-none focus:border-[#547C44]">
+            </label>
+            <label class="flex items-center gap-2 text-sm font-bold text-slate-600">
+                Review Date
+                <input type="date" id="review-date-input" onchange="updateDocDates()" class="p-1.5 bg-slate-50 border border-slate-300 rounded-lg text-sm font-bold text-slate-800 focus:outline-none focus:border-[#547C44]">
+            </label>
+        </div>
+    </div>
+
+    <!-- DOCUMENT -->
+    <div id="main-content" class="py-8 md:py-10 flex justify-center px-3 md:px-4">
+        <div id="document-a4" class="a4-page bg-white shadow-2xl w-full max-w-[21cm] p-4 md:p-[12mm] border border-slate-200 rounded-2xl md:rounded-none">
+            <!-- Rendered by ssop-documents.js -->
+        </div>
+    </div>
+
+    <!-- WHATSAPP MODAL -->
+    <div id="modal-whatsapp" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 no-print">
+        <div class="bg-white p-7 rounded-3xl w-full max-w-md shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto">
+
+            <!-- Step 1: form -->
+            <div id="wa-step-form">
+                <div class="flex items-center gap-3 mb-1">
+                    <div class="w-11 h-11 bg-[#25D366] rounded-2xl flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-black text-slate-800">Send for Signature</h3>
+                        <p class="text-xs text-slate-500 font-medium">Create a secure link and send it via WhatsApp.</p>
+                    </div>
+                </div>
+
+                <div id="file-warning" class="hidden mt-4 bg-amber-50 border border-amber-200 text-amber-800 text-xs font-medium rounded-xl p-3">
+                    ⚠️ You are running this page locally (file://). The link will only work on the employee's phone if this system is hosted online (e.g. Netlify, Vercel, or your server).
+                </div>
+
+                <div class="mt-5 space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Employee Name <span class="text-slate-400 font-medium normal-case">(optional)</span></label>
+                        <input type="text" id="wa-name" class="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold focus:outline-none focus:border-[#25D366] focus:ring-2 focus:ring-[#25D366]/20" placeholder="e.g. John Smith">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">WhatsApp Number <span class="text-slate-400 font-medium normal-case">(optional)</span></label>
+                        <input type="tel" id="wa-phone" class="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold focus:outline-none focus:border-[#25D366] focus:ring-2 focus:ring-[#25D366]/20" placeholder="e.g. 447700900123">
+                        <p class="text-[11px] text-slate-400 mt-1.5">Include the country code. Leave blank to choose the contact in WhatsApp.</p>
+                    </div>
+                </div>
+
+                <div class="flex gap-3 mt-6">
+                    <button onclick="closeWhatsAppModal()" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors text-sm">Cancel</button>
+                    <button onclick="createAndSendWhatsApp()" id="btn-wa-create" class="flex-1 py-3 bg-[#25D366] hover:bg-[#1eb856] text-white font-bold rounded-xl shadow-md transition-colors text-sm">Create & Send</button>
+                </div>
+            </div>
+
+            <!-- Step 2: link created -->
+            <div id="wa-step-done" class="hidden">
+                <div class="text-center mb-5">
+                    <div class="w-16 h-16 bg-[#547C44]/10 text-[#547C44] rounded-full flex items-center justify-center text-3xl mx-auto mb-3">✓</div>
+                    <h3 class="text-xl font-black text-slate-800">Link Created!</h3>
+                    <p class="text-sm text-slate-500 mt-1">WhatsApp should have opened. You can also copy the link below:</p>
+                </div>
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 break-all text-xs font-mono text-slate-600 mb-4" id="wa-link-text"></div>
+                <div class="flex gap-3">
+                    <button onclick="copyWaLink()" class="flex-1 py-3 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl transition-colors text-sm">🔗 Copy Link</button>
+                    <button onclick="closeWhatsAppModal()" class="flex-1 py-3 bg-[#547C44] hover:bg-[#436435] text-white font-bold rounded-xl transition-colors text-sm">Done</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // ===== SUPABASE CONFIG =====
+        const SUPABASE_URL = 'https://wkndzjnqypsyluhgrdil.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndrbmR6am5xeXBzeWx1aGdyZGlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NzU5MTQsImV4cCI6MjA5NTA1MTkxNH0.6W9dsBVCeLzT3EIHyQ5ZFmQhEOyj586K9po4cj9wJeA';
+
+        const sbHeaders = {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+        };
+
+        let lastCreatedLink = '';
+
+        window.onload = function () {
+            if (!localStorage.getItem('loggedUser')) {
+                window.location.href = 'index.html';
+                return;
+            }
+            // Render the shared Fire Safety SSOP document
+            document.getElementById('document-a4').innerHTML = SSOP_DOCUMENTS['fire-safety'].render();
+            initSignaturePad(document.getElementById('signature-canvas'));
+
+            // Initialise editable document dates (issue = today, review = +1 year)
+            const toISO = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+            const today = new Date();
+            const review = new Date(today);
+            review.setFullYear(review.getFullYear() + 1);
+            document.getElementById('issue-date-input').value = toISO(today);
+            document.getElementById('review-date-input').value = toISO(review);
+
+            if (location.protocol === 'file:') {
+                document.getElementById('file-warning').classList.remove('hidden');
+            }
+        };
+
+        /* ===== EDITABLE DOCUMENT DATES ===== */
+        function fmtGB(dateStr) {
+            if (!dateStr) return '';
+            return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+        }
+
+        function updateDocDates() {
+            const issue = document.getElementById('issue-date-input').value;
+            const review = document.getElementById('review-date-input').value;
+            if (issue) document.getElementById('doc-issue-date').innerText = fmtGB(issue);
+            if (review) {
+                document.getElementById('doc-review-date').innerText = fmtGB(review);
+                const footer = document.getElementById('doc-review-date-footer');
+                if (footer) footer.innerText = fmtGB(review);
+            }
+        }
+
+        /* ===== WHATSAPP FLOW ===== */
+        function openWhatsAppModal() {
+            document.getElementById('wa-step-form').classList.remove('hidden');
+            document.getElementById('wa-step-done').classList.add('hidden');
+            document.getElementById('modal-whatsapp').classList.remove('hidden');
+        }
+
+        function closeWhatsAppModal() {
+            document.getElementById('modal-whatsapp').classList.add('hidden');
+        }
+
+        function signLink(id) {
+            return new URL('ssop-sign.html?id=' + id, window.location.href).href;
+        }
+
+        function buildWhatsAppMessage(name, link) {
+            return `Hello${name ? ' ' + name : ''},\n\n${SSOP_COMPANY_NAME} requires you to read and sign the ${SSOP_DOCUMENTS['fire-safety'].fullTitle}.\n\nPlease open the secure link below, read the document carefully and sign it:\n\n${link}\n\nThank you.`;
+        }
+
+        async function createAndSendWhatsApp() {
+            const name = document.getElementById('wa-name').value.trim();
+            const phone = document.getElementById('wa-phone').value.trim();
+            const btn = document.getElementById('btn-wa-create');
+            btn.innerText = '⏳ Creating...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/ssop_signatures`, {
+                    method: 'POST',
+                    headers: sbHeaders,
+                    body: JSON.stringify({
+                        document_type: 'fire-safety',
+                        employee_name: name || null,
+                        phone: phone || null,
+                        status: 'pending',
+                        issue_date: document.getElementById('issue-date-input').value || null,
+                        review_date: document.getElementById('review-date-input').value || null,
+                        created_by: localStorage.getItem('loggedFullName') || localStorage.getItem('loggedUser') || null
+                    })
+                });
+                if (!res.ok) throw new Error(await res.text());
+                const rows = await res.json();
+                const id = rows[0].id;
+
+                const link = signLink(id);
+                lastCreatedLink = link;
+
+                const msg = encodeURIComponent(buildWhatsAppMessage(name, link));
+                const digits = phone.replace(/\D/g, '');
+                window.open(digits ? `https://wa.me/${digits}?text=${msg}` : `https://wa.me/?text=${msg}`, '_blank');
+
+                document.getElementById('wa-link-text').innerText = link;
+                document.getElementById('wa-step-form').classList.add('hidden');
+                document.getElementById('wa-step-done').classList.remove('hidden');
+            } catch (e) {
+                alert('Error creating signing link: ' + e.message + '\n\nMake sure the "ssop_signatures" table exists in Supabase.');
+            } finally {
+                btn.innerText = 'Create & Send';
+                btn.disabled = false;
+            }
+        }
+
+        function copyWaLink() {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(lastCreatedLink).then(() => alert('Link copied to clipboard!'));
+            } else {
+                prompt('Copy the signing link:', lastCreatedLink);
+            }
+        }
+
+        /* ===== IN-PERSON SIGNING (save straight to Supabase) ===== */
+        async function saveSigned() {
+            const name = document.getElementById('employee-name-input').value.trim();
+            const supervisor = document.getElementById('supervisor-name-input').value.trim();
+            const declared = document.getElementById('declare-check').checked;
+
+            if (!name) return alert('Please enter the employee\'s full name.');
+            if (!declared) return alert('The employee must tick the declaration box.');
+            if (isSignatureBlank()) return alert('Please provide the employee\'s signature.');
+
+            const btn = document.getElementById('btn-save');
+            const original = btn.innerText;
+            btn.innerText = '⏳ Saving...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/ssop_signatures`, {
+                    method: 'POST',
+                    headers: sbHeaders,
+                    body: JSON.stringify({
+                        document_type: 'fire-safety',
+                        employee_name: name,
+                        status: 'signed',
+                        signature_data: getSignatureDataURL(),
+                        signed_at: new Date().toISOString(),
+                        issue_date: document.getElementById('issue-date-input').value || null,
+                        review_date: document.getElementById('review-date-input').value || null,
+                        created_by: supervisor || localStorage.getItem('loggedFullName') || localStorage.getItem('loggedUser') || null
+                    })
+                });
+                if (!res.ok) throw new Error(await res.text());
+
+                alert('✅ Document signed and saved successfully!\n\nYou can view it in the SSOP Signature Requests list.');
+                window.location.href = 'ssop.html';
+            } catch (e) {
+                alert('Error saving: ' + e.message + '\n\nMake sure the "ssop_signatures" table exists in Supabase.');
+                btn.innerText = original;
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Document - West End Cleaning Services</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="ssop-documents.js"></script>
+    <style>
+        @media print {
+            body { background-color: white !important; margin: 0 !important; padding: 0 !important; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+            /* Hide app chrome */
+            .no-print, #submit-bar, #signed-banner { display: none !important; }
+
+            /* Page setup: real margins so nothing is clipped at the edges */
+            @page { size: A4; margin: 11mm 12mm; }
+
+            #state-document > div { padding: 0 !important; margin: 0 !important; }
+            #document-a4 {
+                box-shadow: none !important; margin: 0 !important; padding: 0 !important;
+                width: 100% !important; max-width: 100% !important;
+                border: none !important; border-radius: 0 !important;
+                font-size: 9pt !important; line-height: 1.45 !important;
+            }
+
+            /* Slightly smaller type so pages flow cleanly */
+            #document-a4 h1 { font-size: 15pt !important; }
+            #document-a4 .doc-section-title { font-size: 10pt !important; margin-top: 14px !important; margin-bottom: 6px !important; }
+            #document-a4 p, #document-a4 li { font-size: 9pt !important; line-height: 1.45 !important; }
+            #document-a4 ul, #document-a4 ol { margin-top: 2px !important; }
+
+            /* Keep sections and boxes intact — never cut text across pages */
+            .doc-section { break-inside: avoid !important; page-break-inside: avoid !important; }
+            .doc-section-title { break-after: avoid !important; page-break-after: avoid !important; }
+            li { break-inside: avoid !important; }
+            p { orphans: 3 !important; widows: 3 !important; }
+            .bg-slate-50, .bg-red-50, .bg-\[\#547C44\]\/5 { break-inside: avoid !important; }
+
+            /* Compact spacing for print */
+            #document-a4 .p-4 { padding: 8px !important; }
+            #document-a4 .p-5 { padding: 10px !important; }
+            #document-a4 .p-3 { padding: 6px !important; }
+            #document-a4 .mt-7 { margin-top: 12px !important; }
+            #document-a4 .mt-8 { margin-top: 14px !important; }
+            #document-a4 .space-y-4 > * + * { margin-top: 6px !important; }
+            #document-a4 .space-y-1\.5 > * + * { margin-top: 2px !important; }
+
+            /* Form fields look like a filled paper form */
+            input[type="text"] {
+                border: none !important; border-bottom: 1px solid #94a3b8 !important;
+                border-radius: 0 !important; background: transparent !important;
+                padding: 2px 0 !important; font-size: 10pt !important;
+            }
+            input[type="checkbox"] { width: 14px !important; height: 14px !important; }
+            #sign-date-display { border: none !important; background: transparent !important; padding: 2px 0 !important; }
+            #signature-canvas, #signature-canvas-wrap img { height: 90px !important; border: 1px solid #94a3b8 !important; border-radius: 4px !important; }
+            #signature-canvas-wrap { margin-top: 4px !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 font-sans text-slate-900 min-h-screen flex flex-col">
+
+    <!-- BRANDED HEADER -->
+    <div class="bg-white shadow-sm border-b-4 border-[#547C44]">
+        <div class="max-w-4xl mx-auto px-5 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <img src="logo.png" alt="West End Cleaning Services" class="h-11 object-contain" onerror="this.style.display='none'">
+                <div>
+                    <h1 class="text-base font-extrabold text-slate-800 leading-tight">West End Cleaning Services</h1>
+                    <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Secure Document Signing</p>
+                </div>
+            </div>
+            <span class="text-2xl">🛡️</span>
+        </div>
+    </div>
+
+    <!-- LOADING STATE -->
+    <div id="state-loading" class="flex-1 flex items-center justify-center p-6">
+        <div class="text-center">
+            <div class="w-14 h-14 border-4 border-[#547C44] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p class="font-bold text-slate-600">Loading document...</p>
+        </div>
+    </div>
+
+    <!-- ERROR STATE -->
+    <div id="state-error" class="hidden flex-1 flex items-center justify-center p-6">
+        <div class="bg-white rounded-3xl shadow-lg border border-slate-200 p-8 max-w-sm w-full text-center">
+            <div class="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">✕</div>
+            <h2 class="text-xl font-black text-slate-800 mb-2">Link Not Found</h2>
+            <p class="text-sm text-slate-500">This signing link is invalid or has been removed. Please contact West End Cleaning Services to request a new link.</p>
+        </div>
+    </div>
+
+    <!-- SUCCESS STATE -->
+    <div id="state-success" class="hidden flex-1 flex items-center justify-center p-6">
+        <div class="bg-white rounded-3xl shadow-lg border border-slate-200 p-8 max-w-sm w-full text-center">
+            <div class="w-16 h-16 bg-[#547C44] text-white rounded-full flex items-center justify-center text-3xl mx-auto mb-4 shadow-lg">✓</div>
+            <h2 class="text-xl font-black text-slate-800 mb-2">Document Signed!</h2>
+            <p class="text-sm text-slate-500 mb-5">Thank you. Your signature has been recorded securely and sent to West End Cleaning Services.</p>
+            <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-500">
+                <p><span class="font-bold text-slate-600">Signed by:</span> <span id="success-name"></span></p>
+                <p class="mt-1"><span class="font-bold text-slate-600">Date:</span> <span id="success-date"></span></p>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-5">You may now close this page.</p>
+        </div>
+    </div>
+
+    <!-- DOCUMENT STATE -->
+    <div id="state-document" class="hidden flex-1">
+        <!-- Signed banner (shown when already signed) -->
+        <div id="signed-banner" class="hidden bg-[#547C44] text-white">
+            <div class="max-w-4xl mx-auto px-5 py-3 flex items-center justify-between gap-3 flex-wrap">
+                <div class="flex items-center gap-3">
+                    <span class="text-xl">✓</span>
+                    <p class="text-sm font-bold">This document has been signed<span id="signed-banner-date"></span>. No further action is required.</p>
+                </div>
+                <button onclick="window.print()" class="no-print px-4 py-2 bg-white/15 hover:bg-white/25 border border-white/30 text-white text-xs font-bold rounded-lg transition-colors">🖨️ Print / PDF</button>
+            </div>
+        </div>
+
+        <div class="py-6 md:py-10 flex justify-center px-3 md:px-4">
+            <div id="document-a4" class="bg-white shadow-2xl w-full max-w-[21cm] p-4 md:p-[12mm] border border-slate-200 rounded-2xl md:rounded-none">
+                <!-- Rendered by ssop-documents.js -->
+            </div>
+        </div>
+
+        <!-- STICKY SUBMIT BAR -->
+        <div id="submit-bar" class="sticky bottom-0 bg-white/95 backdrop-blur border-t border-slate-200 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+            <div class="max-w-4xl mx-auto px-5 py-4">
+                <button onclick="submitSignature()" id="btn-submit" class="w-full py-4 bg-[#547C44] hover:bg-[#436435] text-white font-black text-base rounded-2xl shadow-lg transition-colors flex items-center justify-center gap-2">
+                    ✍️ Sign & Submit Document
+                </button>
+                <p class="text-center text-[11px] text-slate-400 mt-2">By submitting, you agree that your electronic signature is legally binding.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="bg-white border-t border-slate-200 py-4 mt-auto">
+        <p class="text-center text-[10px] text-slate-400 font-bold uppercase tracking-widest">West End Cleaning Services · Health & Safety Compliance</p>
+    </div>
+
+    <script>
+        // ===== SUPABASE CONFIG =====
+        const SUPABASE_URL = 'https://wkndzjnqypsyluhgrdil.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndrbmR6am5xeXBzeWx1aGdyZGlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NzU5MTQsImV4cCI6MjA5NTA1MTkxNH0.6W9dsBVCeLzT3EIHyQ5ZFmQhEOyj586K9po4cj9wJeA';
+
+        const sbHeaders = {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json'
+        };
+
+        let requestData = null;
+
+        function showState(state) {
+            ['loading', 'error', 'success', 'document'].forEach(s => {
+                document.getElementById('state-' + s).classList.toggle('hidden', s !== state);
+            });
+        }
+
+        window.onload = async function () {
+            const id = new URLSearchParams(window.location.search).get('id');
+            if (!id) return showState('error');
+
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/ssop_signatures?id=eq.${encodeURIComponent(id)}&limit=1`, {
+                    headers: sbHeaders
+                });
+                if (!res.ok) throw new Error(await res.text());
+                const rows = await res.json();
+                if (!rows || !rows.length) return showState('error');
+
+                requestData = rows[0];
+                renderDocument(requestData);
+            } catch (e) {
+                console.error(e);
+                showState('error');
+            }
+        };
+
+        function renderDocument(data) {
+            const doc = SSOP_DOCUMENTS[data.document_type] || SSOP_DOCUMENTS['fire-safety'];
+            document.getElementById('document-a4').innerHTML = doc.render({
+                issueDate: data.issue_date,
+                reviewDate: data.review_date
+            });
+
+            const nameInput = document.getElementById('employee-name-input');
+            const check = document.getElementById('declare-check');
+            const supInput = document.getElementById('supervisor-name-input');
+            const canvas = document.getElementById('signature-canvas');
+
+            if (data.status === 'signed') {
+                // ---- READ-ONLY SIGNED VIEW ----
+                if (nameInput) { nameInput.value = data.employee_name || ''; nameInput.disabled = true; }
+                if (check) { check.checked = true; check.disabled = true; }
+                if (supInput) { supInput.value = data.created_by || ''; supInput.disabled = true; }
+
+                // Replace canvas with the stored signature image
+                if (canvas && data.signature_data) {
+                    const img = document.createElement('img');
+                    img.src = data.signature_data;
+                    img.alt = 'Employee signature';
+                    img.className = 'w-full h-36 md:h-44 border-2 border-slate-200 rounded-xl bg-white object-contain';
+                    canvas.replaceWith(img);
+                }
+                const hint = document.getElementById('sign-here-hint');
+                if (hint) hint.style.display = 'none';
+
+                // Show signed banner, hide submit bar
+                const banner = document.getElementById('signed-banner');
+                banner.classList.remove('hidden');
+                if (data.signed_at) {
+                    document.getElementById('signed-banner-date').innerText = ' on ' + new Date(data.signed_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+                }
+                document.getElementById('submit-bar').classList.add('hidden');
+            } else {
+                // ---- PENDING: ACTIVE SIGNING FORM ----
+                if (nameInput && data.employee_name) nameInput.value = data.employee_name;
+                if (supInput) supInput.closest('.grid').style.display = 'none'; // employee doesn't fill supervisor
+                initSignaturePad(canvas);
+            }
+
+            showState('document');
+            window.scrollTo(0, 0);
+        }
+
+        async function submitSignature() {
+            const name = document.getElementById('employee-name-input').value.trim();
+            const declared = document.getElementById('declare-check').checked;
+
+            if (!name) {
+                alert('Please enter your full name.');
+                document.getElementById('employee-name-input').focus();
+                return;
+            }
+            if (!declared) {
+                alert('Please tick the declaration box to confirm you have read and understood the document.');
+                return;
+            }
+            if (isSignatureBlank()) {
+                alert('Please draw your signature in the signature box.');
+                return;
+            }
+
+            const btn = document.getElementById('btn-submit');
+            btn.innerText = '⏳ Submitting...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/ssop_signatures?id=eq.${encodeURIComponent(requestData.id)}`, {
+                    method: 'PATCH',
+                    headers: sbHeaders,
+                    body: JSON.stringify({
+                        employee_name: name,
+                        status: 'signed',
+                        signature_data: getSignatureDataURL(),
+                        signed_at: new Date().toISOString()
+                    })
+                });
+                if (!res.ok) throw new Error(await res.text());
+
+                document.getElementById('success-name').innerText = name;
+                document.getElementById('success-date').innerText = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+                showState('success');
+                window.scrollTo(0, 0);
+            } catch (e) {
+                alert('Error submitting your signature: ' + e.message + '\n\nPlease check your internet connection and try again.');
+                btn.innerText = '✍️ Sign & Submit Document';
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
