@@ -157,7 +157,7 @@
                         </div>
                         <div class="flex items-center gap-2 flex-wrap no-print">
                             ${!signed ? `<button onclick="resendWhatsApp('${r.id}', '${(r.phone || '').replace(/'/g, '')}', '${(r.employee_name || '').replace(/'/g, '')}')" class="px-3 py-2 bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#128C4B] text-xs font-bold rounded-lg transition-colors" title="Send via WhatsApp">📱 WhatsApp</button>` : ''}
-                            <button onclick="copyLink('${r.id}')" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold rounded-lg transition-colors" title="Copy signing link">🔗 Copy link</button>
+                            <button onclick="copyLink('${r.id}', '${(r.employee_name || '').replace(/'/g, '')}')" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold rounded-lg transition-colors" title="Copy the full message with the signing link">📋 Copy</button>
                             <button onclick="window.open('ssop-sign.html?id=${r.id}', '_blank')" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold rounded-lg transition-colors" title="View document">👁 View</button>
                             <button onclick="deleteRequest('${r.id}')" class="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-500 text-xs font-bold rounded-lg transition-colors" title="Delete request">🗑</button>
                         </div>
@@ -181,12 +181,14 @@
             window.open(digits ? `https://wa.me/${digits}?text=${msg}` : `https://wa.me/?text=${msg}`, '_blank');
         }
 
-        function copyLink(id) {
+        function copyLink(id, name) {
+            // Copy the full WhatsApp message (greeting + instructions + link)
             const link = signLink(id);
+            const text = buildWhatsAppMessage(name, link);
             if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(link).then(() => alert('Link copied to clipboard!'));
+                navigator.clipboard.writeText(text).then(() => alert('Message and link copied to clipboard!'));
             } else {
-                prompt('Copy the signing link:', link);
+                prompt('Copy the message and signing link:', text);
             }
         }
 

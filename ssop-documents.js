@@ -334,7 +334,6 @@ const SSOP_DOCUMENTS = {
                     <p><span class="font-bold text-slate-600">Version:</span> Audit Version 1.0</p>
                     <p><span class="font-bold text-slate-600">Next Review:</span> <span id="doc-review-date-footer">${fmt(reviewDate)}</span></p>
                 </div>
-                <p class="text-center text-[10px] text-slate-400 mt-4 uppercase tracking-widest font-bold">${SSOP_COMPANY_NAME} · Fire Safety SSOP · Audit Version 1.0</p>
             </div>
             `;
         }

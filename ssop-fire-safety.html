@@ -154,7 +154,7 @@
                 </div>
                 <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 break-all text-xs font-mono text-slate-600 mb-4" id="wa-link-text"></div>
                 <div class="flex gap-3">
-                    <button onclick="copyWaLink()" class="flex-1 py-3 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl transition-colors text-sm">🔗 Copy Link</button>
+                    <button onclick="copyWaLink()" class="flex-1 py-3 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl transition-colors text-sm" title="Copy the full message with the signing link">📋 Copy Message + Link</button>
                     <button onclick="closeWhatsAppModal()" class="flex-1 py-3 bg-[#547C44] hover:bg-[#436435] text-white font-bold rounded-xl transition-colors text-sm">Done</button>
                 </div>
             </div>
@@ -184,6 +184,17 @@
             // Render the shared Fire Safety SSOP document
             document.getElementById('document-a4').innerHTML = SSOP_DOCUMENTS['fire-safety'].render();
             initSignaturePad(document.getElementById('signature-canvas'));
+
+            // Supervisor is always the logged-in user (read-only)
+            const supInput = document.getElementById('supervisor-name-input');
+            const loggedName = localStorage.getItem('loggedFullName') || localStorage.getItem('loggedUser') || '';
+            if (supInput && loggedName) {
+                supInput.value = loggedName;
+                supInput.readOnly = true;
+                supInput.classList.remove('bg-slate-50');
+                supInput.classList.add('bg-slate-100', 'cursor-not-allowed');
+                supInput.title = 'Automatically set to the logged-in user';
+            }
 
             // Initialise editable document dates (issue = today, review = +1 year)
             const toISO = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
@@ -278,10 +289,13 @@
         }
 
         function copyWaLink() {
+            // Copy the full WhatsApp message (greeting + instructions + link)
+            const name = document.getElementById('wa-name').value.trim();
+            const text = buildWhatsAppMessage(name, lastCreatedLink);
             if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(lastCreatedLink).then(() => alert('Link copied to clipboard!'));
+                navigator.clipboard.writeText(text).then(() => alert('Message and link copied to clipboard!'));
             } else {
-                prompt('Copy the signing link:', lastCreatedLink);
+                prompt('Copy the message and signing link:', text);
             }
         }
 
