@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Combined SSOP Pack - West End Cleaning</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="ssop-documents.js"></script>
+    <style>
+        @media print {
+            body { background-color: white !important; margin: 0 !important; padding: 0 !important; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+            /* Hide app chrome */
+            .no-print { display: none !important; }
+
+            /* Page setup: margin 0 removes the browser's automatic URL/date header & footer.
+               Page margins are simulated with padding on the document itself. */
+            @page { size: A4; margin: 0; }
+
+            #main-content { margin: 0 !important; padding: 0 !important; display: block !important; }
+            .a4-page {
+                box-shadow: none !important; margin: 0 !important;
+                padding: 12mm 14mm !important;        /* simulated page margins */
+                -webkit-box-decoration-break: clone;  /* repeat padding at every page break */
+                box-decoration-break: clone;
+                width: 100% !important; max-width: 100% !important;
+                border: none !important; border-radius: 0 !important;
+                font-size: 9pt !important; line-height: 1.45 !important;
+            }
+
+            /* Each major section starts on a new page */
+            .full-document + .declaration-card,
+            .declaration-card + .declaration-card { break-before: page !important; page-break-before: always !important; }
+
+            /* Slightly smaller type so pages flow cleanly */
+            .a4-page h1 { font-size: 15pt !important; }
+            .a4-page .doc-section-title { font-size: 10pt !important; margin-top: 14px !important; margin-bottom: 6px !important; }
+            .a4-page p, .a4-page li { font-size: 9pt !important; line-height: 1.45 !important; }
+            .a4-page ul, .a4-page ol { margin-top: 2px !important; }
+
+            /* Keep sections and boxes intact — never cut text across pages */
+            .doc-section { break-inside: avoid !important; page-break-inside: avoid !important; }
+            .doc-section-title { break-after: avoid !important; page-break-after: avoid !important; }
+            .declaration-card { break-inside: avoid !important; page-break-inside: avoid !important; }
+            li { break-inside: avoid !important; }
+            p { orphans: 3 !important; widows: 3 !important; }
+            .bg-slate-50, .bg-red-50, .bg-\[\#547C44\]\/5 { break-inside: avoid !important; }
+
+            /* Compact spacing for print */
+            .a4-page .p-4 { padding: 8px !important; }
+            .a4-page .p-5 { padding: 10px !important; }
+            .a4-page .p-3 { padding: 6px !important; }
+            .a4-page .mt-7 { margin-top: 12px !important; }
+            .a4-page .mt-8 { margin-top: 14px !important; }
+            .a4-page .space-y-4 > * + * { margin-top: 6px !important; }
+            .a4-page .space-y-1\.5 > * + * { margin-top: 2px !important; }
+
+            /* Form fields look like a filled paper form */
+            input[type="text"] {
+                border: none !important; border-bottom: 1px solid #94a3b8 !important;
+                border-radius: 0 !important; background: transparent !important;
+                padding: 2px 0 !important; font-size: 10pt !important;
+            }
+            input[type="checkbox"] { width: 14px !important; height: 14px !important; }
+            #sign-date-display, .sign-date-display { border: none !important; background: transparent !important; padding: 2px 0 !important; }
+            #signature-canvas, #signature-canvas-wrap img, .signature-img { height: 90px !important; border: 1px solid #94a3b8 !important; border-radius: 4px !important; }
+            #signature-canvas-wrap { margin-top: 4px !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 font-sans text-slate-900 min-h-screen">
+
+    <!-- TOP BAR -->
+    <div class="no-print bg-white shadow-sm border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-[1200px] mx-auto px-4 md:px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-4">
+                <a href="ssop.html" class="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                </a>
+                <div>
+                    <h2 class="text-xl font-extrabold text-slate-800">Combined SSOP Pack</h2>
+                    <p class="text-xs text-slate-500 font-medium uppercase mt-0.5" id="subtitle">Loading documents...</p>
+                </div>
+            </div>
+            <div class="flex gap-2.5 flex-wrap justify-center">
+                <button onclick="window.print()" class="px-4 py-2.5 bg-[#547C44] hover:bg-[#436435] text-white font-bold text-sm rounded-xl shadow-md transition-colors flex items-center gap-2">🖨️ Print / Save as PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- INFO BAR -->
+    <div class="no-print bg-[#547C44]/5 border-b border-[#547C44]/15">
+        <div class="max-w-[1200px] mx-auto px-4 md:px-6 py-3">
+            <p class="text-xs text-slate-600 font-medium">📄 This pack contains <strong>1 full SSOP document</strong> followed by <strong>Section 15 – Employee Declarations</strong> (with signatures) for each selected employee. Use <strong>Print / Save as PDF</strong> and choose "Save as PDF" to generate a single combined PDF file.</p>
+        </div>
+    </div>
+
+    <!-- LOADING -->
+    <div id="state-loading" class="py-20 flex justify-center">
+        <div class="text-center">
+            <div class="w-14 h-14 border-4 border-[#547C44] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p class="font-bold text-slate-600">Loading documents...</p>
+        </div>
+    </div>
+
+    <!-- ERROR -->
+    <div id="state-error" class="hidden py-20 flex justify-center px-4">
+        <div class="bg-white rounded-3xl shadow-lg border border-slate-200 p-8 max-w-sm w-full text-center">
+            <div class="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">✕</div>
+            <h2 class="text-xl font-black text-slate-800 mb-2">No Documents</h2>
+            <p class="text-sm text-slate-500" id="error-message">No valid document IDs were provided.</p>
+            <a href="ssop.html" class="inline-block mt-5 px-5 py-2.5 bg-[#547C44] hover:bg-[#436435] text-white text-sm font-bold rounded-xl transition-colors">← Back to SSOP</a>
+        </div>
+    </div>
+
+    <!-- DOCUMENTS -->
+    <div id="main-content" class="hidden py-8 md:py-10 flex flex-col items-center gap-8 px-3 md:px-4">
+        <!-- Rendered documents are injected here -->
+    </div>
+
+    <script>
+        // ===== SUPABASE CONFIG =====
+        const SUPABASE_URL = 'https://wkndzjnqypsyluhgrdil.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndrbmR6am5xeXBzeWx1aGdyZGlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NzU5MTQsImV4cCI6MjA5NTA1MTkxNH0.6W9dsBVCeLzT3EIHyQ5ZFmQhEOyj586K9po4cj9wJeA';
+
+        const sbHeaders = {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json'
+        };
+
+        window.onload = async function () {
+            if (!localStorage.getItem('loggedUser')) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            const idsParam = new URLSearchParams(window.location.search).get('ids');
+            const ids = (idsParam || '').split(',').map(s => s.trim()).filter(Boolean);
+
+            if (!ids.length) return showError('No document IDs were provided in the link.');
+
+            try {
+                // Fetch all requested records (signature_data included)
+                const filter = '(' + ids.map(id => `"${id}"`).join(',') + ')';
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/ssop_signatures?id=in.${encodeURIComponent(filter)}&select=*`, {
+                    headers: sbHeaders
+                });
+                if (!res.ok) throw new Error(await res.text());
+                const rows = await res.json();
+
+                if (!rows || !rows.length) return showError('None of the selected documents could be found.');
+
+                // Keep the same order the user selected
+                const ordered = ids.map(id => rows.find(r => r.id === id)).filter(Boolean);
+
+                renderAll(ordered);
+            } catch (e) {
+                console.error(e);
+                showError('Error loading documents: ' + e.message);
+            }
+        };
+
+        function showError(msg) {
+            document.getElementById('state-loading').classList.add('hidden');
+            document.getElementById('error-message').innerText = msg;
+            document.getElementById('state-error').classList.remove('hidden');
+            document.getElementById('subtitle').innerText = 'Error';
+        }
+
+        function fmtDate(iso) {
+            if (!iso) return '—';
+            return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+        }
+
+        function renderAll(records) {
+            const container = document.getElementById('main-content');
+            container.innerHTML = '';
+
+            // ===== PART 1: FULL SSOP DOCUMENT (unsigned, using first record's dates) =====
+            const firstRecord = records[0];
+            const doc = SSOP_DOCUMENTS[firstRecord.document_type] || SSOP_DOCUMENTS['fire-safety'];
+
+            const fullDoc = document.createElement('div');
+            fullDoc.className = 'full-document a4-page bg-white shadow-2xl w-full max-w-[21cm] p-4 md:p-[12mm] border border-slate-200 rounded-2xl md:rounded-none';
+            fullDoc.innerHTML = doc.render({
+                issueDate: firstRecord.issue_date,
+                reviewDate: firstRecord.review_date
+            });
+
+            // Make all IDs unique within the full document
+            fullDoc.querySelectorAll('[id]').forEach(el => { el.id = el.id + '-full'; });
+
+            // Hide the signature canvas and declaration section in the full document
+            const fullCanvas = fullDoc.querySelector('#signature-canvas-full');
+            if (fullCanvas) {
+                const wrap = fullCanvas.closest('.doc-section');
+                if (wrap) wrap.style.display = 'none';
+            }
+
+            // Hide the "clear signature" button
+            fullDoc.querySelectorAll('.no-print').forEach(el => el.style.display = 'none');
+
+            container.appendChild(fullDoc);
+
+            // ===== PART 2: SECTION 15 DECLARATIONS (one per employee, with signatures) =====
+            records.forEach((data, idx) => {
+                const docMeta = SSOP_DOCUMENTS[data.document_type] || { icon: '📄', title: data.document_type, fullTitle: data.document_type };
+
+                // Parse dates
+                const parseDate = v => v ? new Date(v + 'T00:00:00') : null;
+                const issueDate = parseDate(data.issue_date);
+                const reviewDate = parseDate(data.review_date);
+                const signedDate = data.signed_at ? new Date(data.signed_at) : null;
+
+                // Build the declaration card (Section 15 only)
+                const card = document.createElement('div');
+                card.className = 'declaration-card a4-page bg-white shadow-2xl w-full max-w-[21cm] p-4 md:p-[12mm] border border-slate-200 rounded-2xl md:rounded-none';
+
+                card.innerHTML = `
+                    <!-- Document header (mini) -->
+                    <div class="rounded-t-2xl overflow-hidden shadow-sm mb-5">
+                        <div class="bg-[#547C44] text-white px-6 py-4 flex items-center justify-between gap-4">
+                            <div>
+                                <p class="text-[10px] uppercase tracking-[0.25em] font-bold opacity-80">${SSOP_COMPANY_NAME}</p>
+                                <h1 class="text-lg font-black mt-1 leading-tight">${docMeta.fullTitle || docMeta.title}</h1>
+                            </div>
+                            <img src="logo.png" alt="${SSOP_COMPANY_NAME}" class="h-12 bg-white rounded-xl p-1.5 object-contain shadow-md" onerror="this.style.display='none'">
+                        </div>
+                        <div class="bg-[#436435] text-white text-[10px] font-bold uppercase tracking-widest px-6 py-2 flex flex-wrap justify-between gap-2">
+                            <span>Audit Version 1.0</span>
+                            <span>Health & Safety Compliance Document</span>
+                        </div>
+                    </div>
+
+                    <!-- Document control (mini) -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-px bg-slate-200 border border-slate-200 rounded-xl overflow-hidden mb-6 text-sm">
+                        <div class="bg-slate-50 p-3">
+                            <p class="text-[9px] font-bold uppercase tracking-widest text-slate-400 mb-0.5">Version</p>
+                            <p class="font-bold text-slate-800 text-xs">Audit 1.0</p>
+                        </div>
+                        <div class="bg-slate-50 p-3">
+                            <p class="text-[9px] font-bold uppercase tracking-widest text-slate-400 mb-0.5">Issue Date</p>
+                            <p class="font-bold text-slate-800 text-xs">${issueDate ? fmtDate(issueDate.toISOString().split('T')[0]) : '—'}</p>
+                        </div>
+                        <div class="bg-slate-50 p-3">
+                            <p class="text-[9px] font-bold uppercase tracking-widest text-slate-400 mb-0.5">Review Date</p>
+                            <p class="font-bold text-slate-800 text-xs">${reviewDate ? fmtDate(reviewDate.toISOString().split('T')[0]) : '—'}</p>
+                        </div>
+                        <div class="bg-slate-50 p-3">
+                            <p class="text-[9px] font-bold uppercase tracking-widest text-slate-400 mb-0.5">Approved By</p>
+                            <p class="font-bold text-slate-800 text-xs">Management</p>
+                        </div>
+                    </div>
+
+                    <!-- ============ 15. EMPLOYEE DECLARATION + SIGNATURE ============ -->
+                    <div class="border-2 border-[#547C44] rounded-2xl overflow-hidden">
+                        <div class="bg-[#547C44] px-5 py-3">
+                            <h2 class="text-sm md:text-base font-black text-white uppercase tracking-wide flex items-center gap-2.5">
+                                <span class="w-7 h-7 shrink-0 bg-white text-[#547C44] rounded-lg flex items-center justify-center text-xs font-black">15</span>
+                                Employee Declaration
+                            </h2>
+                        </div>
+                        <div class="p-5 bg-white">
+                            <p class="text-sm font-bold text-slate-800 mb-2">I confirm that:</p>
+                            <ul class="space-y-1.5 mb-4">
+                                <li class="flex gap-2.5 text-sm text-slate-700 leading-relaxed">
+                                    <span class="text-[#547C44] font-black shrink-0">•</span><span>I have read and understood this ${docMeta.title}</span>
+                                </li>
+                                <li class="flex gap-2.5 text-sm text-slate-700 leading-relaxed">
+                                    <span class="text-[#547C44] font-black shrink-0">•</span><span>I will follow all procedures outlined in this document</span>
+                                </li>
+                                <li class="flex gap-2.5 text-sm text-slate-700 leading-relaxed">
+                                    <span class="text-[#547C44] font-black shrink-0">•</span><span>I understand my responsibilities in case of fire</span>
+                                </li>
+                                <li class="flex gap-2.5 text-sm text-slate-700 leading-relaxed">
+                                    <span class="text-[#547C44] font-black shrink-0">•</span><span>I will participate in fire drills and training</span>
+                                </li>
+                            </ul>
+
+                            <div class="flex items-start gap-3 bg-[#547C44]/5 border border-[#547C44]/20 rounded-xl p-3.5 select-none">
+                                <input type="checkbox" checked disabled class="mt-0.5 w-5 h-5 accent-[#547C44] shrink-0">
+                                <span class="text-sm text-slate-800 font-medium leading-snug">I have read, understood and agree to comply with this ${docMeta.fullTitle || docMeta.title}.</span>
+                            </div>
+
+                            <div class="grid md:grid-cols-2 gap-4 mt-5">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Employee Full Name</label>
+                                    <div class="w-full p-3 bg-slate-100 border border-slate-200 rounded-xl text-sm font-bold text-slate-800">${data.employee_name || '—'}</div>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Date Signed</label>
+                                    <div class="w-full p-3 bg-slate-100 border border-slate-200 rounded-xl text-sm font-bold text-slate-800 sign-date-display">${signedDate ? fmtDate(signedDate.toISOString().split('T')[0]) : '—'}</div>
+                                </div>
+                            </div>
+
+                            <div class="mt-5">
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Employee Signature</label>
+                                ${data.signature_data
+                                    ? `<img src="${data.signature_data}" alt="Employee signature" class="signature-img w-full h-36 md:h-44 border-2 border-slate-200 rounded-xl bg-white object-contain">`
+                                    : '<div class="w-full h-36 md:h-44 border-2 border-dashed border-slate-300 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 text-sm font-bold">No signature on file</div>'}
+                            </div>
+
+                            <div class="grid md:grid-cols-2 gap-4 mt-4 pt-4 border-t border-slate-200">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Supervisor Name</label>
+                                    <div class="w-full p-3 bg-slate-100 border border-slate-200 rounded-xl text-sm font-bold text-slate-800">${data.created_by || '—'}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Document control footer -->
+                    <div class="mt-6 pt-4 border-t-2 border-slate-200">
+                        <div class="flex flex-col md:flex-row justify-between gap-2 text-xs text-slate-500">
+                            <p><span class="font-bold text-slate-600">Document:</span> ${docMeta.title}</p>
+                            <p><span class="font-bold text-slate-600">Version:</span> Audit Version 1.0</p>
+                            <p><span class="font-bold text-slate-600">Employee:</span> ${data.employee_name || '—'}</p>
+                        </div>
+                    </div>
+                `;
+
+                container.appendChild(card);
+            });
+
+            document.getElementById('state-loading').classList.add('hidden');
+            container.classList.remove('hidden');
+            document.getElementById('subtitle').innerText = '1 full document + ' + records.length + (records.length === 1 ? ' declaration' : ' declarations') + ' · Ready to print';
+        }
+    </script>
+</body>
+</html>

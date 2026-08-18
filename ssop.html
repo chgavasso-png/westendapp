@@ -22,13 +22,18 @@
                     <p class="text-xs text-slate-500 font-bold uppercase tracking-widest mt-0.5">Standard Operating Procedures</p>
                 </div>
             </div>
-            <button onclick="loadRequests()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm transition-colors border border-slate-200 flex items-center gap-2">
-                <span id="refresh-icon">🔄</span> Refresh
-            </button>
+            <div class="flex items-center gap-2">
+                <button onclick="toggleSelectMode()" id="btn-select-mode" class="px-4 py-2 bg-[#547C44] hover:bg-[#436435] text-white font-bold rounded-xl text-sm transition-colors flex items-center gap-2">
+                    ☑️ Select
+                </button>
+                <button onclick="loadRequests()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm transition-colors border border-slate-200 flex items-center gap-2">
+                    <span id="refresh-icon">🔄</span> Refresh
+                </button>
+            </div>
         </div>
     </div>
 
-    <div class="max-w-6xl mx-auto p-6">
+    <div class="max-w-6xl mx-auto p-6 pb-28">
 
         <!-- HERO -->
         <div class="bg-[#547C44] text-white p-7 rounded-3xl shadow-lg mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -86,6 +91,21 @@
         </div>
     </div>
 
+    <!-- SELECTION ACTION BAR -->
+    <div id="selection-bar" class="hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur border-t-2 border-[#547C44] shadow-[0_-4px_24px_rgba(0,0,0,0.12)] z-40">
+        <div class="max-w-6xl mx-auto px-5 py-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div class="flex items-center gap-3 flex-wrap justify-center">
+                <span class="w-9 h-9 bg-[#547C44]/10 text-[#547C44] rounded-xl flex items-center justify-center text-lg">📑</span>
+                <p class="text-sm font-bold text-slate-700"><span id="selected-count">0</span> selected</p>
+                <button onclick="selectAllSigned()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold rounded-lg transition-colors">Select all signed</button>
+                <button onclick="clearSelection()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold rounded-lg transition-colors">Clear</button>
+            </div>
+            <button onclick="openCombined()" id="btn-combine" class="w-full sm:w-auto px-6 py-3 bg-[#547C44] hover:bg-[#436435] text-white font-black text-sm rounded-xl shadow-md transition-colors flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed" disabled>
+                📄 Combine into one PDF
+            </button>
+        </div>
+    </div>
+
     <!-- EDIT DATES MODAL -->
     <div id="modal-dates" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div class="bg-white p-7 rounded-3xl w-full max-w-sm shadow-2xl border border-slate-100">
@@ -125,6 +145,11 @@
             'Content-Type': 'application/json'
         };
 
+        // ===== SELECTION MODE STATE =====
+        let selectMode = false;
+        const selectedIds = new Set();
+        let lastRows = [];
+
         window.onload = function () {
             if (!localStorage.getItem('loggedUser')) {
                 window.location.href = 'index.html';
@@ -132,6 +157,60 @@
             }
             loadRequests();
         };
+
+        /* ===== SELECTION MODE ===== */
+        function toggleSelectMode() {
+            selectMode = !selectMode;
+            if (!selectMode) selectedIds.clear();
+            renderSelectionUI();
+            renderRows(lastRows);
+        }
+
+        function renderSelectionUI() {
+            const btn = document.getElementById('btn-select-mode');
+            const bar = document.getElementById('selection-bar');
+
+            if (selectMode) {
+                btn.innerHTML = '✕ Cancel';
+                btn.classList.remove('bg-[#547C44]', 'hover:bg-[#436435]');
+                btn.classList.add('bg-slate-200', 'hover:bg-slate-300', 'text-slate-700');
+                bar.classList.remove('hidden');
+            } else {
+                btn.innerHTML = '☑️ Select';
+                btn.classList.add('bg-[#547C44]', 'hover:bg-[#436435]');
+                btn.classList.remove('bg-slate-200', 'hover:bg-slate-300', 'text-slate-700');
+                bar.classList.add('hidden');
+            }
+            updateSelectedCount();
+        }
+
+        function toggleSelect(id, checked) {
+            if (checked) selectedIds.add(id); else selectedIds.delete(id);
+            updateSelectedCount();
+        }
+
+        function updateSelectedCount() {
+            document.getElementById('selected-count').innerText = selectedIds.size;
+            document.getElementById('btn-combine').disabled = selectedIds.size === 0;
+        }
+
+        function selectAllSigned() {
+            lastRows.filter(r => r.status === 'signed').forEach(r => selectedIds.add(r.id));
+            renderRows(lastRows);
+            updateSelectedCount();
+        }
+
+        function clearSelection() {
+            selectedIds.clear();
+            renderRows(lastRows);
+            updateSelectedCount();
+        }
+
+        function openCombined() {
+            if (!selectedIds.size) return;
+            const url = 'ssop-batch.html?ids=' + Array.from(selectedIds).join(',');
+            window.open(url, '_blank');
+        }
 
         function signLink(id) {
             return new URL('ssop-sign.html?id=' + id, window.location.href).href;
@@ -154,6 +233,12 @@
                 if (!res.ok) throw new Error(await res.text());
                 const rows = await res.json();
 
+                lastRows = rows;
+                // Remove selected IDs that no longer exist
+                const validIds = new Set(rows.map(r => r.id));
+                Array.from(selectedIds).forEach(id => { if (!validIds.has(id)) selectedIds.delete(id); });
+                updateSelectedCount();
+
                 count.innerText = rows.length + (rows.length === 1 ? ' request' : ' requests');
 
                 if (!rows.length) {
@@ -166,36 +251,50 @@
                     return;
                 }
 
-                list.innerHTML = rows.map(r => {
-                    const signed = r.status === 'signed';
-                    const docMeta = SSOP_DOCUMENTS[r.document_type] || { icon: '📄', title: r.document_type };
-                    const badge = signed
-                        ? '<span class="bg-[#547C44]/10 text-[#547C44] text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg whitespace-nowrap">✓ Signed</span>'
-                        : '<span class="bg-amber-100 text-amber-700 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg whitespace-nowrap">⏳ Pending</span>';
-
-                    return `
-                    <div class="p-4 md:p-5 flex flex-col md:flex-row md:items-center gap-3 hover:bg-slate-50 transition-colors">
-                        <div class="w-11 h-11 shrink-0 ${signed ? 'bg-[#547C44]/10' : 'bg-amber-50'} rounded-xl flex items-center justify-center text-xl">${docMeta.icon}</div>
-                        <div class="flex-1 min-w-0">
-                            <div class="flex items-center gap-2 flex-wrap">
-                                <p class="font-bold text-slate-800 text-sm truncate">${r.employee_name || '<span class="text-slate-400 font-medium">Awaiting signature</span>'}</p>
-                                ${badge}
-                            </div>
-                            <p class="text-xs text-slate-500 mt-0.5">${docMeta.title} · Sent ${fmtDate(r.created_at)}${signed ? ' · Signed ' + fmtDate(r.signed_at) : ''}</p>
-                        </div>
-                        <div class="flex items-center gap-2 flex-wrap no-print">
-                            ${!signed ? `<button onclick="resendWhatsApp('${r.id}', '${(r.phone || '').replace(/'/g, '')}', '${(r.employee_name || '').replace(/'/g, '')}')" class="px-3 py-2 bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#128C4B] text-xs font-bold rounded-lg transition-colors" title="Send via WhatsApp">📱 WhatsApp</button>` : ''}
-                            <button onclick="copyLink('${r.id}', '${(r.employee_name || '').replace(/'/g, '')}')" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold rounded-lg transition-colors" title="Copy the full message with the signing link">📋 Copy</button>
-                            <button onclick="openDatesModal('${r.id}', '${r.issue_date || ''}', '${r.review_date || ''}')" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold rounded-lg transition-colors" title="Edit issue / review dates">📅 Dates</button>
-                            <button onclick="window.open('ssop-sign.html?id=${r.id}', '_blank')" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold rounded-lg transition-colors" title="View document">👁 View</button>
-                            <button onclick="deleteRequest('${r.id}')" class="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-500 text-xs font-bold rounded-lg transition-colors" title="Delete request">🗑</button>
-                        </div>
-                    </div>`;
-                }).join('');
+                renderRows(rows);
             } catch (e) {
                 list.innerHTML = `<p class="text-center text-sm text-red-500 py-10 px-6">Error loading requests: ${e.message}<br><span class="text-xs text-slate-400">Make sure the "ssop_signatures" table exists in Supabase.</span></p>`;
                 count.innerText = '';
             }
+        }
+
+        function renderRows(rows) {
+            const list = document.getElementById('requests-list');
+            if (!rows || !rows.length) return;
+
+            list.innerHTML = rows.map(r => {
+                const signed = r.status === 'signed';
+                const docMeta = SSOP_DOCUMENTS[r.document_type] || { icon: '📄', title: r.document_type };
+                const badge = signed
+                    ? '<span class="bg-[#547C44]/10 text-[#547C44] text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg whitespace-nowrap">✓ Signed</span>'
+                    : '<span class="bg-amber-100 text-amber-700 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg whitespace-nowrap">⏳ Pending</span>';
+
+                const checkbox = selectMode
+                    ? (signed
+                        ? `<input type="checkbox" ${selectedIds.has(r.id) ? 'checked' : ''} onchange="toggleSelect('${r.id}', this.checked)" class="w-5 h-5 accent-[#547C44] shrink-0 cursor-pointer" title="Select for combined PDF">`
+                        : `<span class="w-5 h-5 shrink-0 flex items-center justify-center text-slate-300 text-xs" title="Only signed documents can be combined">—</span>`)
+                    : '';
+
+                return `
+                <div class="p-4 md:p-5 flex flex-col md:flex-row md:items-center gap-3 hover:bg-slate-50 transition-colors ${selectMode && selectedIds.has(r.id) ? 'bg-[#547C44]/5' : ''}">
+                    ${checkbox}
+                    <div class="w-11 h-11 shrink-0 ${signed ? 'bg-[#547C44]/10' : 'bg-amber-50'} rounded-xl flex items-center justify-center text-xl">${docMeta.icon}</div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <p class="font-bold text-slate-800 text-sm truncate">${r.employee_name || '<span class="text-slate-400 font-medium">Awaiting signature</span>'}</p>
+                            ${badge}
+                        </div>
+                        <p class="text-xs text-slate-500 mt-0.5">${docMeta.title} · Sent ${fmtDate(r.created_at)}${signed ? ' · Signed ' + fmtDate(r.signed_at) : ''}</p>
+                    </div>
+                    <div class="flex items-center gap-2 flex-wrap no-print">
+                        ${!signed ? `<button onclick="resendWhatsApp('${r.id}', '${(r.phone || '').replace(/'/g, '')}', '${(r.employee_name || '').replace(/'/g, '')}')" class="px-3 py-2 bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#128C4B] text-xs font-bold rounded-lg transition-colors" title="Send via WhatsApp">📱 WhatsApp</button>` : ''}
+                        <button onclick="copyLink('${r.id}', '${(r.employee_name || '').replace(/'/g, '')}')" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold rounded-lg transition-colors" title="Copy the full message with the signing link">📋 Copy</button>
+                        <button onclick="openDatesModal('${r.id}', '${r.issue_date || ''}', '${r.review_date || ''}')" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold rounded-lg transition-colors" title="Edit issue / review dates">📅 Dates</button>
+                        <button onclick="window.open('ssop-sign.html?id=${r.id}', '_blank')" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold rounded-lg transition-colors" title="View document">👁 View</button>
+                        <button onclick="deleteRequest('${r.id}')" class="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-500 text-xs font-bold rounded-lg transition-colors" title="Delete request">🗑</button>
+                    </div>
+                </div>`;
+            }).join('');
         }
 
         function buildWhatsAppMessage(name, link) {
