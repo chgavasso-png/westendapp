@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UhUb Training Certificates - West End Cleaning</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @media print {
+            body { background-color: white !important; margin: 0 !important; padding: 0 !important; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            .no-print { display: none !important; }
+            #print-area { display: block !important; margin: 0 !important; padding: 0 !important; }
+            #app-content { display: none !important; }
+            @page { size: A4 landscape; margin: 0; }
+            .cert-page {
+                box-shadow: none !important; margin: 0 !important; border: none !important;
+                width: 297mm !important; height: 210mm !important; min-height: 210mm !important; max-width: 100% !important;
+                page-break-after: always; break-after: page;
+                padding: 0 !important;
+            }
+            .cert-page:last-child { page-break-after: auto; break-after: auto; }
+        }
+        #print-area { display: none; }
+    </style>
+</head>
+<body class="bg-slate-100 font-sans text-slate-900 min-h-screen">
+
+    <!-- ================= APP ================= -->
+    <div id="app-content">
+        <!-- TOP BAR -->
+        <div class="bg-white shadow-sm border-b-4 border-[#547C44] sticky top-0 z-40 no-print">
+            <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+                <div class="flex items-center gap-4">
+                    <a href="menu.html" class="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                    </a>
+                    <img src="logo.png" alt="Logo" class="h-10 object-contain" onerror="this.style.display='none'">
+                    <div>
+                        <h2 class="text-xl font-extrabold text-slate-800">UhUb Training Certificates</h2>
+                        <p class="text-xs text-slate-500 font-bold uppercase tracking-widest mt-0.5">Saved in Supabase</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="loadAll()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm transition-colors border border-slate-200 flex items-center gap-2">
+                        <span>🔄</span> Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="max-w-6xl mx-auto p-6 pb-20">
+
+            <!-- HERO -->
+            <div class="bg-[#547C44] text-white p-7 rounded-3xl shadow-lg mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h1 class="text-2xl font-black mb-1">Training Certificates</h1>
+                    <p class="text-sm font-medium opacity-90">Add employees, pick who receives each certificate, set the dates and print the official UhUb certificates.</p>
+                </div>
+                <div class="bg-white/10 px-5 py-3 rounded-2xl border border-white/20 backdrop-blur-sm text-sm font-bold">
+                    🎓 UhUb Certified Training
+                </div>
+            </div>
+
+            <!-- STEP 1: EMPLOYEES -->
+            <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 mb-8">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-5">
+                    <div>
+                        <h3 class="text-lg font-black text-slate-800">1️⃣ Employees</h3>
+                        <p class="text-sm text-slate-500 font-medium">Add employees and tick who will receive certificates.</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="selectAllEmployees(true)" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold rounded-lg transition-colors">Select all</button>
+                        <button onclick="selectAllEmployees(false)" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold rounded-lg transition-colors">Clear</button>
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-3 mb-5">
+                    <input type="text" id="new-employee-name" class="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold outline-none focus:border-[#547C44]" placeholder="Employee full name (e.g. Nayara Mariano Muranaka)" onkeydown="if(event.key==='Enter') addEmployee();">
+                    <button onclick="addEmployee()" class="px-6 py-3 bg-[#547C44] hover:bg-[#436435] text-white font-bold rounded-xl shadow-md transition-colors whitespace-nowrap">+ Add Employee</button>
+                </div>
+
+                <div id="employees-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <p class="text-center text-sm text-slate-400 py-6 col-span-full">Loading employees...</p>
+                </div>
+            </div>
+
+            <!-- STEP 2: CERTIFICATES -->
+            <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 mb-8">
+                <h3 class="text-lg font-black text-slate-800 mb-1">2️⃣ Certificates & Dates</h3>
+                <p class="text-sm text-slate-500 font-medium mb-5">Tick the certificates to issue and set the "Assessed and Passed" date for each one.</p>
+
+                <div id="cert-types-list" class="space-y-3"></div>
+
+                <div class="mt-5">
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1 pl-1">Training carried out at</label>
+                    <input type="text" id="carried-out-at" value="West End Cleaning Services" class="w-full sm:w-96 p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold outline-none focus:border-[#547C44]">
+                </div>
+            </div>
+
+            <!-- GENERATE -->
+            <div class="flex flex-col sm:flex-row items-center gap-4 mb-12">
+                <button onclick="generateCertificates()" id="btn-generate" class="w-full sm:w-auto px-8 py-4 bg-[#547C44] hover:bg-[#436435] text-white font-black text-base rounded-2xl shadow-lg transition-colors flex items-center justify-center gap-2">
+                    🖨️ Generate & Print Certificates
+                </button>
+                <label class="flex items-center gap-2 text-sm font-bold text-slate-600 cursor-pointer select-none">
+                    <input type="checkbox" id="chk-save-db" checked class="w-4 h-4 accent-[#547C44]">
+                    Save records to Supabase
+                </label>
+                <p id="generate-summary" class="text-sm text-slate-500 font-medium"></p>
+            </div>
+
+            <!-- HISTORY -->
+            <div class="flex items-center justify-between mb-4 px-1">
+                <h3 class="text-lg font-bold text-slate-800">📜 Issued Certificates History</h3>
+                <span id="history-count" class="text-xs font-bold text-slate-500 bg-white border border-slate-200 px-3 py-1.5 rounded-lg"></span>
+            </div>
+            <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                <div id="history-list" class="divide-y divide-slate-100">
+                    <p class="text-center text-sm text-slate-400 py-10">Loading history...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= PRINT AREA ================= -->
+    <div id="print-area"></div>
+
+    <!-- EDIT DATE MODAL -->
+    <div id="modal-edit" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 no-print">
+        <div class="bg-white p-7 rounded-3xl w-full max-w-sm shadow-2xl border border-slate-100">
+            <h3 class="text-xl font-black text-slate-800 mb-1">Edit Certificate Date</h3>
+            <p class="text-sm text-slate-500 mb-5" id="edit-cert-label"></p>
+            <input type="hidden" id="edit-cert-id">
+            <input type="date" id="edit-cert-date" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold outline-none focus:border-[#547C44] mb-5">
+            <div class="flex gap-3">
+                <button onclick="closeEditModal()" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors">Cancel</button>
+                <button onclick="saveEditDate()" class="flex-1 py-3 bg-[#547C44] hover:bg-[#436435] text-white font-bold rounded-xl shadow-md transition-colors">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== SUPABASE CONFIG =====
+        const SUPABASE_URL = 'https://wkndzjnqypsyluhgrdil.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndrbmR6am5xeXBzeWx1aGdyZGlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NzU5MTQsImV4cCI6MjA5NTA1MTkxNH0.6W9dsBVCeLzT3EIHyQ5ZFmQhEOyj586K9po4cj9wJeA';
+
+        const sbHeaders = {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+        };
+
+        // ===== CERTIFICATE TYPES (fixed UhUb certificates — colors/positions extracted 1:1 from the original PDFs) =====
+        const CERT_TYPES = [
+            {
+                key: 'induction',
+                title: 'Induction Training',
+                icon: '📋',
+                hasRefreshOption: true,
+                accent: '#2abb9c',
+                bg: 'cert-bg-induction.png',
+                moduleFontSize: 18.5,
+                modules: [
+                    { text: 'Company Welcome', color: '#254782' },
+                    { text: 'Storage', color: '#88b561' },
+                    { text: 'Machine Safety & Care', color: '#daa521' },
+                    { text: 'Chemical Competence', color: '#4682b4' },
+                    { text: 'Manual Handling', color: '#fe855a' }
+                ]
+            },
+            {
+                key: 'core',
+                title: 'Core Training',
+                icon: '🧹',
+                accent: '#d2232a',
+                bg: 'cert-bg-core.png',
+                moduleFontSize: 18.5,
+                modules: [
+                    { text: 'Single Solution Mopping', color: '#92918f' },
+                    { text: 'Vacuum Cleaning', color: '#2abb9c' },
+                    { text: 'Dust, Damp Wipe & Polish', color: '#daa521' },
+                    { text: 'Microfibre Window Cleaning', color: '#394c72' },
+                    { text: 'Workstation Cleaning', color: '#88b561' },
+                    { text: 'Stair Cleaning', color: '#fe855a' },
+                    { text: 'Washroom Cleaning', color: '#4682b4' },
+                    { text: 'Shower Cleaning', color: '#cd1619' },
+                    { text: 'Waste Clearance', color: '#82007f' }
+                ]
+            },
+            {
+                key: 'advanced',
+                title: 'Advanced Skills',
+                icon: '⚙️',
+                accent: '#ef7800',
+                bg: 'cert-bg-advanced.png',
+                moduleFontSize: 18.5,
+                modules: [
+                    { text: 'Buffing & Spray Cleaning', color: '#d85998' },
+                    { text: 'Carpet Skimming', color: '#daa521' },
+                    { text: 'Scrubber Dryer', color: '#4682b4' },
+                    { text: 'Machine Scrubbing & Drying', color: '#947f69' },
+                    { text: 'Floor Strip & Polish', color: '#88b561' },
+                    { text: 'Graffiti Removal', color: '#2abb9c' }
+                ]
+            },
+            {
+                key: 'slips_trips_falls',
+                title: 'Slips, Trips and Falls',
+                icon: '⚠️',
+                accent: '#4040aa',
+                bg: 'cert-bg-slips_trips_falls.png',
+                moduleFontSize: 24,
+                modules: [
+                    { text: 'Slips', color: '#800080' },
+                    { text: 'Trips', color: '#ffaa00' },
+                    { text: 'Falls', color: '#4040aa' },
+                    { text: 'Risk Assessments', color: '#ff5500' }
+                ]
+            }
+        ];
+
+        // Exact positions measured from the original UhUb PDFs (PDF points -> mm, 1pt = 25.4/72mm)
+        const PT = 25.4 / 72;
+        const CERT_LAYOUT = {
+            centerX: 576.5 * PT,        // horizontal center of the content column (~203.4mm)
+            nameTop: 255.2 * PT,        // employee name
+            nameWidth: 250 * PT,
+            titleTop: 354.3 * PT,       // course title
+            titleWidth: 480 * PT,
+            companyTop: 429.9 * PT,     // "West End Cleaning Services"
+            companyWidth: 310 * PT,
+            dateTop: 487.5 * PT,        // date dd/mm/yy
+            dateWidth: 90 * PT,
+            modulesLeft: 154.5 * PT,    // module list
+            modulesWidth: 260 * PT
+        };
+        const MODULES_TOP = { induction: 379.2, core: 350.7, advanced: 384.2, slips_trips_falls: 383.4 };
+        const MODULE_STEP = { induction: 22.25, core: 22.25, advanced: 22.25, slips_trips_falls: 28.8 };
+
+        let employees = [];          // [{id, full_name, selected}]
+        let certState = {};          // key -> {enabled, date, mode}
+        let history = [];
+
+        function todayISO() {
+            const d = new Date();
+            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        }
+
+        function fmtGB(dateStr) {
+            if (!dateStr) return '';
+            const d = new Date(dateStr + 'T00:00:00');
+            return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + '/' + String(d.getFullYear()).slice(-2);
+        }
+
+        window.onload = function () {
+            if (!localStorage.getItem('loggedUser')) {
+                window.location.href = 'index.html';
+                return;
+            }
+            CERT_TYPES.forEach(t => {
+                certState[t.key] = { enabled: false, date: todayISO(), mode: 'induction' };
+                const img = new Image(); img.src = t.bg; // preload backgrounds for instant printing
+            });
+            renderCertTypes();
+            loadAll();
+        };
+
+        async function loadAll() {
+            await Promise.all([loadEmployees(), loadHistory()]);
+        }
+
+        /* ================= EMPLOYEES ================= */
+        async function loadEmployees() {
+            const list = document.getElementById('employees-list');
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/certificate_employees?active=eq.true&order=full_name.asc`, { headers: sbHeaders });
+                if (!res.ok) throw new Error(await res.text());
+                const rows = await res.json();
+                // keep previous selections
+                const prevSelected = new Set(employees.filter(e => e.selected).map(e => e.id));
+                employees = rows.map(r => ({ id: r.id, full_name: r.full_name, selected: prevSelected.has(r.id) }));
+                renderEmployees();
+            } catch (e) {
+                list.innerHTML = `<p class="text-center text-sm text-red-500 py-6 col-span-full">Error loading employees: ${e.message}<br><span class="text-xs">Make sure you ran supabase-certificates-setup.sql</span></p>`;
+            }
+        }
+
+        function renderEmployees() {
+            const list = document.getElementById('employees-list');
+            if (!employees.length) {
+                list.innerHTML = '<p class="text-center text-sm text-slate-400 py-6 col-span-full">No employees yet. Add the first one above.</p>';
+                return;
+            }
+            list.innerHTML = employees.map(e => `
+                <label class="flex items-center gap-3 p-3 rounded-2xl border-2 cursor-pointer transition-all ${e.selected ? 'border-[#547C44] bg-[#547C44]/5' : 'border-slate-200 bg-white hover:border-slate-300'}">
+                    <input type="checkbox" ${e.selected ? 'checked' : ''} onchange="toggleEmployee('${e.id}', this.checked)" class="w-5 h-5 accent-[#547C44] shrink-0">
+                    <span class="font-bold text-slate-800 text-sm flex-1 truncate" title="${escapeHtml(e.full_name)}">${escapeHtml(e.full_name)}</span>
+                    <button type="button" onclick="event.preventDefault(); removeEmployee('${e.id}', '${escapeHtml(e.full_name).replace(/'/g, "\\'")}')" class="text-red-400 hover:text-red-600 font-bold text-xs px-2 py-1 no-print" title="Remove employee">✕</button>
+                </label>
+            `).join('');
+        }
+
+        window.toggleEmployee = function (id, checked) {
+            const emp = employees.find(e => e.id === id);
+            if (emp) emp.selected = checked;
+            renderEmployees();
+        };
+
+        window.selectAllEmployees = function (val) {
+            employees.forEach(e => e.selected = val);
+            renderEmployees();
+        };
+
+        window.addEmployee = async function () {
+            const input = document.getElementById('new-employee-name');
+            const name = input.value.trim();
+            if (!name) { alert('Enter the employee name!'); return; }
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/certificate_employees`, {
+                    method: 'POST',
+                    headers: sbHeaders,
+                    body: JSON.stringify({ full_name: name })
+                });
+                if (!res.ok) throw new Error(await res.text());
+                input.value = '';
+                await loadEmployees();
+                // auto-select the new employee
+                const rows = await (await fetch(`${SUPABASE_URL}/rest/v1/certificate_employees?full_name=eq.${encodeURIComponent(name)}&order=created_at.desc&limit=1`, { headers: sbHeaders })).json();
+                if (rows[0]) {
+                    const emp = employees.find(e => e.id === rows[0].id);
+                    if (emp) { emp.selected = true; renderEmployees(); }
+                }
+            } catch (e) {
+                alert('Error adding employee: ' + e.message);
+            }
+        };
+
+        window.removeEmployee = async function (id, name) {
+            if (!confirm(`Remove employee "${name}"? Their issued certificates history will also be deleted.`)) return;
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/certificate_employees?id=eq.${id}`, {
+                    method: 'DELETE',
+                    headers: sbHeaders
+                });
+                if (!res.ok) throw new Error(await res.text());
+                await loadAll();
+            } catch (e) {
+                alert('Error removing employee: ' + e.message);
+            }
+        };
+
+        /* ================= CERTIFICATE TYPES ================= */
+        function renderCertTypes() {
+            const container = document.getElementById('cert-types-list');
+            container.innerHTML = CERT_TYPES.map(t => {
+                const st = certState[t.key];
+                const modulesPreview = t.modules.map(m => m.text).join(' • ');
+                return `
+                <div class="rounded-2xl border-2 transition-all ${st.enabled ? 'border-[#547C44] bg-[#547C44]/5' : 'border-slate-200 bg-white'}">
+                    <div class="flex flex-col lg:flex-row lg:items-center gap-4 p-4">
+                        <label class="flex items-center gap-3 flex-1 cursor-pointer min-w-0">
+                            <input type="checkbox" ${st.enabled ? 'checked' : ''} onchange="toggleCertType('${t.key}', this.checked)" class="w-5 h-5 accent-[#547C44] shrink-0">
+                            <span class="text-2xl">${t.icon}</span>
+                            <span class="min-w-0">
+                                <span class="block font-black text-slate-800">${t.title}</span>
+                                <span class="block text-xs text-slate-500 font-medium truncate" title="${modulesPreview}">${modulesPreview}</span>
+                            </span>
+                        </label>
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3 shrink-0">
+                            ${t.hasRefreshOption ? `
+                            <select id="mode-${t.key}" onchange="setCertMode('${t.key}', this.value)" class="p-2.5 bg-white border border-slate-200 rounded-xl font-bold text-sm outline-none focus:border-[#547C44]">
+                                <option value="induction" ${st.mode === 'induction' ? 'selected' : ''}>Induction Training</option>
+                                <option value="induction_refresh" ${st.mode === 'induction_refresh' ? 'selected' : ''}>Refresh Training</option>
+                            </select>` : ''}
+                            <div class="flex items-center gap-2">
+                                <label class="text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Date:</label>
+                                <input type="date" id="date-${t.key}" value="${st.date}" onchange="setCertDate('${t.key}', this.value)" class="p-2.5 bg-white border border-slate-200 rounded-xl font-bold text-sm outline-none focus:border-[#547C44]">
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        window.toggleCertType = function (key, checked) {
+            certState[key].enabled = checked;
+            renderCertTypes();
+        };
+
+        window.setCertDate = function (key, val) {
+            certState[key].date = val;
+        };
+
+        window.setCertMode = function (key, val) {
+            certState[key].mode = val;
+        };
+
+        function getCertTitle(t) {
+            if (t.key === 'induction' && certState[t.key].mode === 'induction_refresh') {
+                return 'Refresh Training';
+            }
+            return t.title;
+        }
+
+        function getCertTypeKey(t) {
+            if (t.key === 'induction' && certState[t.key].mode === 'induction_refresh') {
+                return 'induction_refresh';
+            }
+            return t.key;
+        }
+
+        /* ================= GENERATE ================= */
+        function escapeHtml(s) {
+            return String(s || '').replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>').replace(/"/g, '"');
+        }
+
+        function buildCertificateHtml(employeeName, certType, title, dateISO, carriedOutAt) {
+            // 1:1 replica of the original UhUb PDF: the scanned background (border, logo,
+            // decorations, static texts) comes from the original PDF itself; only the
+            // dynamic fields are overlaid at the exact measured positions.
+            const L = CERT_LAYOUT;
+            const cx = L.centerX;
+
+            // Title: shrink if it's the long "Induction Training Refresh Training"
+            const titleSize = title.length > 25 ? 21 : 31.4;
+
+            // Modules at exact positions/colours
+            const top0 = MODULES_TOP[certType.key] * PT;
+            const step = MODULE_STEP[certType.key] * PT;
+            const modulesHtml = certType.modules.map((m, i) =>
+                `<div style="position:absolute; left:${L.modulesLeft}mm; top:${(top0 + i * step).toFixed(2)}mm; width:${L.modulesWidth}mm; font-family:Calibri, 'Segoe UI', Arial, sans-serif; font-size:${certType.moduleFontSize}pt; line-height:1; color:${m.color}; white-space:nowrap;">${escapeHtml(m.text)}</div>`
+            ).join('\n');
+
+            return `
+            <div class="cert-page" style="position:relative; width:297mm; height:210mm; margin:0 auto 20px; background:#fff; box-shadow:0 10px 40px rgba(0,0,0,.15); border:1px solid #e2e8f0; box-sizing:border-box; overflow:hidden;">
+                <img src="${certType.bg}" alt="" style="position:absolute; left:0; top:0; width:297mm; height:210mm;" onerror="this.style.display='none'">
+
+                <!-- Underscore line (as in the original) -->
+                <div style="position:absolute; left:${(453 * PT).toFixed(2)}mm; top:${(270.4 * PT).toFixed(2)}mm; width:${(247 * PT).toFixed(2)}mm; font-family:Calibri, 'Segoe UI', Arial, sans-serif; font-weight:300; font-size:17.1pt; line-height:1.2; color:#231f20; white-space:nowrap;">_____________________________</div>
+
+                <!-- Employee name (on the line) -->
+                <div style="position:absolute; left:${(cx - L.nameWidth / 2).toFixed(2)}mm; top:${L.nameTop.toFixed(2)}mm; width:${L.nameWidth}mm; text-align:center; font-family:Helvetica, Arial, sans-serif; font-size:22pt; line-height:1.1; color:#000; white-space:nowrap; overflow:visible;">${escapeHtml(employeeName)}</div>
+
+                <!-- Course title -->
+                <div style="position:absolute; left:${(cx - L.titleWidth / 2).toFixed(2)}mm; top:${L.titleTop.toFixed(2)}mm; width:${L.titleWidth}mm; text-align:center; font-family:Calibri, 'Segoe UI', Arial, sans-serif; font-weight:bold; font-style:italic; font-size:${titleSize}pt; line-height:1.1; color:${certType.accent}; white-space:nowrap;">${escapeHtml(title)}</div>
+
+                <!-- Company (carried out at) -->
+                <div style="position:absolute; left:${(cx - L.companyWidth / 2).toFixed(2)}mm; top:${L.companyTop.toFixed(2)}mm; width:${L.companyWidth}mm; text-align:center; font-family:Helvetica, Arial, sans-serif; font-size:24pt; line-height:1.1; color:#000; white-space:nowrap;">${escapeHtml(carriedOutAt)}</div>
+
+                <!-- Date (assessed and passed) -->
+                <div style="position:absolute; left:${(cx - L.dateWidth / 2).toFixed(2)}mm; top:${L.dateTop.toFixed(2)}mm; width:${L.dateWidth}mm; text-align:center; font-family:Helvetica, Arial, sans-serif; font-size:21pt; line-height:1.1; color:#000; white-space:nowrap;">${fmtGB(dateISO)}</div>
+
+                <!-- Modules -->
+                ${modulesHtml}
+            </div>`;
+        }
+
+        window.generateCertificates = async function () {
+            const selectedEmployees = employees.filter(e => e.selected);
+            const selectedCerts = CERT_TYPES.filter(t => certState[t.key].enabled);
+
+            if (!selectedEmployees.length) { alert('Select at least one employee!'); return; }
+            if (!selectedCerts.length) { alert('Select at least one certificate!'); return; }
+
+            const carriedOutAt = document.getElementById('carried-out-at').value.trim() || 'West End Cleaning Services';
+            const saveToDb = document.getElementById('chk-save-db').checked;
+            const btn = document.getElementById('btn-generate');
+            btn.innerText = '⏳ Generating...';
+            btn.disabled = true;
+
+            try {
+                let html = '';
+                const rowsToInsert = [];
+                const createdBy = localStorage.getItem('loggedFullName') || localStorage.getItem('loggedUser') || null;
+
+                selectedEmployees.forEach(emp => {
+                    selectedCerts.forEach(t => {
+                        const title = getCertTitle(t);
+                        const typeKey = getCertTypeKey(t);
+                        const dateISO = certState[t.key].date || todayISO();
+                        html += buildCertificateHtml(emp.full_name, t, title, dateISO, carriedOutAt);
+                        rowsToInsert.push({
+                            employee_id: emp.id,
+                            employee_name: emp.full_name,
+                            certificate_type: typeKey,
+                            certificate_title: title,
+                            training_date: dateISO,
+                            carried_out_at: carriedOutAt,
+                            created_by: createdBy
+                        });
+                    });
+                });
+
+                if (saveToDb) {
+                    const res = await fetch(`${SUPABASE_URL}/rest/v1/training_certificates`, {
+                        method: 'POST',
+                        headers: sbHeaders,
+                        body: JSON.stringify(rowsToInsert)
+                    });
+                    if (!res.ok) throw new Error(await res.text());
+                }
+
+                document.getElementById('print-area').innerHTML = html;
+                document.getElementById('generate-summary').innerText = `${rowsToInsert.length} certificate(s) generated${saveToDb ? ' and saved' : ''}.`;
+
+                await loadHistory();
+
+                // Give images a moment to load before printing
+                setTimeout(() => window.print(), 800);
+            } catch (e) {
+                alert('Error generating certificates: ' + e.message + '\n\nMake sure you ran supabase-certificates-setup.sql in Supabase.');
+            } finally {
+                btn.innerText = '🖨️ Generate & Print Certificates';
+                btn.disabled = false;
+            }
+        };
+
+        /* ================= HISTORY ================= */
+        async function loadHistory() {
+            const list = document.getElementById('history-list');
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/training_certificates?order=created_at.desc&limit=200`, { headers: sbHeaders });
+                if (!res.ok) throw new Error(await res.text());
+                history = await res.json();
+                renderHistory();
+            } catch (e) {
+                list.innerHTML = `<p class="text-center text-sm text-red-500 py-10">Error loading history: ${e.message}</p>`;
+            }
+        }
+
+        function renderHistory() {
+            const list = document.getElementById('history-list');
+            document.getElementById('history-count').innerText = history.length + ' record(s)';
+            if (!history.length) {
+                list.innerHTML = '<p class="text-center text-sm text-slate-400 py-10">No certificates issued yet.</p>';
+                return;
+            }
+            list.innerHTML = history.map(h => `
+                <div class="flex flex-col sm:flex-row sm:items-center gap-3 p-4">
+                    <div class="flex-1 min-w-0">
+                        <p class="font-bold text-slate-800 text-sm truncate">${escapeHtml(h.employee_name)}</p>
+                        <p class="text-xs text-slate-500 font-medium">${escapeHtml(h.certificate_title)} • ${escapeHtml(h.carried_out_at || 'West End Cleaning Services')}</p>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0 flex-wrap">
+                        <span class="text-xs font-bold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-lg">📅 ${fmtGB(h.training_date)}</span>
+                        <button onclick="reprintCertificate('${h.id}')" class="px-3 py-1.5 bg-[#547C44]/10 hover:bg-[#547C44]/20 text-[#547C44] text-xs font-bold rounded-lg transition-colors">🖨️ Reprint</button>
+                        <button onclick="openEditModal('${h.id}', '${h.training_date}', '${escapeHtml(h.employee_name).replace(/'/g, "\\'")} — ${escapeHtml(h.certificate_title).replace(/'/g, "\\'")}')" class="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold rounded-lg transition-colors">✏️ Date</button>
+                        <button onclick="deleteCertificate('${h.id}')" class="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold rounded-lg transition-colors">🗑️</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        window.reprintCertificate = function (id) {
+            const h = history.find(x => x.id === id);
+            if (!h) return;
+            const t = CERT_TYPES.find(x => x.key === h.certificate_type) || CERT_TYPES.find(x => x.key === 'induction');
+            document.getElementById('print-area').innerHTML = buildCertificateHtml(h.employee_name, t, h.certificate_title, h.training_date, h.carried_out_at || 'West End Cleaning Services');
+            setTimeout(() => window.print(), 800);
+        };
+
+        window.deleteCertificate = async function (id) {
+            if (!confirm('Delete this certificate record permanently?')) return;
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/training_certificates?id=eq.${id}`, {
+                    method: 'DELETE',
+                    headers: sbHeaders
+                });
+                if (!res.ok) throw new Error(await res.text());
+                await loadHistory();
+            } catch (e) {
+                alert('Error deleting: ' + e.message);
+            }
+        };
+
+        /* ================= EDIT DATE MODAL ================= */
+        window.openEditModal = function (id, date, label) {
+            document.getElementById('edit-cert-id').value = id;
+            document.getElementById('edit-cert-date').value = date;
+            document.getElementById('edit-cert-label').innerText = label;
+            document.getElementById('modal-edit').classList.remove('hidden');
+        };
+
+        window.closeEditModal = function () {
+            document.getElementById('modal-edit').classList.add('hidden');
+        };
+
+        window.saveEditDate = async function () {
+            const id = document.getElementById('edit-cert-id').value;
+            const date = document.getElementById('edit-cert-date').value;
+            if (!date) { alert('Pick a date!'); return; }
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/training_certificates?id=eq.${id}`, {
+                    method: 'PATCH',
+                    headers: sbHeaders,
+                    body: JSON.stringify({ training_date: date })
+                });
+                if (!res.ok) throw new Error(await res.text());
+                closeEditModal();
+                await loadHistory();
+            } catch (e) {
+                alert('Error updating date: ' + e.message);
+            }
+        };
+    </script>
+</body>
+</html>
