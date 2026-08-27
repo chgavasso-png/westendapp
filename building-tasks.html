@@ -9,6 +9,13 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
 
     <style>
+        /* Wider editing canvas on screen (print still uses A4) */
+        @media screen {
+            #document-body.a4-page {
+                max-width: 30cm !important;
+                padding: 16mm 18mm !important;
+            }
+        }
         @media print {
             body { background-color: white !important; margin: 0; padding: 0; }
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
@@ -32,20 +39,30 @@
             .a4-page .text-lg[contenteditable] { font-size: 0.8rem !important; margin-top: 3px !important; }
             .a4-page .border-b-\[3px\] { padding-bottom: 8px !important; margin-bottom: 8px !important; border-bottom-width: 2px !important; }
 
-            /* SECTION BLOCKS */
+            /* SECTION BLOCKS - allow breaking across pages so content starts on page 1 */
             .section-block {
                 padding: 8px 10px !important;
                 margin-bottom: 10px !important;
                 border-radius: 5px !important;
-                page-break-inside: avoid !important;
-                break-inside: avoid !important;
             }
             .section-block h2 {
                 font-size: 0.9rem !important;
                 margin-bottom: 6px !important;
                 padding-bottom: 3px !important;
                 letter-spacing: 0.03em !important;
+                break-after: avoid !important;
+                page-break-after: avoid !important;
             }
+            /* Keep rows/slots/notes intact so text is never cut mid-line */
+            .section-block tr,
+            .section-block li,
+            .inspection-slot,
+            .special-note-row {
+                break-inside: avoid !important;
+                page-break-inside: avoid !important;
+            }
+            /* Keep table header row from being orphaned at the bottom of a page */
+            .section-block thead { break-after: avoid !important; page-break-after: avoid !important; }
 
             /* TABELAS */
             table { font-size: 0.8rem !important; }
@@ -75,13 +92,15 @@
             }
             .task-li::before { font-size: 0.9rem !important; line-height: 1.1rem !important; top: 0 !important; }
 
-            /* TIME BADGES - visíveis sem decoração */
+            /* TIME BADGES - mostrar a caixa visual dos horários no PDF */
             .time-badge { 
                 display: inline-flex !important;
-                background: none !important;
-                border: none !important;
-                padding: 0 !important;
-                font-size: 0.75rem !important;
+                background: var(--green-light) !important;
+                border: 1px solid var(--green-border) !important;
+                border-radius: 5px !important;
+                padding: 1px 7px !important;
+                font-size: 0.7rem !important;
+                font-weight: 700 !important;
                 color: #0e7f63 !important;
                 position: static !important;
                 margin-left: 8px !important;
@@ -146,6 +165,9 @@
             padding-bottom: 6px;
         }
 
+        .schedule-table {
+            table-layout: fixed;
+        }
         .schedule-table th, .collection-table th {
             background-color: var(--green-light);
             color: var(--green-dark);
@@ -154,28 +176,71 @@
             font-size: 0.75rem;
             letter-spacing: 0.05em;
             border: 1px solid var(--green-border);
+            padding: 10px 14px !important;
+            position: relative;
         }
+        .col-resize-handle {
+            position: absolute;
+            top: 0;
+            right: -4px;
+            bottom: 0;
+            width: 8px;
+            cursor: col-resize;
+            z-index: 5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .col-resize-handle::after {
+            content: '⇿';
+            font-size: 10px;
+            color: var(--green-dark);
+            opacity: 0.4;
+            pointer-events: none;
+        }
+        .col-resize-handle:hover::after { opacity: 1; }
+        .schedule-table thead tr { user-select: none; }
         .schedule-table td, .collection-table td {
             border: 1px solid var(--green-border);
             vertical-align: top;
+            padding: 12px 14px !important;
         }
         .schedule-table tbody tr:nth-child(even) td {
             background-color: #fafdfb;
         }
-        .schedule-table td ul, .collection-table td ul {
-            list-style: none;
+        .schedule-table td ul, .collection-table td ul, ul.task-list {
+            list-style: none !important;
             padding: 0;
             margin: 0;
+        }
+        /* Ensure list items never show a native marker (only the custom ::before bullet) */
+        .schedule-table td li, .collection-table td li, .task-list li, .task-li {
+            list-style: none !important;
         }
 
         /* TASK ITEMS WITH TIME BADGES */
         .task-li {
             position: relative;
             padding-left: 18px;
-            margin-bottom: 3px;
-            line-height: 1.45;
-            padding-right: 70px;
+            margin-bottom: 5px;
+            line-height: 1.5;
+            padding-right: 8px;
         }
+        .task-li .times-wrapper { vertical-align: middle; }
+        .task-li .add-time-btn,
+        .task-li .del-li-btn {
+            display: inline-block;
+            margin-left: 4px;
+            vertical-align: middle;
+            opacity: 0.55;
+            transition: opacity 0.15s;
+        }
+        .task-li .add-time-btn:hover,
+        .task-li .del-li-btn:hover { opacity: 1; }
+        .group/row:hover .row-del-btn,
+        .group/note:hover .note-del-btn,
+        .group/slot:hover .slot-del-btn { opacity: 1 !important; }
+        .row-del-btn, .note-del-btn, .slot-del-btn { opacity: 0.45; transition: opacity 0.15s; }
         .task-li::before {
             content: "•";
             position: absolute;
@@ -306,13 +371,13 @@
 
             <!-- FOOTER NOTE -->
             <div contenteditable="true" class="text-xs text-slate-500 mt-8 pt-4 border-t border-slate-200 italic relative group/note">
-                <button class="no-print absolute -top-2 -right-2 text-red-400 hover:text-red-600 font-bold text-xs hidden group-hover/note:block bg-red-50 px-1.5 py-0.5 rounded z-10" onclick="this.closest('.flex-wrap, .border-t').remove() || this.closest('[contenteditable]').remove()" title="Remove footer note">✕ Delete Note</button>
+                <button class="no-print absolute -top-3 -right-2 text-red-500 hover:text-white hover:bg-red-500 font-bold text-[10px] bg-red-50 border border-red-200 px-2 py-1 rounded-full shadow-sm z-10 flex items-center gap-1 transition-colors" onclick="deleteFooterNote(this)" title="Remove footer note">✕ Delete Note</button>
                 * Bins are taken to the collection point in accordance with the above collection schedule. Bin rotation is carried out as part of the daily operational process to ensure accessibility and cleanliness.
             </div>
 
             <!-- FOOTER -->
             <div class="text-center pt-6 mt-6 border-t border-slate-200 relative group/ftr">
-                <button class="no-print absolute -top-2 -right-2 text-red-400 hover:text-red-600 font-bold text-xs hidden group-hover/ftr:block bg-red-50 px-1.5 py-0.5 rounded z-10" onclick="this.closest('.text-center').remove()" title="Remove footer">✕ Delete Footer</button>
+                <button class="no-print absolute -top-3 -right-2 text-red-500 hover:text-white hover:bg-red-500 font-bold text-[10px] bg-red-50 border border-red-200 px-2 py-1 rounded-full shadow-sm z-10 flex items-center gap-1 transition-colors" onclick="deleteFooter(this)" title="Remove footer">✕ Delete Footer</button>
                 <p contenteditable="true" class="text-xs text-slate-400 mb-1">Official Document - West End Cleaning Services Ltd</p>
                 <p contenteditable="true" class="text-xs text-slate-400">Standard Operational Procedures</p>
             </div>
@@ -439,7 +504,7 @@
 
             // Delete section button
             innerHTML += `
-                <button class="no-print absolute -top-3 -right-3 bg-red-100 hover:bg-red-200 text-red-600 font-bold text-xs px-2.5 py-1 rounded-full shadow-sm opacity-0 group-hover/sec:opacity-100 transition-opacity z-10" onclick="deleteSection(this)" title="Delete entire section">✕ Delete Section</button>
+                <button class="no-print absolute -top-3 -right-3 bg-red-100 hover:bg-red-200 text-red-600 font-bold text-xs px-2.5 py-1 rounded-full shadow-sm z-10" onclick="deleteSection(this)" title="Delete entire section">✕ Delete Section</button>
             `;
 
             // Section title
@@ -454,6 +519,7 @@
 
             if (data.type === 'schedule') {
                 innerHTML += buildScheduleTable(data.rows || []);
+                innerHTML += `<button onclick="addScheduleColumn(this)" class="no-print text-xs font-bold text-[#0e7f63] hover:underline mt-2">+ Add Column</button>`;
             } else if (data.type === 'inspection') {
                 innerHTML += buildInspectionContent(data.slots || []);
             } else if (data.type === 'collection') {
@@ -495,97 +561,323 @@
             }
         }
 
-        // ===== SCHEDULE TABLE (Area | Daily | Weekly | Monthly) =====
+        // ===== SCHEDULE TABLE (Area | Dynamic columns) =====
         function buildScheduleTable(rows) {
+            let columns = ['Daily', 'Weekly', 'Monthly'];
+            if (rows && rows[0]) {
+                const keys = Object.keys(rows[0]).filter(k => k !== 'area' && k !== 'areaTimes');
+                if (keys.length) columns = keys.map(k => k.charAt(0).toUpperCase() + k.slice(1));
+            }
+            return buildScheduleTableWithCols(columns, rows);
+        }
+
+        function buildScheduleTableWithCols(columns, rows) {
+            const colW = `${Math.floor(70 / (columns.length + 1))}%`;
             let html = `
-                <table class="schedule-table w-full border-collapse mb-1">
+                <table class="schedule-table border-collapse mb-1" style="width:100%;">
                     <thead>
                         <tr>
-                            <th class="py-2 px-3 text-left w-[22%]" contenteditable="true">Area</th>
-                            <th class="py-2 px-3 text-left w-[26%]" contenteditable="true">Daily</th>
-                            <th class="py-2 px-3 text-left w-[26%]" contenteditable="true">Weekly</th>
-                            <th class="py-2 px-3 text-left w-[26%]" contenteditable="true">Monthly</th>
+                            <th class="py-2 px-3 text-left" style="width:${colW}">
+                                <span contenteditable="true" class="outline-none">Area</span>
+                                <div class="no-print col-resize-handle" onmousedown="startColResize(event, this)" title="Drag to resize column"></div>
+                            </th>`;
+            columns.forEach((col) => {
+                html += `
+                            <th class="py-2 px-3 text-left" style="width:${colW}" data-col-name="${col}">
+                                <div class="flex items-center justify-between gap-1">
+                                    <span contenteditable="true" class="outline-none col-name">${col}</span>
+                                    <button class="no-print text-red-400 hover:text-red-600 font-bold text-xs px-1 rounded col-del-btn" onclick="removeScheduleColumn(this)" title="Remove column">✕</button>
+                                </div>
+                                <div class="no-print col-resize-handle" onmousedown="startColResize(event, this)" title="Drag to resize column"></div>
+                            </th>`;
+            });
+            html += `
                         </tr>
                     </thead>
                     <tbody>`;
             
             if (rows.length === 0) {
-                html += buildScheduleRowHTML('New Area', ['Type daily task...'], ['Type weekly task...'], ['Type monthly task...']);
+                const emptyRow = { area: 'New Area', areaTimes: [] };
+                columns.forEach(c => { emptyRow[c.toLowerCase()] = ['Type task...']; });
+                html += buildScheduleRowHTML(emptyRow, columns);
             } else {
-                rows.forEach(r => {
-                    html += buildScheduleRowHTML(r.area, r.daily || [], r.weekly || [], r.monthly || []);
-                });
+                rows.forEach(r => { html += buildScheduleRowHTML(r, columns); });
             }
 
             html += `</tbody></table>`;
             return html;
         }
 
-        function buildScheduleRowHTML(area, daily, weekly, monthly) {
-            const makeUl = (tasks, colName) => {
-                return `<ul class="task-list outline-none min-h-[20px] text-sm">${tasks.map(t => buildTaskLiHTML(t)).join('')}</ul>
-                <button class="no-print text-[10px] font-bold text-slate-400 hover:text-[#0e7f63] mt-1" onclick="addTaskItem(this, '${colName}')">+ Add task</button>`;
-            };
+        function buildScheduleRowHTML(row, columns) {
+            const area = (row && row.area) ? row.area : 'New Area';
+            const areaTimes = (row && row.areaTimes) ? row.areaTimes : [];
+            const hideText = (row && row.hideText) ? true : false;
+            let areaCell = `
+                    <td class="py-3 px-3 font-bold text-[#0e7f63] align-top relative group/row">
+                        <button class="no-print row-del-btn text-red-400 hover:text-red-600 font-bold text-xs px-1.5 py-0.5 rounded bg-red-50 absolute -left-2 -top-1 z-10" onclick="deleteTableRow(this)" title="Remove row">✕</button>
+                        <div class="area-name-wrap" style="display:flex;align-items:center;gap:4px;">
+                            <div class="area-name" contenteditable="true" class="outline-none uppercase text-sm" style="${hideText ? 'display:none;' : ''}">${area}</div>
+                            <button class="no-print toggle-text-btn text-[10px] font-bold text-[#0e7f63] hover:underline" onclick="toggleAreaText(this)" title="${hideText ? 'Show area text' : 'Hide area text (keep only times)'}">${hideText ? '☰ Text' : '🚫 Text'}</button>
+                        </div>
+                        <div class="area-times-wrapper mt-1" style="display:flex;flex-direction:column;align-items:flex-start;gap:4px;">`;
+            areaTimes.forEach(t => { areaCell += buildAreaTimeBadgeHTML(t); });
+            areaCell += `</div>
+                        <button class="no-print text-[10px] font-bold text-[#0e7f63] hover:underline mt-1" onclick="addAreaTime(this)" title="Add time to this area">+ Area Time</button>
+                    </td>`;
+
+            let cellsHTML = '';
+            columns.forEach(col => {
+                const key = col.toLowerCase();
+                const tasks = (row && row[key]) ? row[key] : ['Type task...'];
+                cellsHTML += `<td class="py-3 px-3 align-top">${makeTaskList(tasks, key)}</td>`;
+            });
 
             return `
                 <tr class="group/row">
-                    <td class="py-3 px-3 font-bold text-[#0e7f63] align-top relative">
-                        <button class="no-print absolute -left-2 -top-1 text-red-400 hover:text-red-600 font-bold text-xs hidden group-hover/row:block bg-red-50 px-1.5 py-0.5 rounded z-10" onclick="deleteTableRow(this)" title="Remove row">✕</button>
-                        <div contenteditable="true" class="outline-none uppercase text-sm">${area}</div>
-                    </td>
-                    <td class="py-3 px-3 align-top">${makeUl(daily, 'daily')}</td>
-                    <td class="py-3 px-3 align-top">${makeUl(weekly, 'weekly')}</td>
-                    <td class="py-3 px-3 align-top">${makeUl(monthly, 'monthly')}</td>
+                    ${areaCell}
+                    ${cellsHTML}
                 </tr>`;
+        }
+
+        function makeTaskList(tasks, colName) {
+            let html = `<ul class="task-list outline-none min-h-[20px] text-sm">`;
+            const liOpen = `<li class="task-li group/li" style="display:flex;align-items:flex-start;flex-wrap:wrap;gap:4px;">`;
+            const liClose = `</li>`;
+            if (!tasks || tasks.length === 0) {
+                html += liOpen + buildTaskLiHTML('') + liClose;
+            } else {
+                tasks.forEach(t => { html += liOpen + buildTaskLiHTML(t) + liClose; });
+            }
+            html += `</ul>`;
+            html += `<button class="no-print text-[10px] font-bold text-slate-400 hover:text-[#0e7f63] mt-1" onclick="addTaskItem(this, '${colName}')">+ Add task</button>`;
+            return html;
         }
 
         function addScheduleRowInSection(btn) {
             const tbody = btn.closest('.section-block').querySelector('tbody');
+            const columns = getScheduleColumns(btn.closest('.section-block'));
             const tr = document.createElement('tr');
-            tr.innerHTML = buildScheduleRowHTML('New Area', ['Type daily task...'], ['Type weekly task...'], ['Type monthly task...']);
+            const newRow = { area: 'New Area', areaTimes: [] };
+            columns.forEach(c => { newRow[c.toLowerCase()] = ['Type task...']; });
+            tr.innerHTML = buildScheduleRowHTML(newRow, columns);
             tbody.appendChild(tr);
         }
 
-        // ===== TASK LI WITH TIME BADGE =====
-        function buildTaskLiHTML(text) {
-            return `
-                <li class="task-li group/li">
-                    <span class="task-text" contenteditable="true">${text || 'New task...'}</span>
-                    <button class="no-print add-time-btn absolute right-0 top-0 text-[10px] font-bold bg-[#0e7f63]/10 text-[#0e7f63] px-1.5 py-0.5 rounded-full opacity-0 group-hover/li:opacity-100 hover:bg-[#0e7f63]/20 transition-all" onclick="toggleTaskTime(this)" title="Add time to this task">+ Time</button>
-                    <span class="no-print time-badge absolute right-0 top-0">
-                        <span class="time-text" contenteditable="true"></span>
-                        <button class="text-[#0e7f63] hover:text-red-600 font-black" onclick="removeTaskTime(this)" title="Remove time">×</button>
-                    </span>
-                    <button class="no-print absolute right-0 top-0 text-[10px] text-slate-400 hover:text-red-500 font-bold px-1 opacity-0 group-hover/li:opacity-100 del-li-btn" onclick="deleteTaskItem(this)" title="Remove task">✕</button>
-                </li>`;
+        function getScheduleColumns(sectionBlock) {
+            const ths = sectionBlock.querySelectorAll('.schedule-table thead th .col-name');
+            const cols = [];
+            ths.forEach(th => { cols.push(th.innerText.trim()); });
+            return cols.length ? cols : ['Daily', 'Weekly', 'Monthly'];
         }
 
-        function toggleTaskTime(btn) {
-            const li = btn.closest('.task-li');
-            const badge = li.querySelector('.time-badge');
-            const timeText = li.querySelector('.time-text');
-            const delBtn = li.querySelector('.del-li-btn');
+        function removeScheduleColumn(btn) {
+            const th = btn.closest('th');
+            const table = btn.closest('.schedule-table');
+            const colIdx = Array.prototype.indexOf.call(th.parentElement.children, th);
+            table.querySelectorAll('tr').forEach(tr => {
+                if (tr.children[colIdx]) tr.children[colIdx].remove();
+            });
+            // Rebalance remaining column widths so none becomes oversized
+            rebalanceColumns(table);
+        }
 
-            btn.style.display = 'none';
-            badge.style.display = 'inline-flex';
-            delBtn.style.right = (badge.offsetWidth + 10) + 'px';
-            
-            if (!timeText.innerText.trim()) {
-                timeText.innerText = '19:00';
+        function rebalanceColumns(table) {
+            const ths = table.querySelectorAll('thead th');
+            const totalCols = ths.length;
+            if (!totalCols) return;
+            // Reset table to full width so % column widths fill the container
+            table.style.width = '100%';
+            const colW = `${Math.floor(100 / totalCols)}%`;
+            ths.forEach(th => { th.style.width = colW; });
+            table.querySelectorAll('tbody tr').forEach(tr => {
+                tr.querySelectorAll('td').forEach(td => { td.style.width = colW; });
+            });
+        }
+
+        // ===== COLUMN RESIZE (drag to shrink/grow) =====
+        let colResizeState = null;
+        function startColResize(e, handle) {
+            e.preventDefault();
+            const th = handle.closest('th');
+            const table = th.closest('.schedule-table');
+            const tr = th.parentElement;
+            const ths = Array.from(tr.children);
+            const colIdx = ths.indexOf(th);
+            const startX = e.clientX;
+            // Snapshot current pixel widths of ALL columns (convert from % to px)
+            const widths = ths.map(t => t.offsetWidth);
+            // Identify the adjacent column to compensate (prefer next, else previous)
+            let adjIdx = colIdx + 1 < ths.length ? colIdx + 1 : colIdx - 1;
+            colResizeState = { th, table, colIdx, adjIdx, startX, widths, ths };
+            // Fix all column widths in px and release 100% width so px values are respected
+            table.style.width = 'auto';
+            ths.forEach((t, i) => { t.style.width = widths[i] + 'px'; });
+            table.querySelectorAll('tbody tr').forEach(row => {
+                Array.from(row.children).forEach((td, i) => { td.style.width = widths[i] + 'px'; });
+            });
+            document.body.style.cursor = 'col-resize';
+            document.addEventListener('mousemove', onColResizeMove);
+            document.addEventListener('mouseup', onColResizeUp);
+        }
+        function onColResizeMove(e) {
+            if (!colResizeState) return;
+            const { th, table, colIdx, adjIdx, startX, widths, ths } = colResizeState;
+            let delta = e.clientX - startX;
+            // Limit delta so neither column goes below 50px
+            if (delta > 0 && widths[adjIdx] - delta < 50) delta = widths[adjIdx] - 50;
+            if (delta < 0 && widths[colIdx] + delta < 50) delta = 50 - widths[colIdx];
+            const newW = widths[colIdx] + delta;
+            const adjW = widths[adjIdx] - delta;
+            ths[colIdx].style.width = newW + 'px';
+            ths[adjIdx].style.width = adjW + 'px';
+            table.querySelectorAll('tbody tr').forEach(row => {
+                const cells = row.children;
+                if (cells[colIdx]) cells[colIdx].style.width = newW + 'px';
+                if (cells[adjIdx]) cells[adjIdx].style.width = adjW + 'px';
+            });
+        }
+        function onColResizeUp() {
+            colResizeState = null;
+            document.body.style.cursor = '';
+            document.removeEventListener('mousemove', onColResizeMove);
+            document.removeEventListener('mouseup', onColResizeUp);
+        }
+
+        function addScheduleColumn(btn) {
+            const sectionBlock = btn.closest('.section-block');
+            const table = sectionBlock.querySelector('.schedule-table');
+            const thead = table.querySelector('thead tr');
+            const tbody = table.querySelector('tbody');
+            const colCount = thead.children.length;
+            const colName = 'Column ' + (colCount);
+            const newTh = document.createElement('th');
+            newTh.className = 'py-2 px-3 text-left';
+            newTh.setAttribute('data-col-name', colName);
+            newTh.innerHTML = `<div class="flex items-center justify-between gap-1">
+                                    <span contenteditable="true" class="outline-none col-name">${colName}</span>
+                                    <button class="no-print text-red-400 hover:text-red-600 font-bold text-xs px-1 rounded col-del-btn" onclick="removeScheduleColumn(this)" title="Remove column">✕</button>
+                                </div>
+                                <div class="no-print col-resize-handle" onmousedown="startColResize(event, this)" title="Drag to resize column"></div>`;
+            thead.appendChild(newTh);
+            tbody.querySelectorAll('tr').forEach(tr => {
+                const td = document.createElement('td');
+                td.className = 'py-3 px-3 align-top';
+                td.innerHTML = makeTaskList(['Type task...'], colName.toLowerCase());
+                tr.appendChild(td);
+            });
+            rebalanceColumns(table);
+        }
+
+        // ===== AREA TIMES (start + optional end, multiple intervals per area) =====
+        function buildAreaTimeBadgeHTML(startText, endText) {
+            const hasEnd = endText && String(endText).trim() !== '';
+            return `
+                <span class="time-badge area-time-badge" style="display:inline-flex;align-items:center;gap:2px;">
+                    <span class="time-start" contenteditable="true">${startText || '00:00'}</span>
+                    <span class="time-end-wrap" style="display:${hasEnd ? 'inline-flex' : 'none'};align-items:center;gap:1px;">
+                        <span class="time-sep">–</span>
+                        <span class="time-end" contenteditable="true">${hasEnd ? endText : '00:00'}</span>
+                    </span>
+                    <button class="no-print add-end-btn text-[10px] font-bold text-[#0e7f63] hover:underline" onclick="addAreaTimeEnd(this)" title="Add end time" style="${hasEnd ? 'display:none;' : ''}">+ End</button>
+                    <button class="no-print text-[#0e7f63] hover:text-red-600 font-black" onclick="removeAreaTime(this)" title="Remove time">×</button>
+                </span>`;
+        }
+
+        function addAreaTime(btn) {
+            const td = btn.closest('td');
+            const wrapper = td.querySelector('.area-times-wrapper');
+            if (!wrapper) return;
+            const tmp = document.createElement('span');
+            tmp.innerHTML = buildAreaTimeBadgeHTML('00:00', '');
+            wrapper.appendChild(tmp.firstElementChild || tmp);
+            const startEl = wrapper.lastElementChild.querySelector('.time-start');
+            if (startEl) startEl.focus();
+        }
+
+        function addAreaTimeEnd(btn) {
+            const badge = btn.closest('.area-time-badge');
+            if (!badge) return;
+            const endWrap = badge.querySelector('.time-end-wrap');
+            if (endWrap) {
+                endWrap.style.display = 'inline-flex';
+                const endEl = endWrap.querySelector('.time-end');
+                if (endEl) endEl.focus();
             }
-            timeText.focus();
+            btn.style.display = 'none';
+        }
+
+        function removeAreaTime(btn) {
+            btn.closest('.area-time-badge').remove();
+        }
+
+        // ===== AREA TEXT TOGGLE (show/hide area name, keep only times) =====
+        function toggleAreaText(btn) {
+            const wrap = btn.closest('.area-name-wrap');
+            if (!wrap) return;
+            const nameEl = wrap.querySelector('.area-name');
+            if (!nameEl) return;
+            const isHidden = nameEl.style.display === 'none';
+            if (isHidden) {
+                nameEl.style.display = '';
+                btn.innerText = '🚫 Text';
+                btn.title = 'Hide area text (keep only times)';
+            } else {
+                nameEl.style.display = 'none';
+                btn.innerText = '☰ Text';
+                btn.title = 'Show area text';
+            }
+        }
+
+        // Helper: create a new <li class="task-li"> with the given text and optional times
+        function createTaskLi(text, times) {
+            const li = document.createElement('li');
+            li.className = 'task-li group/li';
+            li.style.cssText = 'display:flex;align-items:flex-start;flex-wrap:wrap;gap:4px;';
+            li.innerHTML = buildTaskLiHTML(text || '');
+            if (times && times.length) {
+                const wrapper = li.querySelector('.times-wrapper');
+                times.forEach(t => {
+                    const span = document.createElement('span');
+                    span.innerHTML = buildTaskTimeBadgeHTML(t);
+                    wrapper.appendChild(span.firstElementChild || span);
+                });
+            }
+            return li;
+        }
+
+        // Returns ONLY the inner content of a <li class="task-li"> (no wrapping <li> tag).
+        // This is safe to use as li.innerHTML because the HTML5 parser would auto-close
+        // the outer <li> and create a sibling <li>, which is what caused the duplicate
+        // bullets in the legacy code. The wrapping <li> is now created separately by
+        // makeTaskList (for HTML strings) or by createTaskLi (for DOM).
+        function buildTaskLiHTML(text) {
+            return `
+                    <span class="task-text" contenteditable="true" style="flex:1 1 auto;min-width:120px;">${text || 'New task...'}</span>
+                    <span class="times-wrapper" style="display:inline-flex;flex-wrap:wrap;gap:3px;align-items:center;"></span>
+                    <button class="no-print add-time-btn text-[10px] font-bold bg-[#0e7f63]/10 text-[#0e7f63] px-1.5 py-0.5 rounded-full hover:bg-[#0e7f63]/20 transition-all" onclick="addTaskTime(this)" title="Add time to this task">+ Time</button>
+                    <button class="no-print del-li-btn text-[10px] text-red-400 hover:text-red-500 font-bold px-1" onclick="deleteTaskItem(this)" title="Remove task">✕</button>`;
+        }
+
+        function buildTaskTimeBadgeHTML(timeText) {
+            return `
+                <span class="time-badge" style="display:inline-flex;">
+                    <span class="time-text" contenteditable="true">${timeText || '00:00'}</span>
+                    <button class="no-print text-[#0e7f63] hover:text-red-600 font-black" onclick="removeTaskTime(this)" title="Remove time">×</button>
+                </span>`;
+        }
+
+        function addTaskTime(btn) {
+            const li = btn.closest('.task-li');
+            const wrapper = li.querySelector('.times-wrapper');
+            const span = document.createElement('span');
+            span.innerHTML = buildTaskTimeBadgeHTML('00:00');
+            wrapper.appendChild(span.firstElementChild || span);
+            const timeText = wrapper.lastElementChild.querySelector('.time-text');
+            if (timeText) timeText.focus();
         }
 
         function removeTaskTime(btn) {
-            const li = btn.closest('.task-li');
-            const badge = li.querySelector('.time-badge');
-            const addBtn = li.querySelector('.add-time-btn');
-            const delBtn = li.querySelector('.del-li-btn');
-
-            badge.style.display = 'none';
-            badge.querySelector('.time-text').innerText = '';
-            addBtn.style.display = '';
-            delBtn.style.right = '0px';
+            btn.closest('.time-badge').remove();
         }
 
         function deleteTaskItem(btn) {
@@ -593,17 +885,14 @@
             const ul = li.closest('ul');
             li.remove();
             if (ul && ul.children.length === 0) {
-                const newLi = document.createElement('li');
-                newLi.innerHTML = buildTaskLiHTML('Type task here...');
-                ul.appendChild(newLi);
+                ul.appendChild(createTaskLi('Type task here...'));
             }
         }
 
         function addTaskItem(btn, colName) {
             const ul = btn.parentElement.querySelector('ul.task-list');
             if (!ul) return;
-            const li = document.createElement('li');
-            li.innerHTML = buildTaskLiHTML('New task...');
+            const li = createTaskLi('New task...');
             ul.appendChild(li);
             const span = li.querySelector('.task-text');
             if (span) {
@@ -636,7 +925,7 @@
             return `
                 <span class="inspection-slot group/slot">
                     <span contenteditable="true" class="outline-none">${timeText || '00:00 – 00:00'}</span>
-                    <button class="no-print text-[#0e7f63] hover:text-red-600 font-black text-sm leading-none opacity-0 group-hover/slot:opacity-100 transition-opacity" onclick="deleteInspectionSlot(this)" title="Remove slot">×</button>
+                    <button class="no-print text-[#0e7f63] hover:text-red-600 font-black text-sm leading-none slot-del-btn" onclick="deleteInspectionSlot(this)" title="Remove slot">×</button>
                 </span>`;
         }
 
@@ -678,7 +967,7 @@
             return `
                 <tr class="group/row">
                     <td class="py-2 px-3 font-bold text-slate-700 relative">
-                        <button class="no-print absolute -left-2 top-1 text-red-400 hover:text-red-600 font-bold text-xs hidden group-hover/row:block bg-red-50 px-1.5 py-0.5 rounded z-10" onclick="deleteTableRow(this)" title="Remove row">✕</button>
+                        <button class="no-print row-del-btn text-red-400 hover:text-red-600 font-bold text-xs px-1.5 py-0.5 rounded bg-red-50 absolute -left-2 top-1 z-10" onclick="deleteTableRow(this)" title="Remove row">✕</button>
                         <div contenteditable="true" class="outline-none">${day || 'New Day'}</div>
                     </td>
                     <td class="py-2 px-3">
@@ -709,7 +998,7 @@
         function buildSpecialNoteHTML(text) {
             return `
                 <div class="special-note-row group/note relative">
-                    <button class="no-print absolute -top-2 -right-2 text-red-400 hover:text-red-600 font-bold text-xs hidden group-hover/note:block bg-red-50 px-1.5 py-0.5 rounded z-10" onclick="deleteSpecialNote(this)" title="Remove note">✕</button>
+                    <button class="no-print note-del-btn text-red-400 hover:text-red-600 font-bold text-xs px-1.5 py-0.5 rounded bg-red-50 absolute -top-2 -right-2 z-10" onclick="deleteSpecialNote(this)" title="Remove note">✕</button>
                     <div contenteditable="true" class="outline-none text-sm font-bold text-[#0e7f63]">${text || 'Type note here...'}</div>
                 </div>`;
         }
@@ -724,6 +1013,18 @@
 
         function deleteSpecialNote(btn) {
             btn.closest('.special-note-row').remove();
+        }
+
+        function deleteFooterNote(btn) {
+            if (!confirm('Delete the footer note ("Bins are taken to the collection point...")?')) return;
+            const note = btn.closest('.group\\/note');
+            if (note) note.remove();
+        }
+
+        function deleteFooter(btn) {
+            if (!confirm('Delete the page footer ("Official Document / Standard Operational Procedures")?')) return;
+            const footer = btn.closest('.group\\/ftr');
+            if (footer) footer.remove();
         }
 
         // ===== GENERIC ROW =====
@@ -743,8 +1044,7 @@
                     e.preventDefault();
                     const li = e.target.closest('.task-li');
                     const ul = li.closest('ul.task-list');
-                    const newLi = document.createElement('li');
-                    newLi.innerHTML = buildTaskLiHTML('');
+                    const newLi = createTaskLi('');
                     li.after(newLi);
                     const newSpan = newLi.querySelector('.task-text');
                     if (newSpan) newSpan.focus();
@@ -855,14 +1155,46 @@
                 const docSnap = await db.collection('bin_store_reports').doc(id).get();
                 if (!docSnap.exists) { populateDefaults(); return; }
                 const data = docSnap.data();
+                // Replace the document body with the saved HTML (this also restores HEADER,
+                // FOOTER NOTE and FOOTER, but loses the "Add Section" buttons which are
+                // .no-print and were stripped on save).
                 document.getElementById('document-body').innerHTML = data.html_data;
                 currentDocId = id;
                 updateStatusName(data.name);
                 localStorage.setItem('lastBinStoreDocId', id);
                 reinjectAllButtons();
+                // Reinject the "Add Section" buttons bar (stripped on save because they
+                // are .no-print, and not restored by reinjectAllButtons).
+                reinjectAddSectionBar();
             } catch (e) {
                 alert('Error loading: ' + e.message);
                 populateDefaults();
+            }
+        }
+
+        // Re-inserts the "+ Add Section" buttons bar inside #document-body, right after
+        // the #sections-container (or at the end if the container is missing). Safe to
+        // call multiple times — it removes any previous instance first.
+        function reinjectAddSectionBar() {
+            const docBody = document.getElementById('document-body');
+            if (!docBody) return;
+            // Remove any existing add-section bar to avoid duplicates
+            const existing = docBody.querySelector('.add-section-bar');
+            if (existing) existing.remove();
+            const bar = document.createElement('div');
+            bar.className = 'add-section-bar no-print mt-8 pt-6 border-t-2 border-dashed border-slate-300 flex flex-wrap justify-center gap-3';
+            bar.innerHTML = `
+                <button onclick="addSection('schedule')" class="px-5 py-3 bg-white border-2 border-[#0e7f63] text-[#0e7f63] font-bold rounded-xl hover:bg-[#0e7f63] hover:text-white transition-all flex items-center gap-2 text-sm">+ Cleaning Schedule Table</button>
+                <button onclick="addSection('inspection')" class="px-5 py-3 bg-white border-2 border-[#0e7f63] text-[#0e7f63] font-bold rounded-xl hover:bg-[#0e7f63] hover:text-white transition-all flex items-center gap-2 text-sm">+ Inspection Rota</button>
+                <button onclick="addSection('collection')" class="px-5 py-3 bg-white border-2 border-[#0e7f63] text-[#0e7f63] font-bold rounded-xl hover:bg-[#0e7f63] hover:text-white transition-all flex items-center gap-2 text-sm">+ Collection Schedule</button>
+                <button onclick="addSection('special')" class="px-5 py-3 bg-white border-2 border-[#0e7f63] text-[#0e7f63] font-bold rounded-xl hover:bg-[#0e7f63] hover:text-white transition-all flex items-center gap-2 text-sm">+ Special Note Block</button>
+                <button onclick="addSection('generic')" class="px-5 py-3 bg-white border-2 border-[#0e7f63] text-[#0e7f63] font-bold rounded-xl hover:bg-[#0e7f63] hover:text-white transition-all flex items-center gap-2 text-sm">+ Generic Section</button>`;
+            // Insert after #sections-container if present, otherwise append at end
+            const sectionsContainer = docBody.querySelector('#sections-container');
+            if (sectionsContainer && sectionsContainer.parentNode === docBody) {
+                sectionsContainer.after(bar);
+            } else {
+                docBody.appendChild(bar);
             }
         }
 
@@ -887,35 +1219,206 @@
         function reinjectAllButtons() {
             const container = document.getElementById('document-body');
 
-            // Rebuild all task-li items with buttons
+            // Rebuild task-li items preserving existing time badges.
+            // Legacy saved docs may have multiple <li class="task-li"> where only the
+            // last one in a run actually has the .task-text (the earlier ones were
+            // auto-created empty <li> by the HTML5 parser when it encountered the
+            // buggy nested <li> structure). Remove any empty <li.task-li> so we don't
+            // render extra bullets.
+            container.querySelectorAll('ul.task-list').forEach(ul => {
+                const lis = Array.from(ul.querySelectorAll(':scope > li.task-li'));
+                // Keep the LAST li in each consecutive run of task-li that has a .task-text;
+                // remove the others (they're the empty ones that produce stray bullets).
+                for (let i = 0; i < lis.length; i++) {
+                    const li = lis[i];
+                    const hasText = li.querySelector('.task-text');
+                    if (!hasText) {
+                        // Check if a sibling after this one has text — if so, this is a stray empty <li>
+                        const next = lis[i + 1];
+                        if (next && next.querySelector('.task-text')) {
+                            li.remove();
+                        }
+                    }
+                }
+            });
+            // Also flatten any genuinely nested <li.task-li> (defensive)
+            container.querySelectorAll('.task-li').forEach(outerLi => {
+                outerLi.querySelectorAll(':scope > li.task-li').forEach(nestedLi => {
+                    while (nestedLi.firstChild) outerLi.appendChild(nestedLi.firstChild);
+                    nestedLi.remove();
+                });
+            });
             container.querySelectorAll('.task-li').forEach(li => {
-                if (li.querySelector('.add-time-btn')) return; // already processed
+                if (li.querySelector('.add-time-btn')) return; // already processed (interactive)
                 const textSpan = li.querySelector('.task-text');
-                const text = textSpan ? textSpan.innerText : '';
+                // Use textContent (universally supported) instead of innerText
+                const text = textSpan ? (textSpan.textContent || '') : '';
+                let existingTimes = [];
+                const existingWrapper = li.querySelector('.times-wrapper');
+                if (existingWrapper) {
+                    existingWrapper.querySelectorAll('.time-badge').forEach(b => {
+                        const t = b.querySelector('.time-text');
+                        if (t) existingTimes.push(t.textContent || '');
+                    });
+                } else {
+                    const legacyTime = li.querySelector('.time-text');
+                    if (legacyTime && (legacyTime.textContent || '').trim()) existingTimes.push(legacyTime.textContent);
+                }
+                // Replace ONLY the inner content (buildTaskLiHTML no longer wraps in <li>)
                 li.innerHTML = buildTaskLiHTML(text);
+                const wrapper = li.querySelector('.times-wrapper');
+                existingTimes.forEach(t => {
+                    const span = document.createElement('span');
+                    span.innerHTML = buildTaskTimeBadgeHTML(t);
+                    wrapper.appendChild(span.firstElementChild || span);
+                });
             });
 
-            // Add delete buttons to schedule rows
+            // Ensure schedule area cells have area-times wrapper + Area Time button + row delete btn
             container.querySelectorAll('.schedule-table tbody tr').forEach(tr => {
-                if (tr.querySelector('button')) return;
-                const td = tr.querySelector('td');
-                if (!td) return;
-                const btn = document.createElement('button');
-                btn.className = 'no-print absolute -left-2 -top-1 text-red-400 hover:text-red-600 font-bold text-xs hidden group-hover/row:block bg-red-50 px-1.5 py-0.5 rounded z-10';
-                btn.innerText = '✕';
-                btn.setAttribute('onclick', 'deleteTableRow(this)');
-                btn.title = 'Remove row';
-                td.style.position = 'relative';
-                td.insertBefore(btn, td.firstChild);
+                const areaTd = tr.querySelector('td');
+                if (!areaTd) return;
+                areaTd.style.position = 'relative';
+                if (!areaTd.querySelector('.row-del-btn')) {
+                    const btn = document.createElement('button');
+                    btn.className = 'no-print row-del-btn text-red-400 hover:text-red-600 font-bold text-xs px-1.5 py-0.5 rounded bg-red-50 absolute -left-2 -top-1 z-10';
+                    btn.innerText = '✕';
+                    btn.setAttribute('onclick', 'deleteTableRow(this)');
+                    btn.title = 'Remove row';
+                    areaTd.insertBefore(btn, areaTd.firstChild);
+                }
+                // Migrate legacy area name (bare div without .area-name-wrap) to new structure
+                let nameWrap = areaTd.querySelector('.area-name-wrap');
+                if (!nameWrap) {
+                    const legacyName = areaTd.querySelector(':scope > div:not(.area-times-wrapper):not(.area-name-wrap)');
+                    if (legacyName && !legacyName.classList.contains('area-name')) {
+                        legacyName.classList.add('area-name');
+                        const wrap = document.createElement('div');
+                        wrap.className = 'area-name-wrap';
+                        wrap.style.cssText = 'display:flex;align-items:center;gap:4px;';
+                        legacyName.parentNode.insertBefore(wrap, legacyName);
+                        wrap.appendChild(legacyName);
+                        nameWrap = wrap;
+                    }
+                }
+                // Ensure toggle-text button exists in area-name-wrap
+                if (nameWrap && !nameWrap.querySelector('.toggle-text-btn')) {
+                    const tb = document.createElement('button');
+                    tb.className = 'no-print toggle-text-btn text-[10px] font-bold text-[#0e7f63] hover:underline';
+                    const nameEl = nameWrap.querySelector('.area-name');
+                    const isHidden = nameEl && nameEl.style.display === 'none';
+                    tb.innerText = isHidden ? '☰ Text' : '🚫 Text';
+                    tb.setAttribute('onclick', 'toggleAreaText(this)');
+                    tb.title = isHidden ? 'Show area text' : 'Hide area text (keep only times)';
+                    nameWrap.appendChild(tb);
+                }
+                if (!areaTd.querySelector('.area-times-wrapper')) {
+                    const wrap = document.createElement('div');
+                    wrap.className = 'area-times-wrapper mt-1';
+                    wrap.style.cssText = 'display:flex;flex-direction:column;align-items:flex-start;gap:4px;';
+                    areaTd.appendChild(wrap);
+                }
+                // Force vertical (stacked) layout on any existing area-times-wrapper (legacy horizontal)
+                areaTd.querySelectorAll('.area-times-wrapper').forEach(w => {
+                    w.style.flexDirection = 'column';
+                    w.style.alignItems = 'flex-start';
+                    w.style.flexWrap = '';
+                });
+                if (!areaTd.querySelector('[onclick="addAreaTime(this)"]')) {
+                    const ab = document.createElement('button');
+                    ab.className = 'no-print text-[10px] font-bold text-[#0e7f63] hover:underline mt-1';
+                    ab.innerText = '+ Area Time';
+                    ab.setAttribute('onclick', 'addAreaTime(this)');
+                    ab.title = 'Add time to this area';
+                    areaTd.appendChild(ab);
+                }
+            });
+
+            // Re-add + End and × remove buttons to existing area-time-badges (buttons stripped on save)
+            container.querySelectorAll('.area-time-badge').forEach(badge => {
+                // Migrate legacy single-time badges (.time-text) to new start/end structure
+                const legacy = badge.querySelector('.time-text');
+                if (legacy && !badge.querySelector('.time-start')) {
+                    const t = legacy.textContent.trim();
+                    badge.innerHTML = buildAreaTimeBadgeHTML(t, '');
+                    return; // rebuilt fully with buttons
+                }
+                // Re-add missing + End button if end is not shown
+                const endWrap = badge.querySelector('.time-end-wrap');
+                if (!badge.querySelector('.add-end-btn')) {
+                    const eb = document.createElement('button');
+                    eb.className = 'no-print add-end-btn text-[10px] font-bold text-[#0e7f63] hover:underline';
+                    eb.innerText = '+ End';
+                    eb.setAttribute('onclick', 'addAreaTimeEnd(this)');
+                    eb.title = 'Add end time';
+                    if (endWrap && endWrap.style.display !== 'none') eb.style.display = 'none';
+                    badge.appendChild(eb);
+                }
+                if (!badge.querySelector('[onclick="removeAreaTime(this)"]')) {
+                    const btn = document.createElement('button');
+                    btn.className = 'no-print text-[#0e7f63] hover:text-red-600 font-black';
+                    btn.innerText = '×';
+                    btn.setAttribute('onclick', 'removeAreaTime(this)');
+                    btn.title = 'Remove time';
+                    badge.appendChild(btn);
+                }
+            });
+
+            // Ensure schedule column headers have delete buttons + resize handles
+            container.querySelectorAll('.schedule-table thead th').forEach(th => {
+                const isArea = th === th.parentElement.firstElementChild;
+                const colName = th.querySelector('.col-name');
+                if (!isArea && !colName) return;
+                // Add delete button only to non-Area columns
+                if (!isArea && !th.querySelector('.col-del-btn')) {
+                    if (!th.querySelector('.flex')) {
+                        const wrapper = document.createElement('div');
+                        wrapper.className = 'flex items-center justify-between gap-1';
+                        th.appendChild(wrapper);
+                        if (colName) wrapper.appendChild(colName);
+                        const btn = document.createElement('button');
+                        btn.className = 'no-print text-red-400 hover:text-red-600 font-bold text-xs px-1 rounded col-del-btn';
+                        btn.innerText = '✕';
+                        btn.setAttribute('onclick', 'removeScheduleColumn(this)');
+                        btn.title = 'Remove column';
+                        wrapper.appendChild(btn);
+                    }
+                }
+                // Add resize handle to ALL columns (including Area)
+                if (!th.querySelector('.col-resize-handle')) {
+                    const handle = document.createElement('div');
+                    handle.className = 'no-print col-resize-handle';
+                    handle.setAttribute('onmousedown', 'startColResize(event, this)');
+                    handle.title = 'Drag to resize column';
+                    th.appendChild(handle);
+                }
+            });
+
+            // Ensure each schedule table has "+ Add Column" button
+            container.querySelectorAll('.schedule-table').forEach(table => {
+                const sectionBlock = table.closest('.section-block');
+                if (!sectionBlock) return;
+                if (sectionBlock.querySelector('[onclick="addScheduleColumn(this)"]')) return;
+                let actionsDiv = sectionBlock.querySelector('.sec-actions');
+                if (!actionsDiv) {
+                    actionsDiv = document.createElement('div');
+                    actionsDiv.className = 'no-print mt-3 flex flex-wrap gap-2 sec-actions';
+                    sectionBlock.appendChild(actionsDiv);
+                }
+                const colBtn = document.createElement('button');
+                colBtn.className = 'text-xs font-bold text-[#0e7f63] hover:underline';
+                colBtn.innerText = '+ Add Column';
+                colBtn.setAttribute('onclick', 'addScheduleColumn(this)');
+                actionsDiv.appendChild(colBtn);
             });
 
             // Add delete buttons to collection rows
             container.querySelectorAll('.collection-table tbody tr').forEach(tr => {
-                if (tr.querySelector('button')) return;
+                if (tr.querySelector('.row-del-btn')) return;
                 const td = tr.querySelector('td');
                 if (!td) return;
                 const btn = document.createElement('button');
-                btn.className = 'no-print absolute -left-2 top-1 text-red-400 hover:text-red-600 font-bold text-xs hidden group-hover/row:block bg-red-50 px-1.5 py-0.5 rounded z-10';
+                btn.className = 'no-print row-del-btn text-red-400 hover:text-red-600 font-bold text-xs px-1.5 py-0.5 rounded bg-red-50 absolute -left-2 top-1 z-10';
                 btn.innerText = '✕';
                 btn.setAttribute('onclick', 'deleteTableRow(this)');
                 btn.title = 'Remove row';
@@ -927,7 +1430,7 @@
             container.querySelectorAll('.inspection-slot').forEach(slot => {
                 if (slot.querySelector('button')) return;
                 const btn = document.createElement('button');
-                btn.className = 'no-print text-[#0e7f63] hover:text-red-600 font-black text-sm leading-none opacity-0 group-hover/slot:opacity-100 transition-opacity';
+                btn.className = 'no-print text-[#0e7f63] hover:text-red-600 font-black text-sm leading-none slot-del-btn';
                 btn.innerText = '×';
                 btn.setAttribute('onclick', 'deleteInspectionSlot(this)');
                 btn.title = 'Remove slot';
@@ -936,9 +1439,9 @@
 
             // Add delete buttons to special notes
             container.querySelectorAll('.special-note-row').forEach(note => {
-                if (note.querySelector('button')) return;
+                if (note.querySelector('.note-del-btn')) return;
                 const btn = document.createElement('button');
-                btn.className = 'no-print absolute -top-2 -right-2 text-red-400 hover:text-red-600 font-bold text-xs hidden group-hover/note:block bg-red-50 px-1.5 py-0.5 rounded z-10';
+                btn.className = 'no-print note-del-btn text-red-400 hover:text-red-600 font-bold text-xs px-1.5 py-0.5 rounded bg-red-50 absolute -top-2 -right-2 z-10';
                 btn.innerText = '✕';
                 btn.setAttribute('onclick', 'deleteSpecialNote(this)');
                 btn.title = 'Remove note';
@@ -946,16 +1449,53 @@
                 note.appendChild(btn);
             });
 
+            // Add delete button to FOOTER NOTE ("Bins are taken to the collection point...")
+            container.querySelectorAll('.group\\/note').forEach(note => {
+                if (note.querySelector('[onclick*="deleteFooterNote"]')) return;
+                const btn = document.createElement('button');
+                btn.className = 'no-print absolute -top-3 -right-2 text-red-500 hover:text-white hover:bg-red-500 font-bold text-[10px] bg-red-50 border border-red-200 px-2 py-1 rounded-full shadow-sm z-10 flex items-center gap-1 transition-colors';
+                btn.innerText = '✕ Delete Note';
+                btn.setAttribute('onclick', 'deleteFooterNote(this)');
+                btn.title = 'Remove footer note';
+                note.style.position = 'relative';
+                note.insertBefore(btn, note.firstChild);
+            });
+
+            // Add delete button to FOOTER ("Official Document / Standard Operational Procedures")
+            container.querySelectorAll('.group\\/ftr').forEach(footer => {
+                if (footer.querySelector('[onclick*="deleteFooter"]')) return;
+                const btn = document.createElement('button');
+                btn.className = 'no-print absolute -top-3 -right-2 text-red-500 hover:text-white hover:bg-red-500 font-bold text-[10px] bg-red-50 border border-red-200 px-2 py-1 rounded-full shadow-sm z-10 flex items-center gap-1 transition-colors';
+                btn.innerText = '✕ Delete Footer';
+                btn.setAttribute('onclick', 'deleteFooter(this)');
+                btn.title = 'Remove footer';
+                footer.style.position = 'relative';
+                footer.insertBefore(btn, footer.firstChild);
+            });
+
             // Add section delete buttons
             container.querySelectorAll('.section-block').forEach(block => {
                 if (block.querySelector('[onclick*="deleteSection"]')) return;
                 const btn = document.createElement('button');
-                btn.className = 'no-print absolute -top-3 -right-3 bg-red-100 hover:bg-red-200 text-red-600 font-bold text-xs px-2.5 py-1 rounded-full shadow-sm opacity-0 group-hover/sec:opacity-100 transition-opacity z-10';
+                btn.className = 'no-print absolute -top-3 -right-3 bg-red-100 hover:bg-red-200 text-red-600 font-bold text-xs px-2.5 py-1 rounded-full shadow-sm z-10';
                 btn.innerText = '✕ Delete Section';
                 btn.setAttribute('onclick', 'deleteSection(this)');
                 btn.title = 'Delete entire section';
                 block.style.position = 'relative';
                 block.insertBefore(btn, block.firstChild);
+            });
+
+            // Add delete button to HEADER (stripped on save because it's .no-print)
+            container.querySelectorAll('.group\\/head').forEach(head => {
+                if (head.querySelector('[onclick*="border-b-\\\\[3px\\\\]"]')) return;
+                const btn = document.createElement('button');
+                btn.className = 'no-print absolute -top-2 -right-2 text-red-400 hover:text-red-600 font-bold text-xs bg-red-50 px-2 py-1 rounded';
+                btn.innerText = '✕ Delete Header';
+                btn.title = 'Remove header';
+                // The header is identified by class .border-b-[3px] — replicate the original inline handler
+                btn.setAttribute('onclick', "this.closest('.border-b-\\\\[3px\\\\]').remove()");
+                head.style.position = 'relative';
+                head.insertBefore(btn, head.firstChild);
             });
 
             // Add section action buttons at bottom of each section
@@ -971,7 +1511,7 @@
                     block.appendChild(actionsDiv);
                 }
 
-                if (actionsDiv.children.length === 0) {
+                if (!actionsDiv.querySelector('button')) {
                     let btnHTML = '';
                     if (type === 'schedule') {
                         btnHTML = `<button onclick="addScheduleRowInSection(this)" class="text-xs font-bold text-[#0e7f63] hover:underline">+ Add Area Row</button>`;
@@ -982,22 +1522,24 @@
                     } else if (type === 'special') {
                         btnHTML = `<button onclick="addSpecialNoteInSection(this)" class="text-xs font-bold text-[#0e7f63] hover:underline">+ Add Note Row</button>`;
                     }
-                    actionsDiv.innerHTML = btnHTML;
+                    actionsDiv.insertAdjacentHTML('beforeend', btnHTML);
                 }
             });
 
-            // Add "Add task" buttons to schedule cells if missing
-            container.querySelectorAll('.schedule-table td').forEach((td, idx) => {
-                const colIdx = idx % 4;
-                if (colIdx === 0) return; // Area column
-                const ul = td.querySelector('ul.task-list');
-                if (!ul) return;
-                if (td.querySelector('.no-print.text-\\[10px\\]')) return; // already has button
-                const btn = document.createElement('button');
-                btn.className = 'no-print text-[10px] font-bold text-slate-400 hover:text-[#0e7f63] mt-1';
-                btn.innerText = '+ Add task';
-                btn.setAttribute('onclick', "addTaskItem(this, '')");
-                td.appendChild(btn);
+            // Add "Add task" buttons to schedule cells (non-area) if missing
+            container.querySelectorAll('.schedule-table tbody tr').forEach(tr => {
+                const cells = tr.querySelectorAll('td');
+                cells.forEach((td, idx) => {
+                    if (idx === 0) return; // Area column
+                    const ul = td.querySelector('ul.task-list');
+                    if (!ul) return;
+                    if (td.querySelector('[onclick^="addTaskItem"]')) return; // already has button
+                    const btn = document.createElement('button');
+                    btn.className = 'no-print text-[10px] font-bold text-slate-400 hover:text-[#0e7f63] mt-1';
+                    btn.innerText = '+ Add task';
+                    btn.setAttribute('onclick', "addTaskItem(this, '')");
+                    td.appendChild(btn);
+                });
             });
         }
     </script>
